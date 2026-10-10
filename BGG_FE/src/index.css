@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, "Segoe UI", Arial, sans-serif;
+  --color-egmf-primary: #6865d9;
+  --color-egmf-lavender: #e9e8fb;
+  --color-egmf-surface: #f6f7fa;
+  --color-egmf-ink: #252530;
+}
+
+:root {
+  --egmf-primary: #6865d9;
+  --egmf-primary-strong: #5653c5;
+  --egmf-lavender: #e9e8fb;
+  --egmf-surface: #f6f7fa;
+  --egmf-card: #ffffff;
+  --egmf-ink: #252530;
+  --egmf-muted: #74747f;
+  --egmf-border: #e1e1ec;
+  --egmf-radius: 18px;
+  --egmf-shadow: 0 8px 24px rgba(47, 45, 105, 0.06);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+  overflow-x: hidden;
+  background: var(--egmf-surface);
+  color: var(--egmf-ink);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--egmf-lavender);
+  color: var(--egmf-ink);
+}
+
+/* Shared Ant Design primitives retain their own behavior while using eGMF tokens. */
+.ant-input:focus,
+.ant-input-focused {
+  box-shadow: 0 0 0 3px rgba(104, 101, 217, 0.12) !important;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.egmf-mobile-nav-clearance {
+  padding-bottom: calc(
+    92px + max(12px, env(safe-area-inset-bottom), calc(100lvh - 100dvh + 12px))
+  );
+}
+
+@media (min-width: 768px) {
+  .egmf-mobile-nav-clearance {
+    padding-bottom: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea {
+    min-height: 52px;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    line-height: 1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Responsive cho Toast */
+@media (max-width: 640px) {
+  .Toastify__toast-container {
+    width: 70% !important;
+    left: auto !important;
+    right: 12px !important;
+    top: 12px !important;
+  }
+
+  .Toastify__toast {
+    border-radius: 16px !important;
+    margin-bottom: 8px !important;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+}
