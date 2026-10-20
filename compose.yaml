@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: ./BGG_BE
+    restart: unless-stopped
+    env_file:
+      - ./BGG_BE/.env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "node", "-e", "const s=require('net').connect(3000,'127.0.0.1');s.setTimeout(3000);s.on('connect',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1));s.on('timeout',()=>process.exit(1));"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+  frontend:
+    build: ./BGG_FE
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8088}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
