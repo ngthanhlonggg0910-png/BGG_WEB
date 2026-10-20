@@ -35,7 +35,7 @@ function Invoke-Nssm {
 Invoke-Nssm -Arguments @('install', 'BGG-Backend', $node, 'dist/main.js')
 Invoke-Nssm -Arguments @('set', 'BGG-Backend', 'AppDirectory', (Join-Path $repo 'BGG_BE'))
 Invoke-Nssm -Arguments @('set', 'BGG-Backend', 'AppEnvironmentExtra', 'NODE_ENV=production', 'HOST=127.0.0.1', "PORT=$($settings.BackendPort)")
-Invoke-Nssm -Arguments @('install', 'BGG-Web', $NginxExe, "-p `"$prefix`" -c nginx.conf -g `"daemon off;`"")
+Invoke-Nssm -Arguments @('install', 'BGG-Web', $NginxExe, '-p ./ -c nginx.conf')
 Invoke-Nssm -Arguments @('set', 'BGG-Web', 'AppDirectory', $runtime)
 Invoke-Nssm -Arguments @('set', 'BGG-Web', 'DependOnService', 'BGG-Backend')
 foreach ($name in @('BGG-Backend', 'BGG-Web')) {

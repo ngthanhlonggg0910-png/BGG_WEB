@@ -20,6 +20,7 @@ foreach ($folder in @('BGG_BE', 'BGG_FE')) {
 New-Item -ItemType Directory -Force -Path $runtime, (Join-Path $runtime 'logs'), (Join-Path $runtime 'temp') | Out-Null
 $webRoot = (Join-Path $repo 'BGG_FE/dist').Replace('\','/')
 $config = @'
+daemon off;
 worker_processes 1;
 error_log logs/error.log;
 pid logs/nginx.pid;
