@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { ArrowLeft, Barcode, Check, Clock3, LoaderCircle } from "lucide-react";
+import { ArrowLeft, Barcode, Check, Clock3, LoaderCircle, MapPin } from "lucide-react";
 
 import { getCurrentUser } from "../../../shared/auth/session";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
@@ -81,18 +81,12 @@ export default function MaterialLocationUpdate() {
 
   return (
     <MainLayout screenTitle="Cập nhật vị trí nguyên liệu">
-      <div className="mx-auto max-w-[1000px] space-y-4 px-4 py-5 sm:px-6 md:px-8">
-        <button
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-[15px] font-semibold text-slate-600 transition-colors hover:bg-egmf-primary-soft hover:text-egmf-primary"
-          onClick={() => navigate("/")}
-          type="button"
-        >
-          <ArrowLeft size={20} />
-          Trang chủ
-        </button>
-
+      <div className="mx-auto w-full max-w-[1000px] space-y-4 px-4 py-5 sm:px-6 md:px-8">
         <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-          <div className="mb-4">
+          <div className="mb-4 flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
+              <MapPin aria-hidden="true" size={21} />
+            </span>
             <h2 className="text-[19px] font-bold text-slate-900">
               Cập nhật vị trí
             </h2>
