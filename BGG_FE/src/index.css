@@ -1,25 +1,5 @@
 @import "tailwindcss";
-
-@theme {
-  --font-sans: Inter, "Segoe UI", Arial, sans-serif;
-  --color-egmf-primary: #6865d9;
-  --color-egmf-lavender: #e9e8fb;
-  --color-egmf-surface: #f6f7fa;
-  --color-egmf-ink: #252530;
-}
-
-:root {
-  --egmf-primary: #6865d9;
-  --egmf-primary-strong: #5653c5;
-  --egmf-lavender: #e9e8fb;
-  --egmf-surface: #f6f7fa;
-  --egmf-card: #ffffff;
-  --egmf-ink: #252530;
-  --egmf-muted: #74747f;
-  --egmf-border: #e1e1ec;
-  --egmf-radius: 18px;
-  --egmf-shadow: 0 8px 24px rgba(47, 45, 105, 0.06);
-}
+@import "./shared/styles/theme.css";
 
 html,
 body,
@@ -32,20 +12,22 @@ body {
   overflow-x: hidden;
   background: var(--egmf-surface);
   color: var(--egmf-ink);
+  font-family: var(--egmf-font-sans);
   font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: var(--egmf-lavender);
+  background: var(--egmf-primary-soft);
   color: var(--egmf-ink);
 }
 
 /* Shared Ant Design primitives retain their own behavior while using eGMF tokens. */
 .ant-input:focus,
 .ant-input-focused {
-  box-shadow: 0 0 0 3px rgba(104, 101, 217, 0.12) !important;
+  box-shadow: var(--egmf-focus-ring) !important;
 }
 
 button,
@@ -55,10 +37,41 @@ textarea {
   font: inherit;
 }
 
+/* Picking order's remaining Ant Design date picker. */
+.picking-order-page .picking-order-date-picker:hover,
+.picking-order-page .picking-order-date-picker.ant-picker-focused {
+  border-color: var(--egmf-primary) !important;
+}
+
+.picking-order-page .picking-order-date-picker .ant-picker-input > input {
+  min-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 1.5 !important;
+}
+
+.picking-order-page .picking-order-date-picker {
+  display: flex !important;
+  align-items: center !important;
+  padding-inline: 14px !important;
+  border-color: var(--egmf-border) !important;
+  background: var(--egmf-surface-raised) !important;
+}
+
+.picking-order-page .picking-order-date-picker .ant-picker-input {
+  display: flex;
+  align-items: center;
+}
+
 .egmf-mobile-nav-clearance {
   padding-bottom: calc(
     92px + max(12px, env(safe-area-inset-bottom), calc(100lvh - 100dvh + 12px))
   );
+}
+
+.ant-modal-container {
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
 @media (min-width: 768px) {
@@ -68,13 +81,23 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  html {
+    font-size: 17px;
+  }
+
+  body {
+    font-size: 1rem;
+  }
+
   input,
   select,
   textarea {
-    font-size: 16px !important;
+    font-size: 1rem !important;
   }
 
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="color"]
+    ),
   select,
   textarea {
     min-height: 52px;
@@ -92,22 +115,5 @@ textarea {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-  }
-}
-
-/* Responsive cho Toast */
-@media (max-width: 640px) {
-  .Toastify__toast-container {
-    width: 70% !important;
-    left: auto !important;
-    right: 12px !important;
-    top: 12px !important;
-  }
-
-  .Toastify__toast {
-    border-radius: 16px !important;
-    margin-bottom: 8px !important;
-    font-size: 15px;
-    line-height: 1.4;
   }
 }

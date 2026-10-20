@@ -24,3 +24,30 @@ export class lib_Ro_DanhSachTheoKID_MaCay_TKId_RequestDTO {
   MaHang: string;
   TKId: number;
 }
+
+export class lib_Ro_CapNhatViTri_New_RequestDTO {
+  maRo: string;
+  maViTri: string;
+  nguoiCapNhat: string;
+}
+
+export class Lib_RO_TimTheoKho_ViTri_RequestDTO {
+  KID: number;
+  VTId: string;
+}
+
+export class lib_Ro_DanhSachCayTheoKID_MaRo_TKId_RequestDTO {
+  KID: number;
+  MaRo: string;
+  TKId: number;
+}
+
+export class lib_Ro_DanhSachTheoKID_MaRo_ArtLotMau_Cay_TKId_RequestDTO {
+  KID: number;
+  MaRo: string;
+  Item: string;
+  Art: string;
+  Lot: string;
+  Mau: string;
+  TKId: number;
+}

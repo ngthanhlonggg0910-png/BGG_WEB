@@ -1,16 +1,23 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import Login from "../pages/Login/Login";
-import Home from "../pages/Home/Home";
-import AccountInfo from "../pages/AccountInfo/AccountInfo";
-import WarehouseList from "../pages/Warehouse/WarehouseList";
-import WarehouseDetail from "../pages/Warehouse/WarehouseDetail";
-import MaterialLocationUpdate from "../pages/Material/MaterialLocationUpdate";
+import { getCurrentUser } from "../shared/auth/session";
+
+import Login from "../features/auth/pages/LoginPage";
+import Home from "../features/home/pages/HomePage";
+import AccountInfo from "../features/account/pages/AccountInfoPage";
+import WarehouseList from "../features/warehouse/pages/WarehouseListPage";
+import MaterialLocationUpdate from "../features/material-location/pages/MaterialLocationUpdatePage";
+import PickingOrderList from "../features/picking-order/pages/PickingOrderList";
+import PickingOrderDetail from "../features/picking-order/pages/PickingOrderDetail";
+import PickingOrderScan from "../features/picking-order/pages/PickingOrderScan";
+import PickingOrderMaterialList from "../features/picking-order/pages/PickingOrderMaterialList";
+import FabricInspectionList from "../features/fabric-inspection/pages/FabricInspectionList";
+import FabricInspectionRollListPage from "../features/fabric-inspection/pages/FabricInspectionRollList";
 
 // Kiểm tra user đã đăng nhập chưa
 function PrivateRoute({ children }) {
-  const user = localStorage.getItem("user") || sessionStorage.getItem("user");
+  const user = getCurrentUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -21,7 +28,7 @@ function PrivateRoute({ children }) {
 
 // Khi mở app tại "/"
 function StartRoute() {
-  const user = localStorage.getItem("user") || sessionStorage.getItem("user");
+  const user = getCurrentUser();
 
   if (user) {
     return <Navigate to="/home" replace />;
@@ -51,6 +58,42 @@ export default function AppRouter() {
         />
 
         <Route
+          path="/picking-orders"
+          element={
+            <PrivateRoute>
+              <PickingOrderList />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/picking-order-detail"
+          element={
+            <PrivateRoute>
+              <PickingOrderDetail />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/picking-order-scan"
+          element={
+            <PrivateRoute>
+              <PickingOrderScan />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/picking-order-materials"
+          element={
+            <PrivateRoute>
+              <PickingOrderMaterialList />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/infor"
           element={
             <PrivateRoute>
@@ -58,8 +101,6 @@ export default function AppRouter() {
             </PrivateRoute>
           }
         />
-
-        <Route path="/basket-detail" element={<WarehouseDetail />} />
 
         <Route
           path="/warehouse"
@@ -71,19 +112,28 @@ export default function AppRouter() {
         />
 
         <Route
-          path="/warehouse/:warehouseCode"
+          path="/material-location-update"
           element={
             <PrivateRoute>
-              <WarehouseDetail />
+              <MaterialLocationUpdate />
             </PrivateRoute>
           }
         />
 
         <Route
-          path="/material-location-update"
+          path="/fabric-inspection"
           element={
             <PrivateRoute>
-              <MaterialLocationUpdate />
+              <FabricInspectionList />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/fabric-inspection/:pkvId/rolls"
+          element={
+            <PrivateRoute>
+              <FabricInspectionRollListPage />
             </PrivateRoute>
           }
         />

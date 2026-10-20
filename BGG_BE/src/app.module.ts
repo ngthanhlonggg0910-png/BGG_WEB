@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+
 import { AuthModule } from './presentation/modules/auth.module.js';
 import { DatabaseModule } from './infrastructure/database/database.module.js';
-import { ConfigModule } from '@nestjs/config';
 import { WarehouseModule } from './presentation/modules/warehouse.module.js';
-import { BasketLocationModule } from './presentation/modules/basket.module.js';
-import { MaterialLocationModule } from './presentation/modules/MaterialToBasket.module.js';
+import { MaterialLocationModule } from './presentation/modules/updateNPL.module.js';
+import { PickingOrderModule } from './presentation/modules/picking-order.module.js';
+import { FabricInspectionModule } from './presentation/modules/fabric-inspection.module.js';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -13,8 +16,9 @@ import { MaterialLocationModule } from './presentation/modules/MaterialToBasket.
     DatabaseModule,
     AuthModule,
     WarehouseModule,
-    BasketLocationModule,
     MaterialLocationModule,
+    PickingOrderModule,
+    FabricInspectionModule,
   ],
 })
 export class AppModule {}

@@ -1,3 +1,12 @@
+export class BasketLocation {
+  constructor(public readonly KetQua: number) {}
+}
+
+export class RIdAndMaRo {
+  RId: number;
+  MaRo: string;
+}
+
 export class lib_DanhSachDanhSachKho_TheoTKId {
   KId: number;
   MaKho: string;
@@ -52,4 +61,37 @@ export class lib_Ro_DanhSachTheoKID_MaCay_TKId {
   TenNguoiTao: string;
   NgayTao: Date;
   SoLuong: number;
+}
+
+export class BasketFabricRoll {
+  MaCay: string;
+  Item: string;
+  Art: string;
+  Lot: string;
+  MaMau: string;
+  MaRo: string;
+  ThongTin: string;
+  TenViTri: string;
+  TongSoLuong: string;
+  KhachHang: string;
+  Brand: string;
+}
+
+export class BasketFabricRollDetail {
+  MaCay: string;
+  Item: string;
+  Art: string;
+  Lot: string;
+  MaMau: string;
+  MaRo: string;
+  ThongTin: string;
+  VTId: number;
+  TenViTri: string;
+  NguoiTao: string;
+  TenNguoiTao: string;
+  NgayTao: Date;
+  TongSoLuong: number;
+  TongSoCay: number;
+  KhachHang: string;
+  Brand: string;
 }

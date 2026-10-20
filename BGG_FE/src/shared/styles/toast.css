@@ -1,0 +1,58 @@
+/* Toast container */
+.Toastify__toast.custom-toast {
+  border: 1px solid #e5e7eb !important;
+  border-left: 1px solid #e5e7eb !important;
+  border-radius: 18px !important;
+  padding: 14px 12px 18px 14px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden;
+}
+
+/* Nội dung */
+.custom-toast .Toastify__toast-body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  align-items: flex-start;
+}
+
+/* Ẩn icon mặc định */
+.custom-toast .Toastify__toast-icon {
+  display: none !important;
+}
+
+/* Thanh tiến trình chung */
+.custom-toast .Toastify__progress-bar {
+  height: 4px !important;
+  opacity: 1 !important;
+}
+
+/* Lỗi - màu đỏ */
+.custom-toast .custom-toast-progress-error {
+  background: #ef4444 !important;
+}
+
+/* Thành công - màu xanh */
+.custom-toast .custom-toast-progress-success {
+  background: #22c55e !important;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .Toastify__toast-container {
+    width: 85% !important;
+    max-width: 420px !important;
+    left: auto !important;
+    right: 12px !important;
+    top: 12px !important;
+    padding: 0 !important;
+  }
+
+  .Toastify__toast.custom-toast {
+    width: 100% !important;
+    min-height: 72px !important;
+    margin-bottom: 10px !important;
+    border-radius: 16px !important;
+    padding: 12px 8px 16px 12px !important;
+  }
+}
