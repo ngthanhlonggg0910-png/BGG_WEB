@@ -43,6 +43,8 @@ export default function PickingOrderDetail() {
     fetchDetail();
   }, [order?.MaSoPhieuSoan]);
 
+  console.log(order.PhieuSoanHangId);
+
   // LỌC DANH SÁCH
   const filteredItems = useMemo(() => {
     const search = keyword.trim().toLowerCase();
