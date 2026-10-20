@@ -24,6 +24,7 @@ foreach ($port in @($settings.WebPort, $settings.BackendPort)) {
     if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) { throw "Port $port is in use." }
 }
 $prefix = $runtime.Replace('\','/') + '/'
+New-Item -ItemType Directory -Force -Path (Join-Path $runtime 'logs'), (Join-Path $runtime 'temp') | Out-Null
 & $NginxExe -t -p $prefix -c nginx.conf
 if ($LASTEXITCODE -ne 0) { throw 'Nginx config check failed.' }
 function Invoke-Nssm {

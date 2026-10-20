@@ -17,7 +17,7 @@ foreach ($folder in @('BGG_BE', 'BGG_FE')) {
         if ($LASTEXITCODE -ne 0) { throw "Build failed: $folder" }
     } finally { Pop-Location }
 }
-New-Item -ItemType Directory -Force -Path $runtime, (Join-Path $runtime 'logs') | Out-Null
+New-Item -ItemType Directory -Force -Path $runtime, (Join-Path $runtime 'logs'), (Join-Path $runtime 'temp') | Out-Null
 $webRoot = (Join-Path $repo 'BGG_FE/dist').Replace('\','/')
 $config = @'
 worker_processes 1;
