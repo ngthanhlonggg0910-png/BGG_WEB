@@ -1,5 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ScanBarcode, Package, ArrowRight, ClipboardList } from "lucide-react";
+import {
+  ScanBarcode,
+  Package,
+  ArrowRight,
+  ClipboardList,
+  Search,
+} from "lucide-react";
 
 import { useLocation } from "react-router-dom";
 import { Spin, Empty, Modal } from "antd";
@@ -15,16 +21,18 @@ export default function PickingOrderMaterialList() {
   const location = useLocation();
 
   const [materialCode, setMaterialCode] = useState("");
+  const [listSearch, setListSearch] = useState("");
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [keyword, setKeyWord] = useState("");
 
   const PhieuSoanHangId = Number(location.state?.PhieuSoanHangId);
   const MaRo = location.state?.MaRo;
 
   const fetchMaterials = useCallback(async () => {
-    setLoading(true);
     if (!PhieuSoanHangId || !MaRo) return;
+    setLoading(true);
 
     try {
       const response = await getVatTuByRoAndPhieu(PhieuSoanHangId, MaRo);
@@ -35,7 +43,6 @@ export default function PickingOrderMaterialList() {
       setMaterials(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error("Lỗi lấy danh sách vật tư:", err);
-      setMaterials([]);
     } finally {
       setLoading(false);
     }
@@ -45,6 +52,7 @@ export default function PickingOrderMaterialList() {
     fetchMaterials();
   }, [fetchMaterials]);
 
+  //Seacrh rồi truyền vào modal
   const nplSearch = useMemo(
     () =>
       (materials ?? []).filter((item) =>
@@ -54,6 +62,19 @@ export default function PickingOrderMaterialList() {
       ),
     [materialCode, materials],
   );
+
+  //Search bth
+  const filteredMaterials = useMemo(() => {
+    const search = keyword.trim().toLowerCase();
+
+    if (!search) return materials;
+
+    return materials.filter((item) =>
+      String(item.MaCay ?? "")
+        .toLowerCase()
+        .includes(search),
+    );
+  }, [keyword, materials]);
 
   return (
     <MainLayout screenTitle="Nguyên vật liệu xuất">
@@ -113,36 +134,59 @@ export default function PickingOrderMaterialList() {
           {/* MATERIAL LIST */}
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             {/* LIST HEADER */}
-            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-4 sm:px-5">
-              <div className="flex items-center gap-2">
-                <ClipboardList size={23} className="text-egmf-primary" />
+            <div className=" border-b border-gray-100 px-4 py-4 sm:px-5">
+              <div className="flex items-center gap-3 justify-between mb-4">
+                <div className="flex items-center">
+                  <ClipboardList size={23} className="text-egmf-primary" />
 
-                <h2 className="text-lg font-bold text-gray-900">
-                  Danh sách nguyên vật liệu
-                </h2>
+                  <h2 className="text-lg font-bold text-gray-900">
+                    Danh sách nguyên vật liệu
+                  </h2>
+                </div>
+                <span className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-sm font-bold text-gray-700">
+                  {filteredMaterials.length}
+                </span>
               </div>
+              <div className="relative w-full">
+                <Search
+                  size={21}
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                />
 
-              <span className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-sm font-bold text-gray-700">
-                {materials.length}
-              </span>
+                <input
+                  type="search"
+                  placeholder="Nhập hoặc quét mã cây..."
+                  value={keyword}
+                  onChange={(e) => setKeyWord(e.target.value)}
+                  className="
+                    h-13 w-full rounded-xl
+                    border border-gray-200 bg-white
+                    pl-12 pr-4 text-base text-gray-800
+                    outline-none transition-all
+                    placeholder:text-gray-400
+                    focus:border-egmf-primary
+                    focus:ring-2 focus:ring-egmf-primary/15
+                  "
+                />
+              </div>
             </div>
 
             {/* LIST CONTENT */}
             <div className="p-4 sm:p-5">
-              {materials.length === 0 ? (
+              {filteredMaterials.length === 0 ? (
                 <div className="flex min-h-[220px] flex-col items-center justify-center px-4 text-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
                     <Package size={32} className="text-gray-400" />
                   </div>
 
                   <h3 className="text-base font-bold text-gray-800">
-                    {materialCode.trim()
+                    {listSearch.trim()
                       ? "Không tìm thấy vật tư"
                       : "Chưa có dữ liệu vật tư"}
                   </h3>
 
                   <p className="mt-2 max-w-xs text-sm leading-6 text-gray-500">
-                    {materialCode.trim()
+                    {listSearch.trim()
                       ? "Không có vật tư phù hợp với mã đang tìm kiếm."
                       : "Danh sách vật tư sẽ hiển thị tại đây sau khi tải dữ liệu."}
                   </p>
@@ -180,9 +224,9 @@ export default function PickingOrderMaterialList() {
                   ) : (
                     // CÓ DỮ LIỆU
                     <div className="space-y-3">
-                      {materials.map((item, index) => (
+                      {filteredMaterials.map((item, index) => (
                         <PickingMaterialCard
-                          key={item.Id ?? item.MaCay ?? index}
+                          key={`${item.MaCay}-${item.TenNPL}-${index}`}
                           item={item}
                           index={index}
                         />
@@ -202,7 +246,7 @@ export default function PickingOrderMaterialList() {
         onClose={() => setOpen(false)}
         nplSearch={nplSearch}
         phieuSoanHangId={PhieuSoanHangId}
-        onConfirm={fetchMaterials}
+        onReload={fetchMaterials}
       />
     </MainLayout>
   );

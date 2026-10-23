@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
+  ClipboardPlus,
   FilePlus2,
   Plus,
   RefreshCw,
@@ -8,7 +9,8 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import { Modal } from "antd";
+import CreateFabricInspectionForm from "../components/CreateFabricInspectionForm";
 import { FabricInspectionCard } from "../components/FabricInspectionCard";
 import { getFabricInspections } from "../api/fabric-inspections.api";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
@@ -21,6 +23,7 @@ export default function FabricInspectionList() {
   const [fabricInspections, setFabricInspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [open, setOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -95,7 +98,10 @@ export default function FabricInspectionList() {
               <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
                 <button
                   type="button"
-                  onClick={() => setReloadKey((value) => value + 1)}
+                  onClick={() => {
+                    // setReloadKey((value) => value + 1);
+                    setOpen(true);
+                  }}
                   disabled={loading}
                   className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-egmf-primary px-4 text-[15px] font-bold text-white shadow-egmf-primary-compact transition-all hover:-translate-y-0.5 hover:bg-egmf-primary-strong hover:shadow-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/25 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:px-5"
                 >
@@ -208,6 +214,84 @@ export default function FabricInspectionList() {
           </section>
         </div>
       </div>
+
+      <Modal
+        title={
+          <div className="flex items-center gap-3 pr-11">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
+              <ClipboardPlus size={22} strokeWidth={2.2} />
+            </span>
+            <div className="min-w-0">
+              <h2 className="m-0 truncate text-[18px] font-extrabold text-egmf-ink">
+                Tạo phiếu kiểm vải
+              </h2>
+              <p className="m-0 mt-0.5 truncate text-[13px] font-medium text-egmf-muted">
+                Nhập thông tin phiếu kiểm mới
+              </p>
+            </div>
+          </div>
+        }
+        open={open}
+        onCancel={() => setOpen(false)}
+        okText="Tạo phiếu kiểm"
+        cancelText="Hủy"
+        centered
+        width={560}
+        destroyOnHidden
+        closeIcon={<X size={21} strokeWidth={2.4} />}
+        styles={{
+          content: {
+            overflow: "hidden",
+            padding: 0,
+            borderRadius: 20,
+          },
+          header: {
+            margin: 0,
+            padding: "18px 20px",
+            borderBottom: "1px solid var(--egmf-border-subtle)",
+          },
+          body: {
+            height: "min(420px, calc(100dvh - 180px))",
+            overflowY: "auto",
+            padding: 0,
+            background: "var(--egmf-surface-subtle)",
+          },
+          footer: {
+            display: "flex",
+            gap: 12,
+            margin: 0,
+            padding: "12px 20px 20px",
+            borderTop: "1px solid var(--egmf-border-subtle)",
+          },
+          close: {
+            alignItems: "center",
+            background: "var(--egmf-primary-soft)",
+            borderRadius: 12,
+            color: "var(--egmf-primary)",
+            display: "flex",
+            height: 40,
+            insetBlockStart: 18,
+            insetInlineEnd: 16,
+            justifyContent: "center",
+            width: 40,
+          },
+        }}
+        okButtonProps={{
+          form: "create-fabric-inspection-form",
+          htmlType: "submit",
+          className:
+            "!m-0 !h-12 !flex-1 !rounded-xl !bg-egmf-primary !px-4 !text-[15px] !font-bold hover:!bg-egmf-primary-strong",
+        }}
+        cancelButtonProps={{
+          className:
+            "!m-0 !h-12 !flex-1 !rounded-xl !border-egmf-border !px-4 !text-[15px] !font-bold !text-egmf-ink-secondary hover:!border-egmf-primary hover:!text-egmf-primary",
+        }}
+        style={{
+          maxWidth: "calc(100vw - 32px)",
+        }}
+      >
+        <CreateFabricInspectionForm onClose={() => setOpen(false)} />
+      </Modal>
     </MainLayout>
   );
 }

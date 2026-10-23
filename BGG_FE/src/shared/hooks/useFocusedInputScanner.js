@@ -110,6 +110,14 @@ export function useFocusedInputScanner() {
     useBarcodeScanner(handleScannedValue);
 
   const startScan = () => {
+    //Trang tạo phiếu kiểm vải -> chuyển đến trang quét
+    if (location.pathname === "/fabric-inspection") {
+      navigate("/picking-order-scan", {
+        state: {
+          scanType: "fabric-inspection",
+        },
+      });
+    }
     // Trang chi tiết phiếu soạn hàng → chuyển đến trang quét rổ
     if (location.pathname === "/picking-order-detail") {
       const PhieuSoanHangId =
@@ -122,7 +130,10 @@ export function useFocusedInputScanner() {
       }
 
       navigate("/picking-order-scan", {
-        state: { PhieuSoanHangId },
+        state: {
+          scanType: "picking",
+          PhieuSoanHangId: PhieuSoanHangId,
+        },
       });
 
       return;

@@ -130,8 +130,7 @@ export default function PickingOrderList() {
     } catch (error) {
       if (requestId !== requestIdRef.current) return;
 
-      console.error("Lỗi lấy danh sách phiếu:", error);
-      message.error("Không thể tải danh sách phiếu");
+      console.error("Không thể tải danh sách phiếu", error);
       setPickingOrders([]);
     } finally {
       if (requestId === requestIdRef.current) {

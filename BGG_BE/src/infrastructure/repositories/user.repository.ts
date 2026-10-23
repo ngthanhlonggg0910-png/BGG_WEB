@@ -39,4 +39,20 @@ export class UserRepository implements IUserRepository {
       row.TKId,
     );
   }
+
+  async getUsernameAndPassword(
+    TenDangNhap: string,
+  ): Promise<{ TenDangNhap: string; MatKhau: string }> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('TenDangNhap', sql.NVarChar(200), TenDangNhap).query(`
+        select 
+          TenDangNhap, 
+          MatKhau 
+        from Lib_NhanVien_TaiKhoan 
+        where TenDangNhap = @TenDangNhap
+      `);
+    return result.recordset[0];
+  }
 }

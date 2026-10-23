@@ -13,7 +13,7 @@ export default function PickingMaterialModal({
   open,
   onClose,
   nplSearch,
-  onConfirm,
+  onReload,
   phieuSoanHangId,
 }) {
   const user = getCurrentUser();
@@ -23,11 +23,10 @@ export default function PickingMaterialModal({
 
   const item = Array.isArray(nplSearch) ? nplSearch[0] : nplSearch;
 
+  const [slBanDau, setSlBanDau] = useState();
   const [sltx, setSltx] = useState(0);
   const [slt, setSlt] = useState(0);
   const [confirming, setConfirming] = useState(false);
-
-  console.log(sltx, slt);
 
   const availableQuantity = Number(item?.SLBD) || 0;
 
@@ -88,8 +87,11 @@ export default function PickingMaterialModal({
       }
 
       showSuccessToast("Soạn hàng thành công!");
+      console.log("Bắt đầu reload danh sách");
 
-      onConfirm?.();
+      await onReload?.();
+
+      console.log("Reload danh sách hoàn tất");
       onClose?.();
     } catch (error) {
       console.error("Lỗi xác nhận soạn hàng:", error);

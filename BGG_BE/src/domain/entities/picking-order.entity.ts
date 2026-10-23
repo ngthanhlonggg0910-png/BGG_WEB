@@ -60,7 +60,10 @@ export class wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android {
   Loi: string;
 }
 
-//Lấy ra thông tin 
-export class wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaMaCay {
-
+//Lấy ra psh hoàn thành
+export class wh_DanhSachPhieuSoanHang_HoanThanh{
+  PhieuSoanHangId: number;
+  MaSoPhieuSoan: string;
+  DDHId: number | null;
+  LendId: number;
 }

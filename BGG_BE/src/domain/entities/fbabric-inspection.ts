@@ -60,3 +60,21 @@ export class QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi {
   TenLoi: string;
   MaLoi: string;
 }
+
+export class QM_DoKhoVai {
+  KhoId: number;
+  ViTri: string;
+  KhoCM: number;
+  KhoIN: number;
+  TenNguoiTao: string;
+  NgayTao: Date;
+  NguoiTao: string;
+  TKId: number;
+  CTId: number;
+}
+
+export class QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile {
+  ThongBao: string;
+  PKVID: number;
+  SoPhieuKiem: string;
+}
