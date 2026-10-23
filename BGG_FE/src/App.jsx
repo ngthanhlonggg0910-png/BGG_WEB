@@ -1,6 +1,7 @@
 import AppRouter from "./routes/AppRouter";
 import { ToastContainer } from "react-toastify";
 import { ConfigProvider } from "antd";
+import { PwaProvider } from "./features/pwa/hooks/usePwa";
 import "react-toastify/dist/ReactToastify.css";
 import "./shared/styles/toast.css";
 
@@ -37,16 +38,18 @@ function App() {
 
   return (
     <ConfigProvider theme={egmfTheme}>
-      <AppRouter />
+      <PwaProvider>
+        <AppRouter />
 
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        closeButton={true}
-      />
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          closeButton={true}
+        />
+      </PwaProvider>
     </ConfigProvider>
   );
 }

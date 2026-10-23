@@ -1,0 +1,29 @@
+{
+  "id": "/",
+  "name": "eGMF · Kho & Sản xuất",
+  "short_name": "eGMF",
+  "lang": "vi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#ffffff",
+  "description": "Quản lý Kho & Sản xuất HiGarment trên mọi thiết bị.",
+  "icons": [
+    { "src": "/ic_launcher_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/ic_launcher_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Đặt hàng theo LSX",
+      "url": "/production-orders",
+      "icons": [{ "src": "/ic_launcher_192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Soạn hàng kho",
+      "url": "/picking-orders",
+      "icons": [{ "src": "/ic_launcher_192.png", "sizes": "192x192" }]
+    }
+  ]
+}

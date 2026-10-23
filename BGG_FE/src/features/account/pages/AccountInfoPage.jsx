@@ -1,7 +1,10 @@
-import { getCurrentProfile } from "../../../shared/auth/session";
+import { Download, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { clearSession, getCurrentProfile } from "../../../shared/auth/session";
 import Card from "../../../shared/components/ui/Card";
 import Icon from "../../../shared/components/ui/Icon";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
+import { usePwa } from "../../pwa/hooks/usePwa";
 
 const labels = {
   UEId: "UEId",
@@ -20,6 +23,8 @@ const labels = {
 const hiddenFields = /password|matkhau|token|access|refresh|secret/i;
 
 function AccountInfo() {
+  const navigate = useNavigate();
+  const pwa = usePwa();
   const profile = getCurrentProfile();
   const accountName =
     `${profile?.HoVaTenLot ?? ""} ${profile?.Ten ?? ""}`.trim();
@@ -34,6 +39,11 @@ function AccountInfo() {
       value !== undefined &&
       typeof value !== "object",
   );
+
+  const handleLogout = () => {
+    clearSession();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <MainLayout screenTitle="THÔNG TIN TÀI KHOẢN">
@@ -79,6 +89,27 @@ function AccountInfo() {
                     </div>
                   </div>
                 )}
+
+                {/* NÚT CÀI ĐẶT ỨNG DỤNG PWA & ĐĂNG XUẤT (GIỐNG WEB_KYDUYET) */}
+                <div className="mt-6 space-y-2.5 border-t border-egmf-border-subtle pt-5">
+                  <button
+                    type="button"
+                    onClick={pwa.installApp}
+                    className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-[#dde4ef] bg-white px-4 py-2.5 text-sm font-bold text-[#46536a] transition hover:border-egmf-primary hover:bg-[#f8faff] hover:text-egmf-primary"
+                  >
+                    <Download size={17} />
+                    <span>Cài đặt ứng dụng (PWA)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-[#fff3f3] px-4 py-2.5 text-sm font-bold text-[#c54949] transition hover:bg-red-100"
+                  >
+                    <LogOut size={17} />
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
               </div>
             </Card>
 

@@ -7,6 +7,9 @@ import BarcodeScannerModal from "../../shared/components/ui/BarcodeScannerModal"
 import Drawer from "../../shared/components/ui/Drawer";
 import { clearSession } from "../../shared/auth/session";
 import { useFocusedInputScanner } from "../../shared/hooks/useFocusedInputScanner";
+import { usePwa } from "../../features/pwa/hooks/usePwa";
+import ConnectionBanners from "../../features/pwa/components/ConnectionBanners";
+import InstallHelp from "../../features/pwa/components/InstallHelp";
 import Sidebar from "./Sidebar";
 import MobileNavigation from "./MobileNavigation";
 
@@ -15,6 +18,7 @@ export default function MainLayout({ children, screenTitle }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === "/home";
+  const pwa = usePwa();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const {
@@ -85,6 +89,11 @@ export default function MainLayout({ children, screenTitle }) {
     navigate(-1);
   };
 
+  const handleInstallApp = () => {
+    setDrawerOpen(false);
+    pwa.installApp();
+  };
+
   return (
     <div className="min-h-dvh bg-egmf-surface">
       {/* DESKTOP SIDEBAR */}
@@ -97,7 +106,11 @@ export default function MainLayout({ children, screenTitle }) {
           bg-white md:flex
         "
       >
-        <Sidebar selectedKey={selectedKey} onSelect={handleSelect} />
+        <Sidebar
+          selectedKey={selectedKey}
+          onSelect={handleSelect}
+          onInstallApp={handleInstallApp}
+        />
       </aside>
 
       {/* MAIN CONTENT */}
@@ -154,6 +167,16 @@ export default function MainLayout({ children, screenTitle }) {
             {screenTitle}
           </h1>
 
+          {/* ONLINE STATUS (GIỐNG WEB_KYDUYET) */}
+          <span className="hidden items-center gap-1.5 text-xs font-medium text-[#8b98ad] lg:flex">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                pwa.online ? "bg-[#3abc95]" : "bg-[#dc9056]"
+              }`}
+            />
+            {pwa.online ? "Đang kết nối" : "Ngoại tuyến"}
+          </span>
+
           {/* LOGO MOBILE */}
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-egmf-primary-tint p-1.5 md:hidden">
             <img
@@ -172,6 +195,13 @@ export default function MainLayout({ children, screenTitle }) {
             </span>
           </div>
         </header>
+
+        {/* BANNERS TRẠNG THÁI MẠNG & CẬP NHẬT PWA */}
+        <ConnectionBanners
+          online={pwa.online}
+          hasUpdate={pwa.hasUpdate}
+          onUpdate={pwa.applyUpdate}
+        />
 
         {/* PAGE CONTENT */}
         <main
@@ -196,7 +226,11 @@ export default function MainLayout({ children, screenTitle }) {
 
       {/* MOBILE DRAWER */}
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <Sidebar selectedKey={selectedKey} onSelect={handleSelect} />
+        <Sidebar
+          selectedKey={selectedKey}
+          onSelect={handleSelect}
+          onInstallApp={handleInstallApp}
+        />
       </Drawer>
 
       <BarcodeScannerModal
@@ -206,6 +240,8 @@ export default function MainLayout({ children, screenTitle }) {
         title={`Quét vào ${focusedInputLabel}`}
         videoRef={videoRef}
       />
+
+      {pwa.installHelp && <InstallHelp onClose={pwa.closeInstallHelp} />}
     </div>
   );
 }

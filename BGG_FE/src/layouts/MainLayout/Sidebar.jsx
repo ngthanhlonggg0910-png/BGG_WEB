@@ -1,8 +1,11 @@
 import {
   ChevronRight,
+  Download,
   Factory,
   LayoutGrid,
   LogOut,
+  ShieldCheck,
+  Smartphone,
   UserRound,
   Warehouse,
 } from "lucide-react";
@@ -40,18 +43,40 @@ const sidebarItems = [
   },
 ];
 
-export default function Sidebar({ selectedKey, onSelect }) {
+export default function Sidebar({ selectedKey, onSelect, onInstallApp }) {
   return (
     <div className="flex h-full min-h-full flex-col bg-white">
       <Brand />
       <Navigation selectedKey={selectedKey} onSelect={onSelect} />
 
+      {/* THẺ CÀI ĐẶT ỨNG DỤNG PWA (GIỐNG WEB_KYDUYET) */}
+      {onInstallApp && (
+        <div className="mx-3 mb-3 rounded-xl bg-[#f6f8fc] p-4 text-[#7082a3]">
+          <Smartphone size={25} className="text-egmf-primary" />
+          <strong className="mt-2 block text-[13px] font-bold text-[#314566]">
+            Thao tác kho mọi lúc
+          </strong>
+          <p className="my-2 text-xs leading-relaxed text-[#7082a3]">
+            Thêm ứng dụng vào màn hình chính để truy cập nhanh hơn.
+          </p>
+          <button
+            type="button"
+            onClick={onInstallApp}
+            className="flex w-full items-center justify-between rounded-lg border border-[#e4eaf7] bg-white px-3 py-2 text-xs font-bold text-egmf-primary transition hover:border-egmf-primary hover:bg-egmf-primary-tint"
+          >
+            <span>Cài ứng dụng</span>
+            <Download size={15} />
+          </button>
+        </div>
+      )}
+
       <div className="border-t border-slate-100 px-3 py-4">
         <LogoutButton onClick={() => onSelect("Đăng xuất")} />
 
-        <p className="m-0 mt-4 text-center text-xs font-medium text-slate-400">
-          eGMF WebApp · v1.0
-        </p>
+        <div className="mt-3 flex items-center justify-center gap-1.5 text-xs font-medium text-slate-400">
+          <ShieldCheck size={14} />
+          <span>Kết nối HiGarment · v1.0</span>
+        </div>
       </div>
     </div>
   );
@@ -182,5 +207,3 @@ function LogoutButton({ onClick }) {
     </button>
   );
 }
-
-// NỘI DUNG SIDEBAR
