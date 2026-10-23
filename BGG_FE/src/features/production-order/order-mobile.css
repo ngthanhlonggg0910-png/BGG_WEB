@@ -1,0 +1,91 @@
+.order-page {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.order-page button {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.order-page summary {
+  min-height: 44px;
+}
+
+.order-material-quantity {
+  flex-wrap: wrap;
+}
+
+.order-page input {
+  min-height: 44px;
+  min-width: 0;
+  font-size: 16px;
+}
+
+.order-page :is(button, input, summary):focus-visible {
+  outline: 3px solid var(--egmf-primary);
+  outline-offset: 3px;
+}
+
+.order-page :is(h2, h3, strong) {
+  overflow-wrap: anywhere;
+}
+
+.order-size-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+}
+
+.order-color-only {
+  padding: 8px 12px;
+  border: 1px solid var(--egmf-border);
+  border-radius: 12px;
+  background: white;
+  color: var(--egmf-primary-strong);
+  text-align: left;
+  font-weight: 600;
+}
+
+.order-booking {
+  padding-bottom: calc(160px + env(safe-area-inset-bottom));
+}
+
+.order-action-bar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 30;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--egmf-border);
+  background: white;
+  box-shadow: 0 -4px 16px rgb(15 23 42 / 8%);
+}
+
+.order-action-bar > div {
+  max-width: 1152px;
+  margin-inline: auto;
+}
+
+.order-action-bar button {
+  min-height: 52px;
+}
+
+@media (min-width: 1024px) {
+  .order-action-bar {
+    left: 270px;
+  }
+}
+
+@media (max-width: 639px) {
+  .order-material-quantity {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .order-material-quantity > div {
+    width: 100%;
+  }
+
+  .order-material-quantity input {
+    flex: 1;
+    width: 0;
+  }
+}
