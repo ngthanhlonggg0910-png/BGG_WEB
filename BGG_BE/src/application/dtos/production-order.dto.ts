@@ -50,3 +50,8 @@ export class CancelMaterialOrderDto {
   nguoiHuy?: string;
   tkId?: number;
 }
+
+export class CreatePickingOrderDto {
+  tkId?: number;
+  nguoiTao?: string;
+}

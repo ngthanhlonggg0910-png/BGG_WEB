@@ -13,7 +13,15 @@ export interface IProductionOrderRepository {
     lsxId?: number;
     loaiDatHang?: string;
     trangThai?: string;
+    search?: string;
+    tuNgay?: string;
+    denNgay?: string;
   }): Promise<any[]>;
   getChiTietDonDatHangLSX(donDatHangId: number): Promise<any>;
   huyDonDatHangLSX(donDatHangId: number, nguoiHuy?: string): Promise<any>;
+  taoPhieuSoanHangTuDonDatHang(
+    donDatHangId: number,
+    tkId?: number,
+    nguoiTao?: string,
+  ): Promise<any>;
 }

@@ -4,6 +4,7 @@ import {
   Warehouse,
   ScanSearch,
   Factory,
+  FileSpreadsheet,
 } from "lucide-react";
 
 export const menuGroups = [
@@ -27,6 +28,11 @@ export const menuGroups = [
         key: "production-order-material",
         title: "Đặt hàng vật tư LSX",
         icon: Factory,
+      },
+      {
+        key: "material-orders-list",
+        title: "Đơn đặt hàng & Tạo phiếu soạn",
+        icon: FileSpreadsheet,
       },
       {
         key: "soanhang",

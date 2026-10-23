@@ -105,6 +105,15 @@ export default function AppRouter() {
         />
 
         <Route
+          path="/material-orders"
+          element={
+            <PrivateRoute>
+              <ProductionOrderListPage initialTab="ddh" />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/production-order-booking"
           element={
             <PrivateRoute>

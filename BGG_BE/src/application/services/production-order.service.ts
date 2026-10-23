@@ -54,6 +54,9 @@ export class ProductionOrderService implements IProductionOrderService {
     lsxId?: number;
     loaiDatHang?: string;
     trangThai?: string;
+    search?: string;
+    tuNgay?: string;
+    denNgay?: string;
   }) {
     const data =
       await this.productionOrderRepo.getDanhSachDonDatHangLSX(params);
@@ -82,6 +85,23 @@ export class ProductionOrderService implements IProductionOrderService {
     return {
       success: true,
       message: `Đã hủy đơn đặt hàng [${data.soDonDatHang}] thành công`,
+      data,
+    };
+  }
+
+  async taoPhieuSoanHangTuDonDatHang(
+    donDatHangId: number,
+    tkId?: number,
+    nguoiTao?: string,
+  ) {
+    const data = await this.productionOrderRepo.taoPhieuSoanHangTuDonDatHang(
+      donDatHangId,
+      tkId,
+      nguoiTao,
+    );
+    return {
+      success: true,
+      message: `Đã tạo Phiếu soạn hàng [${data.maSoPhieuSoan}] thành công`,
       data,
     };
   }
