@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./shared/styles/theme.css";
+@import "./shared/styles/dialog.css";
 
 html,
 body,
@@ -69,10 +70,6 @@ textarea {
   );
 }
 
-.ant-modal-container {
-  padding: 0 !important;
-  overflow: hidden !important;
-}
 
 @media (min-width: 768px) {
   .egmf-mobile-nav-clearance {

@@ -14,7 +14,7 @@ import Sidebar from "./Sidebar";
 import MobileNavigation from "./MobileNavigation";
 
 // MAIN LAYOUT
-export default function MainLayout({ children, screenTitle, hideMobileNavigation = false }) {
+export default function MainLayout({ children, screenTitle, hideMobileNavigation = false, headerBackTo }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isOrderPage = location.pathname.startsWith("/production-order");
@@ -113,6 +113,11 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
   const handleMobileHeaderAction = () => {
     if (isHomePage) {
       setDrawerOpen(true);
+      return;
+    }
+
+    if (headerBackTo) {
+      navigate(headerBackTo);
       return;
     }
 

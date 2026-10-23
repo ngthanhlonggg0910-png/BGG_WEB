@@ -1,3 +1,4 @@
+import { PushService } from '../../application/services/push.service.js';
 import { Injectable, BadRequestException } from '@nestjs/common';
 import sql from 'mssql';
 import { DatabaseService } from '../database/database.service.js';
@@ -11,7 +12,7 @@ import {
 
 @Injectable()
 export class ProductionOrderRepository implements IProductionOrderRepository {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(private readonly databaseService: DatabaseService, private readonly push: PushService) {}
 
   async getDanhSachLSX(dto: GetProductionOrdersDto): Promise<any[]> {
     const pool = await this.databaseService.getPool();
@@ -590,6 +591,7 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
         });
       }
 
+      await this.push.enqueueOrders(tx, createdOrders, dto);
       await tx.commit();
 
       const lastOrder = createdOrders[createdOrders.length - 1];

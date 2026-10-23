@@ -15,9 +15,9 @@ import {
   Shirt,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Empty, Modal, Spin, message } from "antd";
+import { App as AntApp, Empty, Spin, message } from "antd";
 import dayjs from "dayjs";
 
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
@@ -126,6 +126,7 @@ function formatDateTime(val) {
 
 export default function ProductionOrderListPage({ initialTab }) {
   const navigate = useNavigate();
+  const { modal } = AntApp.useApp();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const currentTab = searchParams.get("tab") || initialTab || "lsx";
@@ -156,6 +157,7 @@ export default function ProductionOrderListPage({ initialTab }) {
 
   // Bottom sheet / Modal xem chi tiết đơn đặt hàng đã tạo
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const openedPushOrder = useRef(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedDdh, setSelectedDdh] = useState(null);
   const [selectedDdhItems, setSelectedDdhItems] = useState([]);
@@ -319,6 +321,13 @@ export default function ProductionOrderListPage({ initialTab }) {
     }
   };
 
+  const notificationOrderId = Number(searchParams.get("orderId") || 0);
+  useEffect(() => {
+    if (!Number.isSafeInteger(notificationOrderId) || notificationOrderId <= 0 || openedPushOrder.current === notificationOrderId) return;
+    openedPushOrder.current = notificationOrderId;
+    void handleViewDdhDetail({ DonDatHangId: notificationOrderId });
+  }, [notificationOrderId]);
+
   // Mở màn hình Phiếu Soạn Hàng (Picking Order)
   const handleOpenPickingOrder = (ddh, e) => {
     if (e) e.stopPropagation();
@@ -357,34 +366,74 @@ export default function ProductionOrderListPage({ initialTab }) {
         ? "Kho Vải (NA)"
         : "Kho Phụ Liệu (PA)";
 
-    Modal.confirm({
-      title: `Tạo Phiếu Soạn Hàng cho đơn [${ddh.SoDonDatHang}]?`,
+    const returnToDetail = detailModalOpen;
+    setDetailModalOpen(false);
+    let createdPickingOrder = null;
+    let restoreDetail = false;
+
+    modal.confirm({
+      width: 600,
+      centered: true,
+      className: "egmf-confirm",
+      icon: <span className="egmf-confirm-icon"><FilePlus2 size={24} /></span>,
+      onCancel: () => { restoreDetail = returnToDetail; },
+      afterClose: () => {
+        if (restoreDetail) setDetailModalOpen(true);
+        if (createdPickingOrder) {
+          const { maPsh, pshId } = createdPickingOrder;
+          modal.confirm({
+            width: 560,
+            centered: true,
+            className: "egmf-confirm",
+            title: `Phiếu soạn [${maPsh}] đã được phát hành!`,
+            content:
+              "Bạn có muốn mở ngay màn hình chi tiết Phiếu soạn hàng để kiểm tra hoặc bắt đầu quét xuất kho không?",
+            okText: "Mở Phiếu Soạn ngay",
+            okButtonProps: {
+              className: "bg-blue-600 hover:bg-blue-700 text-white font-bold",
+            },
+            cancelText: "Ở lại danh sách đơn",
+            onOk: () => {
+              navigate("/picking-order-detail", {
+                state: {
+                  order: {
+                    PhieuSoanHangId: pshId,
+                    MaSoPhieuSoan: maPsh,
+                    DDH: ddh.SoDonDatHang,
+                    PO: ddh.SoLSX,
+                    MaHang: ddh.MaHang,
+                    CapCho:
+                      ddh.LoaiDatHang === "NguyenLieu"
+                        ? `Nhà cắt ${ddh.NhaCat || ""}`
+                        : `Tổ may ${ddh.ToMay || ""}`,
+                    TinhTrang: "moitao",
+                  },
+                },
+              });
+            },
+          });
+        }
+      },
+      title: "Tạo phiếu soạn hàng?",
       content: (
-        <div className="space-y-1.5 text-xs sm:text-sm">
-          <p>
-            Hệ thống sẽ phát hành <strong>Phiếu Soạn Hàng</strong> chuyển sang bộ
-            phận <strong>{loaiKhoText}</strong> để thủ kho bắt đầu quét soạn cấp
-            phát vật tư theo LSX.
+        <div className="space-y-4">
+          <p className="text-base leading-relaxed text-slate-600">
+            Tạo phiếu để <strong>{loaiKhoText}</strong> soạn và cấp vật tư cho đơn này.
           </p>
-          <div className="rounded-lg bg-slate-100 p-2 text-slate-700">
-            <div>
-              Mã hàng: <strong>{ddh.MaHang || "—"}</strong> • {ddh.SoLSX}
-            </div>
-            <div>
-              Số mặt hàng: <strong>{ddh.SoMatHang || 0} dòng NPL</strong>
-            </div>
-            <div>
-              Người đặt: <strong>{ddh.NguoiDat || "—"}</strong>
-            </div>
-          </div>
+          <dl className="egmf-confirm-summary">
+            <div><dt>Đơn đặt hàng</dt><dd>{ddh.SoDonDatHang}</dd></div>
+            <div><dt>Mã hàng</dt><dd>{ddh.MaHang || "—"}</dd></div>
+            <div><dt>Lệnh sản xuất</dt><dd>{ddh.SoLSX || "—"}</dd></div>
+            <div><dt>Người đặt</dt><dd>{ddh.NguoiDat || "—"}</dd></div>
+          </dl>
         </div>
       ),
-      okText: "Tạo Phiếu Soạn",
+      okText: "Tạo phiếu soạn",
       okButtonProps: {
         className:
           "bg-egmf-primary hover:bg-egmf-primary-deep text-white font-bold",
       },
-      cancelText: "Hủy",
+      cancelText: "Quay lại",
       onOk: async () => {
         try {
           setCreatingPshId(ddh.DonDatHangId);
@@ -420,35 +469,7 @@ export default function ProductionOrderListPage({ initialTab }) {
 
           await fetchDdhList();
 
-          // Hỏi mở màn hình soạn hàng ngay
-          Modal.confirm({
-            title: `Phiếu soạn [${maPsh}] đã được phát hành!`,
-            content:
-              "Bạn có muốn mở ngay màn hình chi tiết Phiếu soạn hàng để kiểm tra hoặc bắt đầu quét xuất kho không?",
-            okText: "Mở Phiếu Soạn ngay",
-            okButtonProps: {
-              className: "bg-blue-600 hover:bg-blue-700 text-white font-bold",
-            },
-            cancelText: "Ở lại danh sách đơn",
-            onOk: () => {
-              navigate("/picking-order-detail", {
-                state: {
-                  order: {
-                    PhieuSoanHangId: pshId,
-                    MaSoPhieuSoan: maPsh,
-                    DDH: ddh.SoDonDatHang,
-                    PO: ddh.SoLSX,
-                    MaHang: ddh.MaHang,
-                    CapCho:
-                      ddh.LoaiDatHang === "NguyenLieu"
-                        ? `Nhà cắt ${ddh.NhaCat || ""}`
-                        : `Tổ may ${ddh.ToMay || ""}`,
-                    TinhTrang: "moitao",
-                  },
-                },
-              });
-            },
-          });
+          createdPickingOrder = { maPsh, pshId };
         } catch (err) {
           message.error(err?.message || "Không thể tạo Phiếu Soạn Hàng");
         } finally {
@@ -467,8 +488,17 @@ export default function ProductionOrderListPage({ initialTab }) {
       return;
     }
 
-    Modal.confirm({
-      title: `Hủy đơn đặt hàng [${ddh.SoDonDatHang}]?`,
+    const returnToDetail = detailModalOpen;
+    let restoreDetail = false;
+    setDetailModalOpen(false);
+
+    modal.confirm({
+      width: 600,
+      centered: true,
+      className: "egmf-confirm",
+      onCancel: () => { restoreDetail = returnToDetail; },
+      afterClose: () => { if (restoreDetail) setDetailModalOpen(true); },
+      title: `Hủy đơn ${ddh.SoDonDatHang}?`,
       content:
         "Đơn đặt hàng sẽ chuyển sang trạng thái Đã hủy (nếu có Phiếu soạn ở trạng thái Mới tạo chưa quét cũng sẽ tự động hủy).",
       okText: "Xác nhận hủy đơn",
@@ -505,7 +535,7 @@ export default function ProductionOrderListPage({ initialTab }) {
   };
 
   return (
-    <MainLayout screenTitle="Đặt hàng & Cấp phát vật tư LSX">
+    <MainLayout screenTitle="Đặt hàng & Cấp phát vật tư LSX" headerBackTo="/home">
       <div className="min-h-full bg-egmf-surface p-2.5 sm:p-4 md:p-5">
         <div className="mx-auto max-w-6xl space-y-3 sm:space-y-4">
           {/* HEADER & CHUYỂN TAB (TỐI ƯU TOUCH CHO MOBILE & TABLET) */}
@@ -605,78 +635,39 @@ export default function ProductionOrderListPage({ initialTab }) {
                   )}
                 </div>
 
-                {/* FILTER CHIPS CUỘN NGANG MƯỢT TRÊN MOBILE */}
-                {activeTab === "lsx" ? (
-                  <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5">
-                    {[
-                      { key: "ALL", label: "Tất cả" },
-                      { key: "DaDuyet", label: "Đã duyệt" },
-                      { key: "MoiTao", label: "Mới tạo" },
-                    ].map((st) => (
-                      <button
-                        key={st.key}
-                        type="button"
-                        onClick={() => setStatusFilter(st.key)}
-                        className={`h-11 shrink-0 touch-manipulation rounded-xl border px-3.5 text-xs font-extrabold transition sm:text-sm ${
-                          statusFilter === st.key
-                            ? "border-egmf-primary bg-egmf-primary-tint text-egmf-primary-strong"
-                            : "border-egmf-border bg-white text-egmf-ink-secondary"
-                        }`}
-                      >
-                        {st.label}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="-mx-1 flex flex-wrap items-center gap-1.5 overflow-x-auto px-1 pb-0.5">
-                    {/* LỌC THEO BỘ PHẬN / KHO */}
-                    {[
-                      { key: "ALL", label: "Tất cả đơn" },
-                      { key: "NguyenLieu", label: "Kho Vải (Cắt)" },
-                      { key: "PhuLieu", label: "Kho Phụ Liệu (May)" },
-                    ].map((tp) => (
-                      <button
-                        key={tp.key}
-                        type="button"
-                        onClick={() => setDdhTypeFilter(tp.key)}
-                        className={`h-11 shrink-0 touch-manipulation rounded-xl border px-3 text-xs font-extrabold transition sm:text-sm ${
-                          ddhTypeFilter === tp.key
-                            ? "border-egmf-primary bg-egmf-primary-tint text-egmf-primary-strong"
-                            : "border-egmf-border bg-white text-egmf-ink-secondary"
-                        }`}
-                      >
-                        {tp.label}
-                      </button>
-                    ))}
-
-                    <span className="text-slate-300">|</span>
-
-                    {/* LỌC THEO TÌNH TRẠNG TIẾP NHẬN & PHIẾU SOẠN */}
-                    {[
-                      { key: "ALL", label: "Tất cả TT" },
-                      {
-                        key: "ChoSoanHang",
-                        label: "Chờ tạo PSH",
-                      },
-                      { key: "DaTaoPSH", label: "Đã có PSH" },
-                      { key: "HoanThanh", label: "Đã xuất" },
-                      { key: "DaHuy", label: "Đã hủy" },
-                    ].map((st) => (
-                      <button
-                        key={st.key}
-                        type="button"
-                        onClick={() => setDdhStatusFilter(st.key)}
-                        className={`h-11 shrink-0 touch-manipulation rounded-xl border px-3 text-xs font-extrabold transition sm:text-sm ${
-                          ddhStatusFilter === st.key
-                            ? "border-slate-800 bg-slate-800 text-white"
-                            : "border-egmf-border bg-white text-slate-600"
-                        }`}
-                      >
-                        {st.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto">
+                  {activeTab === "lsx" ? (
+                    <label className="order-filter-label">
+                      Trạng thái lệnh sản xuất
+                      <select className="order-combobox" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                        <option value="ALL">Tất cả trạng thái</option>
+                        <option value="DaDuyet">Đã duyệt</option>
+                        <option value="MoiTao">Mới tạo</option>
+                      </select>
+                    </label>
+                  ) : (
+                    <>
+                      <label className="order-filter-label">
+                        Bộ phận / Kho
+                        <select className="order-combobox" value={ddhTypeFilter} onChange={(e) => setDdhTypeFilter(e.target.value)}>
+                          <option value="ALL">Tất cả bộ phận / kho</option>
+                          <option value="NguyenLieu">Kho Vải (Nhà cắt)</option>
+                          <option value="PhuLieu">Kho Phụ liệu (Nhà may)</option>
+                        </select>
+                      </label>
+                      <label className="order-filter-label">
+                        Trạng thái đơn đặt hàng
+                        <select className="order-combobox" value={ddhStatusFilter} onChange={(e) => setDdhStatusFilter(e.target.value)}>
+                          <option value="ALL">Tất cả trạng thái</option>
+                          <option value="ChoSoanHang">Chờ tạo phiếu soạn</option>
+                          <option value="DaTaoPSH">Đã có phiếu soạn</option>
+                          <option value="HoanThanh">Đã xuất</option>
+                          <option value="DaHuy">Đã hủy</option>
+                        </select>
+                      </label>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </section>
@@ -1015,11 +1006,14 @@ export default function ProductionOrderListPage({ initialTab }) {
       {/* BOTTOM SHEET (MOBILE) / MODAL (TABLET & DESKTOP) XEM CHI TIẾT ĐƠN ĐẶT HÀNG & TẠO PHIẾU SOẠN */}
       {detailModalOpen && selectedDdh && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/55 backdrop-blur-xs sm:items-center sm:p-4"
+          className="egmf-dialog-overlay fixed inset-0 z-50 flex items-end justify-center bg-slate-900/55 backdrop-blur-xs sm:items-center sm:p-4"
           onClick={() => setDetailModalOpen(false)}
         >
           <div
-            className="flex max-h-[88dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[85dvh] sm:rounded-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Chi tiết đơn đặt hàng"
+            className="egmf-dialog-panel flex max-h-[88dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[85dvh] sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* THANH KÉO TRÊN MOBILE */}

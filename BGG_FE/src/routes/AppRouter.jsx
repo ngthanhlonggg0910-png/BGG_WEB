@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import { getCurrentUser } from "../shared/auth/session";
 
@@ -19,10 +19,11 @@ import ProductionOrderBookingPage from "../features/production-order/pages/Produ
 
 // Kiểm tra user đã đăng nhập chưa
 function PrivateRoute({ children }) {
+  const location = useLocation();
   const user = getCurrentUser();
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ returnTo: location.pathname + location.search }} />;
   }
 
   return children;

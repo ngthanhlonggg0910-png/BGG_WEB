@@ -30,6 +30,22 @@ export function saveUser(user, rememberMe) {
 }
 
 export function clearSession() {
+  const pushToken = getCurrentProfile()?.pushToken;
+  // Detach this browser even if the server is unavailable. The retired endpoint
+  // cannot deliver notifications after another user logs in on a shared device.
+  if ("serviceWorker" in navigator) {
+    void navigator.serviceWorker.getRegistration().then(async registration => {
+      const subscription = await registration?.pushManager?.getSubscription();
+      if (!subscription) return;
+      const endpoint = subscription.endpoint;
+      await subscription.unsubscribe();
+      if (pushToken) await fetch('/api/push/unsubscribe', {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${pushToken}` },
+        body: JSON.stringify({ endpoint }),
+      });
+    }).catch(() => {});
+  }
   localStorage.removeItem(USER_KEY);
   sessionStorage.removeItem(USER_KEY);
 }

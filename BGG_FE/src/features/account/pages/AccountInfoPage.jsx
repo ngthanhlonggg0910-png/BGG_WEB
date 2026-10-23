@@ -1,3 +1,4 @@
+import PushSettings from '../../push/components/PushSettings';
 import { Download, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { clearSession, getCurrentProfile } from "../../../shared/auth/session";
@@ -59,6 +60,8 @@ function AccountInfo() {
             Thông tin được lưu từ lần đăng nhập gần nhất.
           </p>
         </header>
+
+        {profile && <PushSettings />}
 
         {profile ? (
           <div className="grid gap-5 lg:grid-cols-[minmax(280px,0.8fr)_minmax(0,1.2fr)]">

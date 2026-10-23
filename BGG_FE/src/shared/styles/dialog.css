@@ -1,0 +1,208 @@
+/* Common presentation for Ant Design dialogs, including contextual confirms. */
+.ant-modal {
+  max-width: calc(100vw - 24px);
+  padding-bottom: 0;
+  font-family: var(--egmf-font-sans);
+}
+
+.ant-modal .ant-modal-container {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgb(15 23 42 / 22%);
+}
+
+.ant-modal .ant-modal-header {
+  margin: 0;
+  padding: 20px 64px 16px 20px;
+  border-bottom: 1px solid var(--egmf-border);
+}
+
+.ant-modal .ant-modal-title,
+.ant-modal .ant-modal-confirm-title {
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ant-modal .ant-modal-body {
+  padding: 20px;
+  max-height: calc(100dvh - 220px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.ant-modal .ant-modal-close {
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--egmf-surface);
+}
+
+.ant-modal .ant-modal-footer,
+.ant-modal .ant-modal-confirm-btns {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  padding: 16px 20px;
+  border-top: 1px solid var(--egmf-border);
+  background: var(--egmf-surface);
+}
+
+.ant-modal .ant-btn,
+.egmf-dialog-panel button {
+  min-height: 48px;
+  height: auto;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: normal;
+  touch-action: manipulation;
+}
+
+.ant-modal .ant-btn + .ant-btn {
+  margin-inline-start: 0;
+}
+
+.ant-modal.egmf-confirm .ant-modal-body {
+  padding: 0;
+  max-height: calc(100dvh - 48px);
+}
+
+.egmf-confirm .ant-modal-confirm-body {
+  padding: 24px;
+  gap: 12px;
+}
+
+.egmf-confirm .ant-modal-confirm-body > .anticon {
+  margin-inline-end: 0;
+  margin-top: 3px;
+  font-size: 24px;
+}
+
+.egmf-confirm .ant-modal-confirm-paragraph {
+  min-width: 0;
+  gap: 12px;
+}
+
+.egmf-confirm .egmf-confirm-icon {
+  display: grid;
+  flex: 0 0 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--egmf-primary-soft);
+  color: var(--egmf-primary);
+}
+
+.egmf-confirm .ant-modal-confirm-title {
+  font-size: 22px;
+  letter-spacing: -0.3px;
+}
+
+.egmf-confirm-summary {
+  margin: 0;
+  padding: 4px 16px;
+  border: 1px solid var(--egmf-border);
+  border-radius: 14px;
+  background: var(--egmf-surface);
+}
+
+.egmf-confirm-summary > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: start;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.egmf-confirm-summary > div + div {
+  border-top: 1px solid var(--egmf-border);
+}
+
+.egmf-confirm-summary dt {
+  color: var(--egmf-muted);
+  font-size: 14px;
+}
+
+.egmf-confirm-summary dd {
+  margin: 0;
+  color: var(--egmf-ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.egmf-confirm .ant-modal-confirm-content,
+.egmf-confirm .ant-modal-confirm-container {
+  color: var(--egmf-ink-secondary);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.egmf-dialog-overlay {
+  padding-top: max(12px, env(safe-area-inset-top));
+  backdrop-filter: blur(3px);
+}
+
+.egmf-dialog-panel {
+  box-shadow: 0 24px 80px rgb(15 23 42 / 22%);
+  overscroll-behavior: contain;
+}
+
+.egmf-dialog-panel button[aria-label] {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px;
+}
+
+.egmf-dialog-panel .text-xs {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.egmf-dialog-panel :is(button, input, select):focus-visible {
+  outline: 3px solid var(--egmf-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 639px) {
+  .egmf-confirm .ant-modal-confirm-body {
+    flex-wrap: wrap;
+  }
+
+  .egmf-confirm .ant-modal-confirm-paragraph {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+
+  .ant-modal .ant-modal-footer,
+  .ant-modal .ant-modal-confirm-btns {
+    padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  .ant-modal-footer > button,
+  .ant-modal-confirm-btns > button {
+    flex: 1 1 110px;
+  }
+
+  .egmf-confirm .ant-modal-confirm-body {
+    padding: 20px 16px;
+  }
+
+  .egmf-dialog-panel {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}

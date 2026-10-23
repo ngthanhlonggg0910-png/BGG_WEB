@@ -24,7 +24,7 @@ export function usePwaState() {
 
     if (window.isSecureContext && "serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register("/sw.js")
+        .register("/sw.js", { updateViaCache: "none" })
         .then((registration) => {
           if (!active) return;
           if (registration.waiting) setUpdate(registration.waiting);
