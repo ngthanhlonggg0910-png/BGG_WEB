@@ -7,6 +7,7 @@ import { WarehouseModule } from './presentation/modules/warehouse.module.js';
 import { MaterialLocationModule } from './presentation/modules/updateNPL.module.js';
 import { PickingOrderModule } from './presentation/modules/picking-order.module.js';
 import { FabricInspectionModule } from './presentation/modules/fabric-inspection.module.js';
+import { ProductionOrderModule } from './presentation/modules/production-order.module.js';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { FabricInspectionModule } from './presentation/modules/fabric-inspection
     MaterialLocationModule,
     PickingOrderModule,
     FabricInspectionModule,
+    ProductionOrderModule,
   ],
 })
 export class AppModule {}

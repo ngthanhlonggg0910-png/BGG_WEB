@@ -63,7 +63,7 @@ export default function MainLayout({ children, screenTitle }) {
         break;
 
       case "production":
-        // Chưa có route sản xuất trong code hiện tại
+        navigate("/production-orders");
         break;
 
       case "Đăng xuất":
@@ -82,8 +82,6 @@ export default function MainLayout({ children, screenTitle }) {
       return;
     }
 
-    // Always return exactly one page in the navigation history. `history.state.idx`
-    // is not available consistently on mobile browsers, so it must not gate back.
     navigate(-1);
   };
 

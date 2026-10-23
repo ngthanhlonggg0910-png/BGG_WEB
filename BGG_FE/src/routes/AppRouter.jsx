@@ -14,6 +14,8 @@ import PickingOrderScan from "../features/picking-order/pages/PickingOrderScan";
 import PickingOrderMaterialList from "../features/picking-order/pages/PickingOrderMaterialList";
 import FabricInspectionList from "../features/fabric-inspection/pages/FabricInspectionList";
 import FabricInspectionRollListPage from "../features/fabric-inspection/pages/FabricInspectionRollList";
+import ProductionOrderListPage from "../features/production-order/pages/ProductionOrderListPage";
+import ProductionOrderBookingPage from "../features/production-order/pages/ProductionOrderBookingPage";
 
 // Kiểm tra user đã đăng nhập chưa
 function PrivateRoute({ children }) {
@@ -89,6 +91,24 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <PickingOrderMaterialList />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production-orders"
+          element={
+            <PrivateRoute>
+              <ProductionOrderListPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production-order-booking"
+          element={
+            <PrivateRoute>
+              <ProductionOrderBookingPage />
             </PrivateRoute>
           }
         />

@@ -28,7 +28,63 @@ export class PickingOrderRepository implements IPickingOrderRepository {
       .input('tinhTrang', sql.NVarChar(50), tinhTrang)
       .execute('wh_DanhSachPhieuSoanHangNgayVaTinhTrang');
 
-    return result.recordset;
+    const baseRecords: wh_DanhSachPhieuSoanHangNgayVaTinhTrang[] =
+      result.recordset || [];
+
+    // Bổ sung các Phiếu soạn hàng sinh từ Đơn đặt hàng LSX (LoaiLenh = 'DonDatHang')
+    try {
+      const lsxResult = await pool
+        .request()
+        .input('maKho', sql.NVarChar(50), (maKho || '').trim().toUpperCase())
+        .input('ngaySoan', sql.DateTime, ngaySoan)
+        .input('tinhTrang', sql.NVarChar(50), tinhTrang)
+        .query(`
+          SELECT 
+            d.DonDatHangId AS DDHId,
+            psh.MaSoPhieuSoan,
+            psh.NgaySoan,
+            psh.NgayTao,
+            psh.NguoiTao,
+            psh.PhieuSoanHangId,
+            psh.TenNguoiTao,
+            psh.TinhTrang,
+            psh.TKId,
+            d.SoDonDatHang AS DDH,
+            ISNULL(d.NguoiDat, N'') + CASE WHEN ISNULL(d.GhiChu, N'') <> N'' THEN CHAR(10) + CHAR(10) + N'GHI CHÚ: ' + d.GhiChu + CHAR(10) ELSE N'' END AS NguoiDat,
+            lsx.SoLSX AS PO,
+            d.NgayCanGiao AS NgayGiaoHang,
+            lsx.MaHang,
+            CASE 
+              WHEN d.LoaiDatHang = N'NguyenLieu' THEN N'Nhà cắt ' + ISNULL(lsx.NhaCat, N'')
+              ELSE N'Tổ may ' + ISNULL(lsx.ToMay, N'')
+            END AS CapCho
+          FROM dbo.WH_PhieuSoanHang psh
+          INNER JOIN dbo.OMM_DonDatHang_LSX d ON psh.LenhId = d.DonDatHangId
+          INNER JOIN dbo.OMM_LenhSanXuat lsx ON d.LSXId = lsx.LSXId
+          WHERE psh.LoaiLenh = N'DonDatHang'
+            AND DATEDIFF(DAY, psh.NgaySoan, @ngaySoan) = 0
+            AND (
+              (@tinhTrang = N'hoanthanh' AND psh.TinhTrang = N'hoanthanh')
+              OR (@tinhTrang <> N'hoanthanh' AND ISNULL(psh.TinhTrang, N'') NOT IN (N'hoanthanh', N'huy'))
+            )
+            AND (
+              (@maKho = N'NA' AND (d.LoaiDatHang = N'NguyenLieu' OR psh.MaSoPhieuSoan LIKE N'NA%'))
+              OR (@maKho = N'PA' AND (d.LoaiDatHang = N'PhuLieu' OR psh.MaSoPhieuSoan LIKE N'PA%' OR psh.MaSoPhieuSoan LIKE N'PL%'))
+              OR psh.MaSoPhieuSoan LIKE @maKho + N'%'
+            )
+        `);
+
+      const existingIds = new Set(baseRecords.map((r) => r.PhieuSoanHangId));
+      for (const row of lsxResult.recordset || []) {
+        if (!existingIds.has(row.PhieuSoanHangId)) {
+          baseRecords.push(row);
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi truy vấn bổ sung phiếu soạn LSX:', err);
+    }
+
+    return baseRecords;
   }
 
   async getDanhSachChiTietPhieuSoanHangTheoPhieuSoanHangId(

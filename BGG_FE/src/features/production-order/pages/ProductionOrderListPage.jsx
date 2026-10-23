@@ -1,0 +1,859 @@
+import {
+  CalendarDays,
+  ClipboardList,
+  Eye,
+  Factory,
+  FileSpreadsheet,
+  Layers,
+  Package,
+  RefreshCw,
+  Scissors,
+  Search,
+  Shirt,
+  UserRound,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Empty, Spin, message } from "antd";
+import dayjs from "dayjs";
+
+import MainLayout from "../../../layouts/MainLayout/MainLayout";
+import {
+  getListProductionOrders,
+  getMaterialOrderDetail,
+  getMaterialOrders,
+} from "../api/productionOrderAPI";
+
+const LSX_STATUS_MAP = {
+  DaDuyet: {
+    label: "Đã duyệt",
+    cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  QLDHDuyet: {
+    label: "QLĐH duyệt",
+    cls: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  KeHoachDuyet: {
+    label: "KH duyệt",
+    cls: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  },
+  MoiTao: {
+    label: "Mới tạo",
+    cls: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+};
+
+const DDH_STATUS_MAP = {
+  ChoSoanHang: {
+    label: "Chờ kho tạo PSH",
+    cls: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  DaTaoPSH: {
+    label: "Đã tạo Phiếu soạn",
+    cls: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  HoanThanh: {
+    label: "Đã xuất hoàn thành",
+    cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+};
+
+function formatDate(val) {
+  if (!val) return "—";
+  const d = dayjs(val);
+  return d.isValid() ? d.format("DD/MM/YYYY") : "—";
+}
+
+function formatDateTime(val) {
+  if (!val) return "—";
+  const d = dayjs(val);
+  return d.isValid() ? d.format("DD/MM/YYYY HH:mm") : "—";
+}
+
+export default function ProductionOrderListPage() {
+  const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState("lsx"); // "lsx" | "ddh"
+  const [loading, setLoading] = useState(false);
+  const [keyword, setKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [ddhTypeFilter, setDdhTypeFilter] = useState("ALL");
+
+  const [lsxList, setLsxList] = useState([]);
+  const [ddhList, setDdhList] = useState([]);
+
+  // Bottom sheet / Modal xem chi tiết đơn đặt hàng đã tạo
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [selectedDdh, setSelectedDdh] = useState(null);
+  const [selectedDdhItems, setSelectedDdhItems] = useState([]);
+
+  const fetchLsxList = async () => {
+    try {
+      setLoading(true);
+      const res = await getListProductionOrders({});
+      setLsxList(Array.isArray(res?.data) ? res.data : []);
+    } catch (err) {
+      console.error("Lỗi tải danh sách LSX:", err);
+      message.error(err?.message || "Không thể tải danh sách Lệnh sản xuất");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDdhList = async () => {
+    try {
+      setLoading(true);
+      const res = await getMaterialOrders({});
+      setDdhList(Array.isArray(res?.data) ? res.data : []);
+    } catch (err) {
+      console.error("Lỗi tải danh sách Đơn đặt hàng LSX:", err);
+      message.error(err?.message || "Không thể tải danh sách Đơn đặt hàng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "lsx") {
+      fetchLsxList();
+    } else {
+      fetchDdhList();
+    }
+  }, [activeTab]);
+
+  const filteredLsx = useMemo(() => {
+    const q = keyword.trim().toLowerCase();
+    return lsxList.filter((item) => {
+      if (statusFilter !== "ALL" && item.TrangThai !== statusFilter) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        String(item.SoLSX || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.MaHang || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.KhachHang || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.NhaCat || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.ToMay || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    });
+  }, [lsxList, keyword, statusFilter]);
+
+  const filteredDdh = useMemo(() => {
+    const q = keyword.trim().toLowerCase();
+    return ddhList.filter((item) => {
+      if (ddhTypeFilter !== "ALL" && item.LoaiDatHang !== ddhTypeFilter) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        String(item.SoDonDatHang || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.SoLSX || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.MaHang || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.NguoiDat || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.MaSoPhieuSoan || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    });
+  }, [ddhList, keyword, ddhTypeFilter]);
+
+  const handleOpenBooking = (lsxItem, loaiDatHang) => {
+    navigate(
+      `/production-order-booking?lsxId=${lsxItem.LSXId}&type=${loaiDatHang}`,
+      {
+        state: { lsx: lsxItem, loaiDatHang },
+      },
+    );
+  };
+
+  const handleViewDdhDetail = async (ddh) => {
+    setSelectedDdh(ddh);
+    setSelectedDdhItems([]);
+    setDetailModalOpen(true);
+    try {
+      setDetailLoading(true);
+      const res = await getMaterialOrderDetail(ddh.DonDatHangId);
+      if (res?.data?.header) {
+        setSelectedDdh(res.data.header);
+      }
+      setSelectedDdhItems(
+        Array.isArray(res?.data?.chiTiet) ? res.data.chiTiet : [],
+      );
+    } catch (err) {
+      message.error(err?.message || "Không thể tải chi tiết đơn đặt hàng");
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  return (
+    <MainLayout screenTitle="Đặt hàng vật tư theo LSX">
+      <div className="min-h-full bg-egmf-surface p-2.5 sm:p-4 md:p-5">
+        <div className="mx-auto max-w-6xl space-y-3 sm:space-y-4">
+          {/* HEADER & CHUYỂN TAB (TỐI ƯU TOUCH CHO MOBILE & TABLET) */}
+          <section className="overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-egmf-card">
+            <div className="flex items-center justify-between gap-2.5 border-b border-egmf-border px-3.5 py-3 sm:px-5 sm:py-3.5">
+              <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-egmf-primary-tint text-egmf-primary-strong">
+                  <Factory size={20} />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="truncate text-[16px] font-extrabold leading-tight text-egmf-ink sm:text-lg">
+                    Đặt hàng Nhà Cắt & Nhà May
+                  </h2>
+                  <p className="mt-0.5 truncate text-xs text-egmf-muted sm:text-sm">
+                    Cấp phát Nguyên phụ liệu theo Lệnh sản xuất (LSX)
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  activeTab === "lsx" ? fetchLsxList() : fetchDdhList()
+                }
+                className="inline-flex h-11 shrink-0 touch-manipulation items-center gap-1.5 rounded-xl border border-egmf-border bg-white px-3 text-xs font-bold text-egmf-ink-secondary transition active:scale-95 hover:border-egmf-primary hover:text-egmf-primary sm:px-3.5 sm:text-sm"
+              >
+                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                <span className="hidden xs:inline sm:inline">Làm mới</span>
+              </button>
+            </div>
+
+            <div className="space-y-3 p-3 sm:space-y-4 sm:p-5">
+              {/* TAB BUTTONS - CAO 48PX DỄ CHẠM TRÊN ĐIỆN THOẠI & TABLET */}
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("lsx")}
+                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-extrabold transition-all sm:gap-2 sm:text-sm ${
+                    activeTab === "lsx"
+                      ? "bg-egmf-primary text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <ClipboardList size={17} className="shrink-0" />
+                  <span className="truncate">
+                    Lệnh SX ({lsxList.length})
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("ddh")}
+                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-extrabold transition-all sm:gap-2 sm:text-sm ${
+                    activeTab === "ddh"
+                      ? "bg-egmf-primary text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <FileSpreadsheet size={17} className="shrink-0" />
+                  <span className="truncate">
+                    Đơn đã gửi ({ddhList.length})
+                  </span>
+                </button>
+              </div>
+
+              {/* SEARCH + HORIZONTAL FILTER PILLS */}
+              <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
+                <div className="flex h-12 flex-1 items-center gap-2.5 rounded-xl border border-egmf-border bg-egmf-surface px-3.5 focus-within:border-egmf-primary focus-within:bg-white focus-within:ring-2 focus-within:ring-egmf-primary/15">
+                  <Search size={19} className="shrink-0 text-egmf-muted" />
+                  <input
+                    type="text"
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    placeholder={
+                      activeTab === "lsx"
+                        ? "Tìm Số LSX, Mã hàng, Khách hàng..."
+                        : "Tìm Số ĐĐH, Số LSX, Mã hàng, PSH..."
+                    }
+                    className="h-full w-full bg-transparent text-base font-medium text-egmf-ink outline-none placeholder:font-normal placeholder:text-egmf-muted"
+                  />
+                  {keyword && (
+                    <button
+                      type="button"
+                      onClick={() => setKeyword("")}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600 active:scale-95"
+                      aria-label="Xóa tìm kiếm"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* FILTER CHIPS CUỘN NGANG MƯỢT TRÊN MOBILE */}
+                {activeTab === "lsx" ? (
+                  <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5">
+                    {[
+                      { key: "ALL", label: "Tất cả" },
+                      { key: "DaDuyet", label: "Đã duyệt" },
+                      { key: "MoiTao", label: "Mới tạo" },
+                    ].map((st) => (
+                      <button
+                        key={st.key}
+                        type="button"
+                        onClick={() => setStatusFilter(st.key)}
+                        className={`h-11 shrink-0 touch-manipulation rounded-xl border px-3.5 text-xs font-extrabold transition sm:text-sm ${
+                          statusFilter === st.key
+                            ? "border-egmf-primary bg-egmf-primary-tint text-egmf-primary-strong"
+                            : "border-egmf-border bg-white text-egmf-ink-secondary"
+                        }`}
+                      >
+                        {st.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5">
+                    {[
+                      { key: "ALL", label: "Tất cả" },
+                      { key: "NguyenLieu", label: "Nhà cắt (Nguyên liệu)" },
+                      { key: "PhuLieu", label: "Nhà may (Phụ liệu)" },
+                    ].map((tp) => (
+                      <button
+                        key={tp.key}
+                        type="button"
+                        onClick={() => setDdhTypeFilter(tp.key)}
+                        className={`h-11 shrink-0 touch-manipulation rounded-xl border px-3.5 text-xs font-extrabold transition sm:text-sm ${
+                          ddhTypeFilter === tp.key
+                            ? "border-egmf-primary bg-egmf-primary-tint text-egmf-primary-strong"
+                            : "border-egmf-border bg-white text-egmf-ink-secondary"
+                        }`}
+                      >
+                        {tp.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* DANH SÁCH THẺ (CARDS) */}
+          <section>
+            {loading ? (
+              <div className="flex min-h-60 items-center justify-center rounded-2xl border border-egmf-border bg-white p-6">
+                <Spin size="large" />
+              </div>
+            ) : activeTab === "lsx" ? (
+              filteredLsx.length === 0 ? (
+                <div className="rounded-2xl border border-egmf-border bg-white py-12">
+                  <Empty description="Không tìm thấy Lệnh sản xuất phù hợp" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
+                  {filteredLsx.map((lsx) => {
+                    const st = LSX_STATUS_MAP[lsx.TrangThai] || {
+                      label: lsx.TrangThai || "Mới tạo",
+                      cls: "bg-slate-100 text-slate-700 border-slate-200",
+                    };
+
+                    return (
+                      <article
+                        key={lsx.LSXId}
+                        className="flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-egmf-card transition hover:border-egmf-primary/60 sm:p-4"
+                      >
+                        <div>
+                          {/* DÒNG TRÊN: SỐ LSX + TRẠNG THÁI */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 rounded-lg bg-egmf-primary-tint px-2 py-0.5 text-xs font-extrabold text-egmf-primary-strong">
+                                  <Layers size={13} />
+                                  {lsx.SoLSX}
+                                </span>
+                                <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-extrabold text-emerald-700">
+                                  {Number(
+                                    lsx.TongSanLuong || 0,
+                                  ).toLocaleString("vi-VN")}{" "}
+                                  SP
+                                </span>
+                              </div>
+
+                              <h3 className="mt-1.5 break-words text-[16px] font-extrabold leading-snug text-slate-900 sm:text-lg">
+                                Mã hàng: {lsx.MaHang || "—"}
+                              </h3>
+                            </div>
+
+                            <span
+                              className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold sm:text-xs ${st.cls}`}
+                            >
+                              {st.label}
+                            </span>
+                          </div>
+
+                          {/* LƯỚI THÔNG TIN 2 CỘT GỌN GÀNG CHO MOBILE & TABLET */}
+                          <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-2.5 text-xs sm:gap-2.5 sm:p-3 sm:text-sm">
+                            <div className="min-w-0">
+                              <span className="block text-[11px] font-medium text-slate-400">
+                                Khách hàng
+                              </span>
+                              <strong className="mt-0.5 block truncate text-slate-800">
+                                {lsx.KhachHang || "—"}
+                              </strong>
+                            </div>
+
+                            <div className="min-w-0">
+                              <span className="block text-[11px] font-medium text-slate-400">
+                                Chi tiết cỡ/màu
+                              </span>
+                              <strong className="mt-0.5 block truncate text-slate-800">
+                                {lsx.SoDongChiTiet || 0} dòng PO/Size
+                              </strong>
+                            </div>
+
+                            <div className="min-w-0">
+                              <span className="block text-[11px] font-medium text-slate-400">
+                                Nhà cắt • Ngày cần
+                              </span>
+                              <strong className="mt-0.5 block truncate text-slate-800">
+                                {lsx.NhaCat || "—"} ({formatDate(lsx.NgayCanMauCat)})
+                              </strong>
+                            </div>
+
+                            <div className="min-w-0">
+                              <span className="block text-[11px] font-medium text-slate-400">
+                                Tổ may • Vào chuyền
+                              </span>
+                              <strong className="mt-0.5 block truncate text-slate-800">
+                                {lsx.ToMay || "—"} ({formatDate(lsx.NgayVaoChuyen)})
+                              </strong>
+                            </div>
+                          </div>
+
+                          {/* SỐ ĐƠN ĐÃ TẠO */}
+                          <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 font-bold text-blue-700">
+                              <Scissors size={12} />
+                              Đơn Cắt: {lsx.SoDonCat || 0}
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 font-bold text-amber-800">
+                              <Shirt size={12} />
+                              Đơn May: {lsx.SoDonMay || 0}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* NÚT HÀNH ĐỘNG LỚN DỄ BẤM TRÊN TABLET & ĐIỆN THOẠI */}
+                        <div className="mt-3.5 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenBooking(lsx, "NguyenLieu")}
+                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-blue-700 active:scale-[0.98] sm:text-sm"
+                          >
+                            <Scissors size={16} className="shrink-0" />
+                            <span>Nhà Cắt Đặt NL</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenBooking(lsx, "PhuLieu")}
+                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-amber-700 active:scale-[0.98] sm:text-sm"
+                          >
+                            <Shirt size={16} className="shrink-0" />
+                            <span>Nhà May Đặt PL</span>
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )
+            ) : filteredDdh.length === 0 ? (
+              <div className="rounded-2xl border border-egmf-border bg-white py-12">
+                <Empty description="Chưa có đơn đặt hàng LSX nào" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
+                {filteredDdh.map((ddh) => {
+                  const isCat = ddh.LoaiDatHang === "NguyenLieu";
+                  const st = DDH_STATUS_MAP[ddh.TrangThai] || {
+                    label: ddh.TrangThai || "Chờ xử lý",
+                    cls: "bg-slate-100 text-slate-700 border-slate-200",
+                  };
+
+                  return (
+                    <article
+                      key={ddh.DonDatHangId}
+                      onClick={() => handleViewDdhDetail(ddh)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleViewDdhDetail(ddh);
+                        }
+                      }}
+                      className="flex cursor-pointer flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-egmf-card transition active:scale-[0.99] hover:border-egmf-primary/60 sm:p-4"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-extrabold ${
+                                  isCat
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-amber-100 text-amber-800"
+                                }`}
+                              >
+                                {isCat ? (
+                                  <Scissors size={12} />
+                                ) : (
+                                  <Shirt size={12} />
+                                )}
+                                {isCat
+                                  ? "Nhà cắt (NL)"
+                                  : "Nhà may (PL)"}
+                              </span>
+                              <span className="text-xs font-bold text-slate-500">
+                                • {ddh.SoLSX}
+                              </span>
+                            </div>
+
+                            <h3 className="mt-1.5 text-base font-extrabold text-slate-900 sm:text-lg">
+                              {ddh.SoDonDatHang}
+                            </h3>
+                          </div>
+
+                          <span
+                            className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold sm:text-xs ${st.cls}`}
+                          >
+                            {st.label}
+                          </span>
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-2.5 text-xs sm:p-3 sm:text-sm">
+                          <div className="min-w-0">
+                            <span className="block text-[11px] text-slate-400">
+                              Mã hàng
+                            </span>
+                            <strong className="mt-0.5 block truncate text-slate-800">
+                              {ddh.MaHang || "—"}
+                            </strong>
+                          </div>
+                          <div className="min-w-0">
+                            <span className="block text-[11px] text-slate-400">
+                              Số mặt hàng
+                            </span>
+                            <strong className="mt-0.5 block truncate text-egmf-primary-strong">
+                              {ddh.SoMatHang || 0} dòng NPL
+                            </strong>
+                          </div>
+                          <div className="min-w-0">
+                            <span className="block text-[11px] text-slate-400">
+                              Người đặt
+                            </span>
+                            <strong className="mt-0.5 block truncate text-slate-800">
+                              {ddh.NguoiDat || "—"}
+                            </strong>
+                          </div>
+                          <div className="min-w-0">
+                            <span className="block text-[11px] text-slate-400">
+                              Ngày cần giao
+                            </span>
+                            <strong className="mt-0.5 block truncate text-slate-800">
+                              {formatDate(ddh.NgayCanGiao)}
+                            </strong>
+                          </div>
+                          {ddh.MaSoPhieuSoan && (
+                            <div className="col-span-2 rounded-lg bg-blue-50/80 px-2.5 py-1.5">
+                              <span className="text-xs text-slate-600">
+                                Phiếu soạn kho:{" "}
+                              </span>
+                              <strong className="text-xs font-extrabold text-egmf-primary sm:text-sm">
+                                {ddh.MaSoPhieuSoan}
+                              </strong>
+                            </div>
+                          )}
+                          {ddh.GhiChuLot && (
+                            <div className="col-span-2 truncate text-xs text-slate-600">
+                              <span className="font-bold">Lot:</span>{" "}
+                              {ddh.GhiChuLot}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
+                        <span className="text-[11px] font-medium text-slate-400 sm:text-xs">
+                          {formatDateTime(ddh.NgayDat)}
+                        </span>
+
+                        <span className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-egmf-primary-tint px-3 py-1.5 text-xs font-extrabold text-egmf-primary-strong">
+                          <Eye size={15} />
+                          <span>Chi tiết NPL</span>
+                        </span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+
+      {/* BOTTOM SHEET (MOBILE) / MODAL (TABLET & DESKTOP) XEM CHI TIẾT ĐƠN ĐẶT HÀNG */}
+      {detailModalOpen && selectedDdh && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/55 backdrop-blur-xs sm:items-center sm:p-4"
+          onClick={() => setDetailModalOpen(false)}
+        >
+          <div
+            className="flex max-h-[88dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[85dvh] sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* THANH KÉO TRÊN MOBILE */}
+            <div className="flex justify-center pt-2 sm:hidden">
+              <div className="h-1.5 w-12 rounded-full bg-slate-300" />
+            </div>
+
+            <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={`rounded-md px-2 py-0.5 text-xs font-extrabold ${
+                      selectedDdh.LoaiDatHang === "NguyenLieu"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
+                    {selectedDdh.LoaiDatHang === "NguyenLieu"
+                      ? "Nhà cắt (Nguyên liệu)"
+                      : "Nhà may (Phụ liệu)"}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500">
+                    • {selectedDdh.SoLSX}
+                  </span>
+                </div>
+                <h3 className="mt-1 truncate text-base font-extrabold text-slate-900 sm:text-lg">
+                  {selectedDdh.SoDonDatHang} — Mã hàng: {selectedDdh.MaHang}
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setDetailModalOpen(false)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 active:scale-95 hover:bg-slate-200"
+                aria-label="Đóng"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3.5 sm:p-5">
+              {/* TÓM TẮT ĐƠN */}
+              <div className="mb-3.5 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs sm:grid-cols-4 sm:text-sm">
+                <div>
+                  <span className="block text-[11px] text-slate-400">
+                    Người đặt
+                  </span>
+                  <strong className="text-slate-800">
+                    {selectedDdh.NguoiDat || "—"}
+                  </strong>
+                </div>
+                <div>
+                  <span className="block text-[11px] text-slate-400">
+                    Ngày cần giao
+                  </span>
+                  <strong className="text-slate-800">
+                    {formatDate(selectedDdh.NgayCanGiao)}
+                  </strong>
+                </div>
+                <div>
+                  <span className="block text-[11px] text-slate-400">
+                    Phiếu soạn kho
+                  </span>
+                  <strong className="text-egmf-primary">
+                    {selectedDdh.MaSoPhieuSoan || "Chưa tạo PSH"}
+                  </strong>
+                </div>
+                <div>
+                  <span className="block text-[11px] text-slate-400">
+                    Ghi chú Lot
+                  </span>
+                  <strong className="text-slate-800">
+                    {selectedDdh.GhiChuLot || "—"}
+                  </strong>
+                </div>
+              </div>
+
+              {detailLoading ? (
+                <div className="flex min-h-48 items-center justify-center">
+                  <Spin size="large" />
+                </div>
+              ) : selectedDdhItems.length === 0 ? (
+                <Empty description="Không có dữ liệu vật tư" />
+              ) : (
+                <>
+                  {/* GIAO DIỆN THẺ (CARDS) CHO MOBILE & TABLET NHỎ - KHÔNG CẦN CUỘN NGANG */}
+                  <div className="space-y-2.5 md:hidden">
+                    {selectedDdhItems.map((it, idx) => (
+                      <div
+                        key={it.ChiTietId || idx}
+                        className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-xs font-extrabold text-slate-700">
+                              {idx + 1}
+                            </span>
+                            <span className="font-extrabold text-slate-900">
+                              {it.MaVatTu}
+                            </span>
+                          </div>
+                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
+                            ĐVT: {it.DVT || "—"}
+                          </span>
+                        </div>
+
+                        <p className="mt-1.5 text-xs font-medium leading-relaxed text-slate-700">
+                          {it.TenVatTu}
+                        </p>
+
+                        <div className="mt-2.5 grid grid-cols-3 gap-2 rounded-lg bg-slate-50 p-2 text-xs">
+                          <div>
+                            <span className="block text-[10px] text-slate-400">
+                              Định mức × SP
+                            </span>
+                            <strong className="text-slate-700">
+                              {Number(it.DinhMuc || 0).toLocaleString("vi-VN", {
+                                maximumFractionDigits: 4,
+                              })}{" "}
+                              ×{" "}
+                              {Number(it.SoLuongSanPham || 0).toLocaleString(
+                                "vi-VN",
+                              )}
+                            </strong>
+                          </div>
+                          <div>
+                            <span className="block text-[10px] text-slate-400">
+                              SL Yêu cầu
+                            </span>
+                            <strong className="text-sm font-extrabold text-egmf-primary">
+                              {Number(it.SoLuongYeuCau || 0).toLocaleString(
+                                "vi-VN",
+                                { maximumFractionDigits: 4 },
+                              )}
+                            </strong>
+                          </div>
+                          <div>
+                            <span className="block text-[10px] text-slate-400">
+                              Thực xuất
+                            </span>
+                            <strong className="text-sm font-extrabold text-emerald-700">
+                              {Number(it.SoLuongThucXuat || 0).toLocaleString(
+                                "vi-VN",
+                                { maximumFractionDigits: 4 },
+                              )}
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* BẢNG TRÊN TABLET NGANG & DESKTOP */}
+                  <div className="hidden overflow-x-auto rounded-xl border border-slate-200 md:block">
+                    <table className="w-full border-collapse text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 bg-slate-50 font-bold text-slate-700">
+                          <th className="px-3 py-2.5 text-center">#</th>
+                          <th className="px-3 py-2.5">Mã vật tư</th>
+                          <th className="px-3 py-2.5">Tên / Diễn giải NPL</th>
+                          <th className="px-3 py-2.5 text-center">ĐVT</th>
+                          <th className="px-3 py-2.5 text-right">Định mức</th>
+                          <th className="px-3 py-2.5 text-right">SL SP</th>
+                          <th className="px-3 py-2.5 text-right">SL Yêu cầu</th>
+                          <th className="px-3 py-2.5 text-right">Thực xuất</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {selectedDdhItems.map((it, idx) => (
+                          <tr
+                            key={it.ChiTietId || idx}
+                            className="hover:bg-slate-50/80"
+                          >
+                            <td className="px-3 py-2.5 text-center font-medium text-slate-500">
+                              {idx + 1}
+                            </td>
+                            <td className="px-3 py-2.5 font-bold text-slate-900">
+                              {it.MaVatTu}
+                            </td>
+                            <td className="px-3 py-2.5 text-slate-700">
+                              <div>{it.TenVatTu}</div>
+                              {it.GhiChu && (
+                                <div className="text-xs text-slate-400">
+                                  {it.GhiChu}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-center font-medium text-slate-600">
+                              {it.DVT}
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-slate-600">
+                              {Number(it.DinhMuc || 0).toLocaleString("vi-VN", {
+                                maximumFractionDigits: 4,
+                              })}
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-slate-700">
+                              {Number(it.SoLuongSanPham || 0).toLocaleString(
+                                "vi-VN",
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-right font-bold text-egmf-primary">
+                              {Number(it.SoLuongYeuCau || 0).toLocaleString(
+                                "vi-VN",
+                                { maximumFractionDigits: 4 },
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-right font-semibold text-emerald-700">
+                              {Number(it.SoLuongThucXuat || 0).toLocaleString(
+                                "vi-VN",
+                                { maximumFractionDigits: 4 },
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end border-t border-slate-200 bg-slate-50 px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-6 sm:pb-3">
+              <button
+                type="button"
+                onClick={() => setDetailModalOpen(false)}
+                className="min-h-[46px] w-full rounded-xl bg-slate-800 px-6 py-2.5 text-sm font-extrabold text-white active:scale-[0.99] sm:w-auto"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </MainLayout>
+  );
+}

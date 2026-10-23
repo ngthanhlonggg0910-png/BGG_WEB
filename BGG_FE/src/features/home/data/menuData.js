@@ -3,6 +3,7 @@ import {
   ClipboardList,
   Warehouse,
   ScanSearch,
+  Factory,
 } from "lucide-react";
 
 export const menuGroups = [
@@ -22,6 +23,11 @@ export const menuGroups = [
     key: "main-process",
     title: "Sản xuất - Quy trình chính",
     items: [
+      {
+        key: "production-order-material",
+        title: "Đặt hàng vật tư LSX",
+        icon: Factory,
+      },
       {
         key: "soanhang",
         title: "Danh sách soạn hàng",

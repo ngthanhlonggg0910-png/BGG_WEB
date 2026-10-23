@@ -58,6 +58,8 @@ export default function Home() {
       navigate("/warehouse");
     } else if (item.key === "soanhang") {
       navigate("/picking-orders");
+    } else if (item.key === "production-order-material") {
+      navigate("/production-orders");
     } else if (item.key === "fabric-inspection") {
       navigate("/fabric-inspection");
     } else {
