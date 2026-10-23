@@ -41,3 +41,12 @@ export class LoginResponseDTO {
     this.data = data;
   }
 }
+
+export class GetUsernameAndPassword_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: {
+    TenDangNhap: string;
+    MatKhau: string;
+  } | null;
+}

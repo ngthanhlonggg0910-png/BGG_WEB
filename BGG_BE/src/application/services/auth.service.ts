@@ -4,7 +4,10 @@ import type { IUserRepository } from '../../domain/repositories/user.repository.
 import type { IAuthService } from '../interfaces/auth-service.interface.js';
 
 import { LoginRequestDTO } from '../dtos/login-request.dto.js';
-import { LoginResponseDTO } from '../dtos/login-response.dto.js';
+import {
+  GetUsernameAndPassword_ResponseDTO,
+  LoginResponseDTO,
+} from '../dtos/login-response.dto.js';
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -35,5 +38,26 @@ export class AuthService implements IAuthService {
       SoDienThoai: user.SoDienThoai,
       TKId: user.TKId,
     });
+  }
+
+  async getUsernameAndPassword(
+    TenDangNhap: string,
+  ): Promise<GetUsernameAndPassword_ResponseDTO> {
+    try {
+      const infor =
+        await this.userRepository.getUsernameAndPassword(TenDangNhap);
+
+      return {
+        success: true,
+        message: 'Thành công',
+        data: infor,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Có lỗi: ${error}`,
+        data: null,
+      };
+    }
   }
 }

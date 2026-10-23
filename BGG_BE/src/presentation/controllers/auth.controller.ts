@@ -2,6 +2,7 @@ import { Body, Controller, Inject, Post } from '@nestjs/common';
 
 import type { IAuthService } from '../../application/interfaces/auth-service.interface.js';
 import { LoginRequestDTO } from '../../application/dtos/login-request.dto.js';
+import { GetUsernameAndPassword_ResponseDTO } from '../../application/dtos/login-response.dto.js';
 import { dot } from 'node:test/reporters';
 
 @Controller('auth')
@@ -14,5 +15,12 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginRequestDTO) {
     return this.authService.login(dto);
+  }
+
+  @Post('getUsernameAndPass')
+  async getUsernameAndPassword(
+    @Body('TenDangNhap') TenDangNhap: string,
+  ): Promise<GetUsernameAndPassword_ResponseDTO> {
+    return await this.authService.getUsernameAndPassword(TenDangNhap);
   }
 }

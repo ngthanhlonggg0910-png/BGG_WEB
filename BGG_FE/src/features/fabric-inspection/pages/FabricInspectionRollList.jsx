@@ -113,14 +113,17 @@ export default function FabricInspectionRollList({ onScan, onRollAction }) {
             <EmptyState hasSearch={Boolean(keyword)} />
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
-              {filteredRolls.map((item, index) => (
-                <FabricRollCard
-                  key={item?.MaCayVai}
-                  item={item}
-                  index={index}
-                  onAction={(action, roll) => onRollAction?.(action, roll)}
-                />
-              ))}
+              {filteredRolls.map((item, index) => {
+                return (
+                  <FabricRollCard
+                    key={item?.MaCayVai}
+                    item={item}
+                    index={index}
+                    onAction={(action, roll) => onRollAction?.(action, roll)}
+                    onReload={fetchData}
+                  />
+                );
+              })}
             </div>
           )}
         </section>
