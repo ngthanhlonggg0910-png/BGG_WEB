@@ -1,6 +1,6 @@
 import { ArrowLeft, Menu, Layers3 } from "lucide-react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import BarcodeScannerModal from "../../shared/components/ui/BarcodeScannerModal";
@@ -22,6 +22,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
   const pwa = usePwa();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const {
     closeScanner,
     focusedInputLabel,
@@ -30,6 +31,34 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
     startScan,
     videoRef,
   } = useFocusedInputScanner();
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+
+    if (!viewport) return undefined;
+
+    const updateKeyboardOffset = () => {
+      const offset = Math.max(
+        0,
+        window.innerHeight - viewport.height - viewport.offsetTop,
+      );
+
+      // Ignore the small viewport changes caused by browser chrome; a soft
+      // keyboard always takes substantially more space than this.
+      setKeyboardOffset(offset > 120 ? Math.round(offset) : 0);
+    };
+
+    updateKeyboardOffset();
+    viewport.addEventListener("resize", updateKeyboardOffset);
+    viewport.addEventListener("scroll", updateKeyboardOffset);
+    window.addEventListener("resize", updateKeyboardOffset);
+
+    return () => {
+      viewport.removeEventListener("resize", updateKeyboardOffset);
+      viewport.removeEventListener("scroll", updateKeyboardOffset);
+      window.removeEventListener("resize", updateKeyboardOffset);
+    };
+  }, []);
 
   // XÁC ĐỊNH MENU ACTIVE
   const selectedKey = (() => {
@@ -219,6 +248,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
 
       {/* MOBILE BOTTOM NAVIGATION */}
       {!hideMobileNavigation && <MobileNavigation
+        keyboardOffset={keyboardOffset}
         tabletLayout={isOrderPage}
         onScan={startScan}
         onSelect={handleSelect}
