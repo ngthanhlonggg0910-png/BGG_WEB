@@ -11,6 +11,7 @@ const shell = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/push-events.js',
   '/ic_launcher_192.png',
   '/ic_launcher_512.png',
   '/icons/icon.svg',
@@ -27,6 +28,7 @@ for (const path of shell.filter(path => path !== '/')) {
 const hash = digest.digest('hex').slice(0, 12);
 
 await writeFile(resolve(root, 'sw.js'), `
+importScripts('/push-events.js');
 const CACHE = 'egmf-shell-${hash}';
 const SHELL = ${JSON.stringify(shell)};
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL))));

@@ -15,6 +15,7 @@ export class LoginResponseDTO {
     SoNoiBo: string | null;
     SoDienThoai: string | null;
     TKId: number;
+    pushToken?: string;
   };
 
   constructor(
@@ -34,6 +35,7 @@ export class LoginResponseDTO {
       SoNoiBo: string | null;
       SoDienThoai: string | null;
       TKId: number;
+      pushToken?: string;
     },
   ) {
     this.success = success;

@@ -12,11 +12,11 @@ export default function InstallHelp({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1b2d4b]/40 p-4 backdrop-blur-[3px] sm:p-6"
+      className="egmf-dialog-overlay fixed inset-0 z-[100] flex items-center justify-center bg-[#1b2d4b]/40 p-4 backdrop-blur-[3px] sm:p-6"
       onClick={onClose}
     >
       <section
-        className="relative max-h-[calc(100dvh-40px)] w-full max-w-[520px] overflow-auto rounded-[18px] bg-white p-6 shadow-[0_25px_80px_rgba(17,39,75,0.22)] sm:p-7"
+        className="egmf-dialog-panel relative max-h-[calc(100dvh-40px)] w-full max-w-[520px] overflow-auto rounded-[18px] bg-white p-6 shadow-[0_25px_80px_rgba(17,39,75,0.22)] sm:p-7"
         role="dialog"
         aria-modal="true"
         aria-labelledby="install-title"

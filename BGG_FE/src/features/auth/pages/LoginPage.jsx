@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   UserRound,
@@ -16,6 +16,7 @@ import { saveUser } from "../../../shared/auth/session";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +47,8 @@ export default function Login() {
       if (result.success) {
         saveUser(result, rememberMe);
         toast.success("Đăng nhập thành công");
-        navigate("/", { replace: true });
+        const returnTo = location.state?.returnTo;
+        navigate(typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/", { replace: true });
       } else {
         toast.error(result.message || "Tên đăng nhập hoặc mật khẩu không đúng");
       }

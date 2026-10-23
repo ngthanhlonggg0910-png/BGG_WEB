@@ -1,3 +1,4 @@
+import { PushAuthService } from './push-auth.service.js';
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { IUserRepository } from '../../domain/repositories/user.repository.interface.js';
@@ -14,6 +15,7 @@ export class AuthService implements IAuthService {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
+    private readonly pushAuth: PushAuthService,
   ) {}
 
   async login(dto: LoginRequestDTO): Promise<LoginResponseDTO> {
@@ -37,6 +39,7 @@ export class AuthService implements IAuthService {
       SoNoiBo: user.SoNoiBo,
       SoDienThoai: user.SoDienThoai,
       TKId: user.TKId,
+      pushToken: this.pushAuth.issue(user.TKId),
     });
   }
 

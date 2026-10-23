@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { Empty, Modal, Spin, message } from "antd";
+import { App as AntApp, Empty, Modal, Spin, message } from "antd";
 import dayjs from "dayjs";
 
 import "../order-mobile.css";
@@ -105,6 +105,7 @@ function getOrderStatusChip(od) {
 
 export default function ProductionOrderBookingPage() {
   const navigate = useNavigate();
+  const { modal } = AntApp.useApp();
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
@@ -139,6 +140,7 @@ export default function ProductionOrderBookingPage() {
   const [lsxHeader, setLsxHeader] = useState(location.state?.lsx || null);
   const [sizeRows, setSizeRows] = useState([]);
   const [existingOrders, setExistingOrders] = useState([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Thông tin đơn đặt hàng ("ALL" | "NguyenLieu" | "PhuLieu" đồng bộ với Desktop)
   const [loaiDatHang, setLoaiDatHang] = useState(initialType);
@@ -511,7 +513,17 @@ export default function ProductionOrderBookingPage() {
       return;
     }
 
-    Modal.confirm({
+    const returnToHistory = historyOpen;
+    setHistoryOpen(false);
+
+    modal.confirm({
+
+      width: 560,
+
+      centered: true,
+
+      className: "egmf-confirm",
+      afterClose: () => { if (returnToHistory) setHistoryOpen(true); },
       title: `Hủy đơn đặt hàng [${od.SoDonDatHang}]?`,
       content:
         "Đơn đặt hàng sẽ chuyển sang trạng thái Đã hủy (nếu có Phiếu soạn ở trạng thái Mới tạo chưa quét cũng sẽ tự động hủy).",
@@ -611,7 +623,7 @@ export default function ProductionOrderBookingPage() {
 
   if (!lsxId) {
     return (
-      <MainLayout screenTitle="Đặt hàng vật tư từ LSX">
+      <MainLayout screenTitle="Đặt hàng vật tư từ LSX" headerBackTo="/production-orders">
         <div className="p-6">
           <Empty description="Chưa chọn Lệnh sản xuất" />
         </div>
@@ -626,6 +638,7 @@ export default function ProductionOrderBookingPage() {
   return (
     <MainLayout
       hideMobileNavigation
+      headerBackTo="/production-orders"
       screenTitle={
         isCat
           ? "Nhà Cắt đặt Nguyên liệu (LSX)"
@@ -865,63 +878,11 @@ export default function ProductionOrderBookingPage() {
                   )}
                 </div>
 
-                {/* LỊCH SỬ ĐƠN ĐẶT ĐÃ GỬI CỦA LSX NÀY - CHO PHÉP HỦY ĐƠN KHI CHƯA QUÉT GIỐNG DESKTOP */}
-                {existingOrders.length > 0 && (
-                  <details className="border-t border-slate-100 px-3.5 py-2.5 sm:px-5">
-                    <summary className="cursor-pointer py-2 text-sm font-semibold text-slate-700">Xem đơn đã gửi ({existingOrders.length})</summary>
-                    <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-                      <span className="shrink-0 text-sm font-extrabold uppercase tracking-wider text-slate-500">
-                        Đơn đã tạo ({existingOrders.length}):
-                      </span>
-                      {existingOrders.map((od) => {
-                        const chip = getOrderStatusChip(od);
-                        const allowCancel = canCancelOrder(od);
-                        return (
-                          <div
-                            key={od.DonDatHangId}
-                            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-2xs"
-                          >
-                            <span
-                              className={`rounded px-1.5 py-0.5 text-sm font-extrabold ${
-                                od.LoaiDatHang === "NguyenLieu"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-amber-100 text-amber-700"
-                              }`}
-                            >
-                              {od.LoaiDatHang === "NguyenLieu" ? "Cắt" : "May"}
-                            </span>
-                            <strong
-                              className={
-                                od.TrangThai === "DaHuy"
-                                  ? "text-slate-500 line-through"
-                                  : "text-slate-800"
-                              }
-                            >
-                              {od.SoDonDatHang}
-                            </strong>
-                            <span
-                              className={`rounded-full border px-1.5 py-0.5 text-sm font-bold ${chip.cls}`}
-                            >
-                              {chip.text}
-                            </span>
-                            {allowCancel && (
-                              <button
-                                type="button"
-                                disabled={cancellingId === od.DonDatHangId}
-                                onClick={() => handleCancelOrder(od)}
-                                className="ml-0.5 inline-flex h-6 items-center gap-1 rounded-lg bg-rose-50 px-1.5 text-sm font-extrabold text-rose-600 transition active:scale-95 hover:bg-rose-100"
-                                title="Hủy đơn đặt hàng này"
-                              >
-                                <Ban size={12} />
-                                <span>Hủy</span>
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </details>
-                )}
+                <div className="border-t border-slate-100 px-3.5 py-2.5 sm:px-5">
+                  <button type="button" onClick={() => setHistoryOpen(true)} className="order-color-only" aria-haspopup="dialog">
+                    Lịch sử đặt hàng ({existingOrders.length})
+                  </button>
+                </div>
               </section>
 
               {/* 2. THANH CHUYỂN BƯỚC (STEPPER) CHO MOBILE & TABLET */}
@@ -1005,34 +966,13 @@ export default function ProductionOrderBookingPage() {
                   {/* THANH LỌC MÀU & CÔNG CỤ NHANH */}
                   <div className="space-y-2.5 border-b border-slate-100 bg-slate-50/70 p-3.5 sm:px-5">
                     <p className="text-sm text-slate-600">Đã chọn sẵn số lượng kế hoạch. Chỉ sửa nếu cần đặt ít hơn.</p>
-                    {/* Lọc màu chỉ thay đổi hiển thị, không đổi lựa chọn. */}
-                    <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
-                      <button
-                        type="button"
-                        onClick={() => setColorFilter("ALL")}
-                        className={`min-h-[40px] shrink-0 touch-manipulation rounded-xl px-3.5 py-1.5 text-sm font-extrabold transition ${
-                          colorFilter === "ALL"
-                            ? "bg-slate-900 text-white shadow-2xs"
-                            : "border border-slate-200 bg-white text-slate-700"
-                        }`}
-                      >
-                        Tất cả màu ({sizeRows.length})
-                      </button>
-                      {distinctColors.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setColorFilter(c)}
-                          className={`min-h-[40px] shrink-0 touch-manipulation rounded-xl px-3.5 py-1.5 text-sm font-extrabold transition ${
-                            colorFilter === c
-                              ? "bg-egmf-primary text-white shadow-2xs"
-                              : "border border-slate-200 bg-white text-slate-700"
-                          }`}
-                        >
-                          {c}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="order-filter-label">
+                      Màu sản phẩm
+                      <select className="order-combobox" value={colorFilter} onChange={(e) => setColorFilter(e.target.value)}>
+                        <option value="ALL">Tất cả màu ({distinctColors.length})</option>
+                        {distinctColors.map((color) => <option key={color} value={color}>{color}</option>)}
+                      </select>
+                    </label>
 
                     {colorFilter !== "ALL" && (
                       <button type="button" className="order-color-only" onClick={() => handleSelectOnlyColor(colorFilter)}>
@@ -1583,6 +1523,38 @@ export default function ProductionOrderBookingPage() {
           )}
         </div>
       </div>
+      <Modal
+        title={`Lịch sử đặt hàng — ${lsxHeader?.SoLSX || ""}`}
+        open={historyOpen}
+        onCancel={() => setHistoryOpen(false)}
+        footer={<button type="button" className="order-color-only" onClick={() => setHistoryOpen(false)}>Đóng</button>}
+        width={640}
+        styles={{ body: { maxHeight: "65dvh", overflowY: "auto", padding: 16 }, header: { padding: "16px 48px 0 16px" }, footer: { padding: "0 16px 16px" } }}
+      >
+        <div className="order-page space-y-3">
+          {existingOrders.length === 0 ? <Empty description="Chưa có đơn đặt hàng" /> : existingOrders.map((order) => {
+            const status = getOrderStatusChip(order);
+            return (
+              <article key={order.DonDatHangId} className="rounded-xl border border-slate-200 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <strong className="text-base text-slate-900">{order.SoDonDatHang}</strong>
+                  <span className={`rounded-full border px-2 py-1 text-sm ${status.cls}`}>{status.text}</span>
+                </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  {order.LoaiDatHang === "NguyenLieu" ? "Nhà cắt · Nguyên liệu" : "Nhà may · Phụ liệu"}
+                </p>
+                {order.NguoiDat && <p className="mt-1 text-sm text-slate-600">Người đặt: {order.NguoiDat}</p>}
+                {order.NgayDat && dayjs(order.NgayDat).isValid() && <p className="mt-1 text-sm text-slate-600">Ngày đặt: {dayjs(order.NgayDat).format("DD/MM/YYYY HH:mm")}</p>}
+                {canCancelOrder(order) && (
+                  <button type="button" disabled={cancellingId === order.DonDatHangId} onClick={() => handleCancelOrder(order)} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 text-sm font-semibold text-rose-700 disabled:opacity-50">
+                    <Ban size={16} />{cancellingId === order.DonDatHangId ? "Đang hủy..." : "Hủy đơn"}
+                  </button>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </Modal>
     </MainLayout>
   );
 }

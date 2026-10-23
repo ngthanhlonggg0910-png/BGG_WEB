@@ -1,6 +1,6 @@
 import AppRouter from "./routes/AppRouter";
 import { ToastContainer } from "react-toastify";
-import { ConfigProvider } from "antd";
+import { App as AntApp, ConfigProvider } from "antd";
 import { PwaProvider } from "./features/pwa/hooks/usePwa";
 import "react-toastify/dist/ReactToastify.css";
 import "./shared/styles/toast.css";
@@ -11,6 +11,7 @@ function App() {
 
   const egmfTheme = {
     token: {
+      fontSize: 16,
       colorPrimary: token("--egmf-primary"),
       colorInfo: token("--egmf-primary"),
       colorText: token("--egmf-ink"),
@@ -25,6 +26,11 @@ function App() {
       fontFamily: token("--egmf-font-sans"),
     },
     components: {
+      Modal: {
+        titleFontSize: 18,
+        titleLineHeight: 1.5,
+        borderRadiusLG: 20,
+      },
       Collapse: {
         headerBg: token("--egmf-surface-raised"),
         contentBg: token("--egmf-surface-raised"),
@@ -38,18 +44,20 @@ function App() {
 
   return (
     <ConfigProvider theme={egmfTheme}>
-      <PwaProvider>
-        <AppRouter />
+      <AntApp>
+        <PwaProvider>
+          <AppRouter />
 
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          closeOnClick
-          pauseOnHover
-          closeButton={true}
-        />
-      </PwaProvider>
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            closeOnClick
+            pauseOnHover
+            closeButton={true}
+          />
+        </PwaProvider>
+      </AntApp>
     </ConfigProvider>
   );
 }

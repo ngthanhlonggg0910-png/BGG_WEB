@@ -7,10 +7,10 @@ function BarcodeScannerModal({ error, onClose, open, title, videoRef }) {
     <div
       aria-labelledby="scanner-title"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end justify-center bg-egmf-ink/70 sm:items-center sm:p-4"
+      className="egmf-dialog-overlay fixed inset-0 z-50 flex items-end justify-center bg-egmf-ink/70 sm:items-center sm:p-4"
       role="dialog"
     >
-      <div className="w-full overflow-hidden rounded-t-[28px] bg-white p-4 shadow-2xl sm:max-w-lg sm:rounded-[28px]">
+      <div className="egmf-dialog-panel max-h-[90dvh] overflow-y-auto w-full rounded-t-[28px] bg-white p-4 shadow-2xl sm:max-w-lg sm:rounded-[28px]">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <p className="text-[11px] font-bold tracking-[0.1em] text-egmf-primary">
