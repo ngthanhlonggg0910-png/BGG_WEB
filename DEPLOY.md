@@ -43,3 +43,29 @@ docker compose down
 ```
 
 Nếu dùng camera quét mã từ điện thoại qua IP máy chủ, trình duyệt thường yêu cầu HTTPS. Cấu hình TLS tại reverse proxy của môi trường deploy khi cần sử dụng camera.
+
+## PWA khi phục vụ qua IIS
+
+Frontend dùng `/manifest.json` để tránh lỗi IIS trả 404 cho đuôi `.webmanifest`
+chưa có MIME mapping. Sau khi deploy, kiểm tra trên đúng domain, giao thức và
+cổng mà điện thoại sử dụng:
+
+```powershell
+curl.exe --fail --include https://wh.bgg.vn:8088/manifest.json
+curl.exe --fail --include https://wh.bgg.vn:8088/sw.js
+```
+
+Manifest phải trả HTTP 200, Content-Type `application/json` hoặc
+`application/manifest+json`, và nội dung JSON có `scope: "/"`,
+`start_url: "/"`, `display: "standalone"`. Không được rewrite manifest thành
+`index.html`. Service worker phải trả JavaScript. Build vẫn xuất thêm
+`manifest.webmanifest` để tương thích URL cũ; URL này không nằm trong cache
+bắt buộc vì IIS có thể chưa hỗ trợ phần mở rộng đó.
+
+Nếu cần phục vụ URL cũ trên IIS, bổ sung MIME mapping `.webmanifest` thành
+`application/manifest+json` trong cấu hình site hiện có; giữ nguyên các rule
+API/rewrite của máy chủ. Không cần thay đổi cổng hoặc URL điều hướng nội bộ.
+
+Biểu tượng iPhone được cài lúc manifest bị lỗi có thể vẫn giữ phạm vi cũ.
+Sau khi xác minh manifest mới hoạt động trên máy chủ, xóa biểu tượng đó và
+thêm lại từ Safari trên cùng địa chỉ HTTPS.
