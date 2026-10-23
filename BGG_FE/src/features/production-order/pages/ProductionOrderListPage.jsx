@@ -201,6 +201,13 @@ export default function ProductionOrderListPage({ initialTab }) {
   };
 
   useEffect(() => {
+    const tabFromUrl = searchParams.get("tab") || initialTab || "lsx";
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, initialTab]);
+
+  useEffect(() => {
     if (activeTab === "lsx") {
       fetchLsxList();
     } else {

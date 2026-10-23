@@ -4,7 +4,14 @@ import CollapsiblePanel from "../../../shared/components/ui/CollapsiblePanel";
 import EmptyState from "../../../shared/components/ui/EmptyState";
 import Icon from "../../../shared/components/ui/Icon";
 
-function FunctionGroup({ group, defaultOpen, onFunctionClick }) {
+function FunctionGroup({
+  group,
+  defaultOpen = true,
+  onFunctionClick,
+  onItemClick,
+}) {
+  const handleClick = onFunctionClick || onItemClick;
+
   const heading = (
     <span className="flex min-w-0 items-center gap-3 text-base font-bold leading-[1.35] text-egmf-ink md:text-lg">
       <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
@@ -28,7 +35,7 @@ function FunctionGroup({ group, defaultOpen, onFunctionClick }) {
                 <FunctionCard
                   item={item}
                   key={item.key}
-                  onClick={onFunctionClick}
+                  onClick={handleClick}
                 />
               ))}
             </div>

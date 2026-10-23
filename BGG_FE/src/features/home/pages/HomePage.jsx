@@ -52,6 +52,13 @@ export default function Home() {
 
   // ĐIỀU HƯỚNG
   const handleFunctionClick = (item) => {
+    if (!item) return;
+
+    if (item.path) {
+      navigate(item.path);
+      return;
+    }
+
     if (item.key === "update-material-location") {
       navigate("/material-location-update");
     } else if (item.key === "warehouse") {
@@ -197,6 +204,8 @@ export default function Home() {
               <FunctionGroup
                 key={group.key}
                 group={group}
+                defaultOpen={true}
+                onFunctionClick={handleFunctionClick}
                 onItemClick={handleFunctionClick}
               />
             ))}
