@@ -73,4 +73,16 @@ export class ProductionOrderService implements IProductionOrderService {
       data,
     };
   }
+
+  async huyDonDatHangLSX(donDatHangId: number, nguoiHuy?: string) {
+    const data = await this.productionOrderRepo.huyDonDatHangLSX(
+      donDatHangId,
+      nguoiHuy,
+    );
+    return {
+      success: true,
+      message: `Đã hủy đơn đặt hàng [${data.soDonDatHang}] thành công`,
+      data,
+    };
+  }
 }

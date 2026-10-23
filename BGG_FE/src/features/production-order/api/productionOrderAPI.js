@@ -25,6 +25,13 @@ export async function createMaterialOrderFromLsx(payload) {
   return postJson("/api/production-order/create-material-order", payload);
 }
 
+// Hủy đơn đặt hàng vật tư từ LSX (chỉ khi Kho chưa quét/xuất)
+export async function cancelMaterialOrderFromLsx(donDatHangId, nguoiHuy) {
+  return postJson(`/api/production-order/cancel-material-order/${donDatHangId}`, {
+    nguoiHuy,
+  });
+}
+
 // Lấy danh sách đơn đặt hàng LSX đã tạo
 export async function getMaterialOrders(params = {}) {
   const query = new URLSearchParams();

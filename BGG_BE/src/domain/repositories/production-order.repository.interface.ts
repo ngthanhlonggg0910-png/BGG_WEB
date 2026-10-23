@@ -15,4 +15,5 @@ export interface IProductionOrderRepository {
     trangThai?: string;
   }): Promise<any[]>;
   getChiTietDonDatHangLSX(donDatHangId: number): Promise<any>;
+  huyDonDatHangLSX(donDatHangId: number, nguoiHuy?: string): Promise<any>;
 }

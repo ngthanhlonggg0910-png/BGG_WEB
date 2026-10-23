@@ -17,7 +17,8 @@ export class SelectedLsxRowDto {
 
 export class CalculateBomDto {
   lsxId: number;
-  loaiDatHang: 'NguyenLieu' | 'PhuLieu';
+  loaiDatHang: 'ALL' | 'NguyenLieu' | 'PhuLieu';
+  ghiChuLot?: string;
   selectedRows: SelectedLsxRowDto[];
 }
 
@@ -31,15 +32,21 @@ export class MaterialOrderItemDto {
   soLuongSanPham: number;
   soLuongYeuCau: number;
   ghiChu?: string;
+  ghiChuLot?: string;
 }
 
 export class CreateMaterialOrderDto {
   lsxId: number;
-  loaiDatHang: 'NguyenLieu' | 'PhuLieu';
+  loaiDatHang: 'ALL' | 'NguyenLieu' | 'PhuLieu';
   nguoiDat: string;
   tkId: number;
   ngayCanGiao?: string;
   ghiChuLot?: string;
   ghiChu?: string;
   items: MaterialOrderItemDto[];
+}
+
+export class CancelMaterialOrderDto {
+  nguoiHuy?: string;
+  tkId?: number;
 }

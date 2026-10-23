@@ -1,7 +1,16 @@
-import { Body, Controller, Get, Inject, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import type { IProductionOrderService } from '../../application/interfaces/production-order.service.interface.js';
 import {
   CalculateBomDto,
+  CancelMaterialOrderDto,
   CreateMaterialOrderDto,
   GetProductionOrdersDto,
 } from '../../application/dtos/production-order.dto.js';
@@ -31,6 +40,17 @@ export class ProductionOrderController {
   @Post('create-material-order')
   async taoDonDatHangVatTu(@Body() dto: CreateMaterialOrderDto) {
     return this.productionOrderService.taoDonDatHangVatTu(dto);
+  }
+
+  @Post('cancel-material-order/:donDatHangId')
+  async huyDonDatHangLSX(
+    @Param('donDatHangId') donDatHangId: string,
+    @Body() dto?: CancelMaterialOrderDto,
+  ) {
+    return this.productionOrderService.huyDonDatHangLSX(
+      Number(donDatHangId),
+      dto?.nguoiHuy,
+    );
   }
 
   @Get('material-orders')

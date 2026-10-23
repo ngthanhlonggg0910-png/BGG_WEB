@@ -1,25 +1,25 @@
 import {
-  CalendarDays,
+  Ban,
   ClipboardList,
   Eye,
   Factory,
   FileSpreadsheet,
   Layers,
-  Package,
   RefreshCw,
   Scissors,
   Search,
   Shirt,
-  UserRound,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Empty, Spin, message } from "antd";
+import { Empty, Modal, Spin, message } from "antd";
 import dayjs from "dayjs";
 
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
+import { getCurrentProfile } from "../../../shared/auth/session";
 import {
+  cancelMaterialOrderFromLsx,
   getListProductionOrders,
   getMaterialOrderDetail,
   getMaterialOrders,
@@ -44,20 +44,56 @@ const LSX_STATUS_MAP = {
   },
 };
 
-const DDH_STATUS_MAP = {
-  ChoSoanHang: {
-    label: "Chờ kho tạo PSH",
+function getDdhStatusBadge(ddh) {
+  const trangThai = String(ddh?.TrangThai || "")
+    .trim()
+    .toLowerCase();
+  const tinhTrangPsh = String(ddh?.TinhTrangPSH || "")
+    .trim()
+    .toLowerCase();
+
+  if (trangThai === "dahuy") {
+    return {
+      label: "Đã hủy",
+      cls: "bg-rose-50 text-rose-700 border-rose-200",
+    };
+  }
+  if (trangThai === "hoanthanh" || tinhTrangPsh === "hoanthanh") {
+    return {
+      label: "Đã hoàn tất xuất kho",
+      cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    };
+  }
+  if (tinhTrangPsh === "dangthuchien") {
+    return {
+      label: "Kho đang quét soạn hàng",
+      cls: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    };
+  }
+  if (ddh?.PhieuSoanHangId && tinhTrangPsh === "moitao") {
+    return {
+      label: "Đã tạo PSH (Chưa quét)",
+      cls: "bg-blue-50 text-blue-700 border-blue-200",
+    };
+  }
+  return {
+    label: "Chờ Kho tạo Phiếu soạn",
     cls: "bg-amber-50 text-amber-700 border-amber-200",
-  },
-  DaTaoPSH: {
-    label: "Đã tạo Phiếu soạn",
-    cls: "bg-blue-50 text-blue-700 border-blue-200",
-  },
-  HoanThanh: {
-    label: "Đã xuất hoàn thành",
-    cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  },
-};
+  };
+}
+
+function canCancelDdh(ddh) {
+  const trangThai = String(ddh?.TrangThai || "")
+    .trim()
+    .toLowerCase();
+  const tinhTrangPsh = String(ddh?.TinhTrangPSH || "")
+    .trim()
+    .toLowerCase();
+  if (trangThai === "dahuy" || trangThai === "hoanthanh") return false;
+  if (tinhTrangPsh === "hoanthanh" || tinhTrangPsh === "dangthuchien")
+    return false;
+  return true;
+}
 
 function formatDate(val) {
   if (!val) return "—";
@@ -73,6 +109,14 @@ function formatDateTime(val) {
 
 export default function ProductionOrderListPage() {
   const navigate = useNavigate();
+  const profile = getCurrentProfile();
+  const currentUserName = useMemo(() => {
+    const full = [profile?.HoVaTenLot, profile?.Ten]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    return full || profile?.TenDangNhap || "Người dùng Web";
+  }, [profile]);
 
   const [activeTab, setActiveTab] = useState("lsx"); // "lsx" | "ddh"
   const [loading, setLoading] = useState(false);
@@ -86,6 +130,7 @@ export default function ProductionOrderListPage() {
   // Bottom sheet / Modal xem chi tiết đơn đặt hàng đã tạo
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [selectedDdh, setSelectedDdh] = useState(null);
   const [selectedDdhItems, setSelectedDdhItems] = useState([]);
 
@@ -204,6 +249,52 @@ export default function ProductionOrderListPage() {
     } finally {
       setDetailLoading(false);
     }
+  };
+
+  const handleCancelDdh = (ddh, e) => {
+    if (e) e.stopPropagation();
+    if (!canCancelDdh(ddh)) {
+      message.warning(
+        `Đơn đặt hàng [${ddh?.SoDonDatHang}] không thể hủy ở trạng thái hiện tại!`,
+      );
+      return;
+    }
+
+    Modal.confirm({
+      title: `Hủy đơn đặt hàng [${ddh.SoDonDatHang}]?`,
+      content:
+        "Đơn đặt hàng sẽ chuyển sang trạng thái Đã hủy (nếu có Phiếu soạn ở trạng thái Mới tạo chưa quét cũng sẽ tự động hủy).",
+      okText: "Xác nhận hủy đơn",
+      okButtonProps: { danger: true },
+      cancelText: "Đóng",
+      onOk: async () => {
+        try {
+          setCancelling(true);
+          await cancelMaterialOrderFromLsx(ddh.DonDatHangId, currentUserName);
+          message.success(
+            `Đã hủy đơn đặt hàng [${ddh.SoDonDatHang}] thành công!`,
+          );
+          if (selectedDdh?.DonDatHangId === ddh.DonDatHangId) {
+            setSelectedDdh((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    TrangThai: "DaHuy",
+                    TenTrangThai: "Đã hủy",
+                    PhieuSoanHangId: null,
+                    MaSoPhieuSoan: "",
+                  }
+                : null,
+            );
+          }
+          await fetchDdhList();
+        } catch (err) {
+          message.error(err?.message || "Không thể hủy đơn đặt hàng");
+        } finally {
+          setCancelling(false);
+        }
+      },
+    });
   };
 
   return (
@@ -486,10 +577,8 @@ export default function ProductionOrderListPage() {
               <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
                 {filteredDdh.map((ddh) => {
                   const isCat = ddh.LoaiDatHang === "NguyenLieu";
-                  const st = DDH_STATUS_MAP[ddh.TrangThai] || {
-                    label: ddh.TrangThai || "Chờ xử lý",
-                    cls: "bg-slate-100 text-slate-700 border-slate-200",
-                  };
+                  const st = getDdhStatusBadge(ddh);
+                  const allowCancel = canCancelDdh(ddh);
 
                   return (
                     <article
@@ -503,7 +592,11 @@ export default function ProductionOrderListPage() {
                           handleViewDdhDetail(ddh);
                         }
                       }}
-                      className="flex cursor-pointer flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-egmf-card transition active:scale-[0.99] hover:border-egmf-primary/60 sm:p-4"
+                      className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-3.5 shadow-egmf-card transition active:scale-[0.99] hover:border-egmf-primary/60 sm:p-4 ${
+                        ddh.TrangThai === "DaHuy"
+                          ? "border-slate-200 bg-slate-50/80 opacity-75"
+                          : "border-slate-200/90 bg-white"
+                      }`}
                     >
                       <div>
                         <div className="flex items-start justify-between gap-2">
@@ -530,7 +623,13 @@ export default function ProductionOrderListPage() {
                               </span>
                             </div>
 
-                            <h3 className="mt-1.5 text-base font-extrabold text-slate-900 sm:text-lg">
+                            <h3
+                              className={`mt-1.5 text-base font-extrabold sm:text-lg ${
+                                ddh.TrangThai === "DaHuy"
+                                  ? "text-slate-400 line-through"
+                                  : "text-slate-900"
+                              }`}
+                            >
                               {ddh.SoDonDatHang}
                             </h3>
                           </div>
@@ -599,10 +698,24 @@ export default function ProductionOrderListPage() {
                           {formatDateTime(ddh.NgayDat)}
                         </span>
 
-                        <span className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-egmf-primary-tint px-3 py-1.5 text-xs font-extrabold text-egmf-primary-strong">
-                          <Eye size={15} />
-                          <span>Chi tiết NPL</span>
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {allowCancel && (
+                            <button
+                              type="button"
+                              disabled={cancelling}
+                              onClick={(e) => handleCancelDdh(ddh, e)}
+                              className="inline-flex min-h-[38px] touch-manipulation items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-extrabold text-rose-600 active:scale-95 hover:bg-rose-100"
+                            >
+                              <Ban size={14} />
+                              <span>Hủy đơn</span>
+                            </button>
+                          )}
+
+                          <span className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-egmf-primary-tint px-3 py-1.5 text-xs font-extrabold text-egmf-primary-strong">
+                            <Eye size={15} />
+                            <span>Chi tiết NPL</span>
+                          </span>
+                        </div>
                       </div>
                     </article>
                   );
@@ -644,6 +757,13 @@ export default function ProductionOrderListPage() {
                   </span>
                   <span className="text-xs font-bold text-slate-500">
                     • {selectedDdh.SoLSX}
+                  </span>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${
+                      getDdhStatusBadge(selectedDdh).cls
+                    }`}
+                  >
+                    {getDdhStatusBadge(selectedDdh).label}
                   </span>
                 </div>
                 <h3 className="mt-1 truncate text-base font-extrabold text-slate-900 sm:text-lg">
@@ -842,7 +962,7 @@ export default function ProductionOrderListPage() {
               )}
             </div>
 
-            <div className="flex justify-end border-t border-slate-200 bg-slate-50 px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:px-6 sm:pb-3">
+            <div className="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:flex-row sm:justify-between sm:px-6 sm:pb-3">
               <button
                 type="button"
                 onClick={() => setDetailModalOpen(false)}
@@ -850,6 +970,20 @@ export default function ProductionOrderListPage() {
               >
                 Đóng
               </button>
+
+              {canCancelDdh(selectedDdh) && (
+                <button
+                  type="button"
+                  disabled={cancelling}
+                  onClick={(e) => handleCancelDdh(selectedDdh, e)}
+                  className="inline-flex min-h-[46px] w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-extrabold text-white shadow-xs active:scale-[0.99] hover:bg-rose-700 disabled:opacity-50 sm:w-auto"
+                >
+                  <Ban size={16} />
+                  <span>
+                    {cancelling ? "Đang hủy..." : "Hủy đơn đặt hàng"}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>

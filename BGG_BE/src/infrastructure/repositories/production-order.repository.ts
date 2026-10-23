@@ -63,8 +63,8 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
         lsx.TrangThai,
         lsx.LanPhatLenh,
         (SELECT COUNT(*) FROM dbo.OMM_LenhSanXuat_ChiTiet ct WHERE ct.LSXId = lsx.LSXId) AS SoDongChiTiet,
-        (SELECT COUNT(*) FROM dbo.OMM_DonDatHang_LSX d WHERE d.LSXId = lsx.LSXId AND d.LoaiDatHang = N'NguyenLieu') AS SoDonCat,
-        (SELECT COUNT(*) FROM dbo.OMM_DonDatHang_LSX d WHERE d.LSXId = lsx.LSXId AND d.LoaiDatHang = N'PhuLieu') AS SoDonMay
+        (SELECT COUNT(*) FROM dbo.OMM_DonDatHang_LSX d WHERE d.LSXId = lsx.LSXId AND d.LoaiDatHang = N'NguyenLieu' AND ISNULL(d.TrangThai, N'') <> N'DaHuy') AS SoDonCat,
+        (SELECT COUNT(*) FROM dbo.OMM_DonDatHang_LSX d WHERE d.LSXId = lsx.LSXId AND d.LoaiDatHang = N'PhuLieu' AND ISNULL(d.TrangThai, N'') <> N'DaHuy') AS SoDonMay
       FROM dbo.OMM_LenhSanXuat lsx
       WHERE (@TuNgay IS NULL OR lsx.NgayTao >= @TuNgay)
         AND (@DenNgay IS NULL OR lsx.NgayTao <= @DenNgay)
@@ -128,6 +128,10 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
           d.SoDonDatHang,
           d.LSXId,
           d.LoaiDatHang,
+          CASE
+            WHEN d.LoaiDatHang = N'NguyenLieu' THEN N'Nguyên liệu (Kho Vải)'
+            ELSE N'Phụ liệu (Kho Phụ Liệu)'
+          END AS TenLoaiDatHang,
           d.NguoiDat,
           d.TKId,
           d.NgayDat,
@@ -135,9 +139,16 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
           d.GhiChuLot,
           d.GhiChu,
           d.TrangThai,
+          CASE
+            WHEN d.TrangThai = N'DaHuy' THEN N'Đã hủy'
+            WHEN d.TrangThai = N'HoanThanh' OR ISNULL(psh.TinhTrang, N'') = N'hoanthanh' THEN N'Đã hoàn tất xuất kho'
+            WHEN ISNULL(psh.TinhTrang, N'') = N'dangthuchien' THEN N'Kho đang quét soạn hàng'
+            WHEN d.PhieuSoanHangId IS NOT NULL AND ISNULL(psh.TinhTrang, N'') = N'moitao' THEN N'Đã tạo Phiếu soạn (Chưa quét)'
+            ELSE N'Chờ Kho tạo Phiếu soạn'
+          END AS TenTrangThai,
           d.PhieuSoanHangId,
-          psh.MaSoPhieuSoan,
-          psh.TinhTrang AS TinhTrangPSH,
+          CASE WHEN ISNULL(psh.TinhTrang, N'') = N'huy' THEN N'' ELSE ISNULL(psh.MaSoPhieuSoan, N'') END AS MaSoPhieuSoan,
+          ISNULL(psh.TinhTrang, N'') AS TinhTrangPSH,
           (SELECT COUNT(*) FROM dbo.OMM_DonDatHang_LSX_ChiTiet ct WHERE ct.DonDatHangId = d.DonDatHangId) AS SoMatHang
         FROM dbo.OMM_DonDatHang_LSX d
         LEFT JOIN dbo.WH_PhieuSoanHang psh ON d.PhieuSoanHangId = psh.PhieuSoanHangId
@@ -150,6 +161,42 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
       chiTiet: chiTietRes.recordset,
       donDatHangList: donDatHangRes.recordset,
     };
+  }
+
+  private isNguyenLieuGroup(loaiNPL?: string): boolean {
+    if (!loaiNPL || !loaiNPL.trim()) return false;
+    const s = loaiNPL.trim().toUpperCase();
+    return (
+      s.includes('NGUYÊN LIỆU') ||
+      s.includes('NGUYEN LIEU') ||
+      s.includes('VẢI') ||
+      s.includes('VAI') ||
+      s.includes('MEX')
+    );
+  }
+
+  private normalizeLoaiNPL(rawLoaiNPL?: string, maChungLoai?: string): string {
+    if (this.isNguyenLieuGroup(rawLoaiNPL)) {
+      return 'NGUYÊN LIỆU';
+    }
+
+    if (
+      (!rawLoaiNPL || !rawLoaiNPL.trim()) &&
+      maChungLoai &&
+      maChungLoai.trim()
+    ) {
+      const mc = maChungLoai.trim().toUpperCase();
+      if (
+        mc.startsWith('N.') ||
+        mc.includes('VẢI') ||
+        mc.includes('VAI') ||
+        mc.includes('MEX')
+      ) {
+        return 'NGUYÊN LIỆU';
+      }
+    }
+
+    return 'PHỤ LIỆU';
   }
 
   private matchesColor(
@@ -169,25 +216,39 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
       return true;
     }
 
-    const codeTokens = rawCode
-      .split(/[\s,;/|]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    if (rawCode) {
+      if (rawCode === 'ALL') return true;
 
-    if (
-      codeTokens.length > 0 &&
-      (codeTokens.includes(rowTenMau) ||
-        (rowCodeMau && codeTokens.includes(rowCodeMau)))
-    ) {
-      return true;
+      const codeTokens = rawCode
+        .split(/[\s,;/|]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (
+        codeTokens.length > 0 &&
+        ((rowTenMau && codeTokens.includes(rowTenMau)) ||
+          (rowCodeMau && codeTokens.includes(rowCodeMau)))
+      ) {
+        return true;
+      }
+
+      if (
+        (rowTenMau && rawCode === rowTenMau) ||
+        (rowCodeMau && rawCode === rowCodeMau)
+      ) {
+        return true;
+      }
     }
 
-    if (
-      rawMau &&
-      ((rowTenMau && rawMau.includes(rowTenMau)) ||
-        (rowCodeMau && rawMau.includes(rowCodeMau)))
-    ) {
-      return true;
+    if (rawMau) {
+      if (rawMau === 'ALL') return true;
+
+      if (
+        (rowTenMau && rawMau.includes(rowTenMau)) ||
+        (rowCodeMau && rawMau.includes(rowCodeMau))
+      ) {
+        return true;
+      }
     }
 
     return false;
@@ -203,6 +264,9 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
     if (!rawSize && !rawPhoiSize) {
       return true;
     }
+    if (rawSize === 'ALL' || rawSize === 'FREE') {
+      return true;
+    }
 
     const rowSize = (row.tenSize || '').trim().toUpperCase();
     if (!rowSize) {
@@ -212,6 +276,17 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
     if (rawSize && rawSize === rowSize) {
       return true;
     }
+
+    if (rawSize) {
+      const sizeTokens = rawSize
+        .split(/[,;/|]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (sizeTokens.includes(rowSize)) {
+        return true;
+      }
+    }
+
     if (rawPhoiSize && rawPhoiSize.includes(rowSize)) {
       return true;
     }
@@ -233,23 +308,31 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
       new Set(validRows.map((r) => Number(r.poId))),
     );
 
-    const filterLoai =
-      dto.loaiDatHang === 'NguyenLieu'
-        ? `AND (
-            ISNULL(LoaiNPL, N'') LIKE N'%NGUYÊN LIỆU%'
-            OR ISNULL(LoaiNPL, N'') LIKE N'%NGUYEN LIEU%'
-            OR ISNULL(LoaiNPL, N'') LIKE N'%VẢI%'
-            OR ISNULL(LoaiNPL, N'') LIKE N'%VAI%'
-            OR ISNULL(LoaiNPL, N'') LIKE N'%MEX%'
-          )`
-        : `AND (
-            ISNULL(LoaiNPL, N'') NOT LIKE N'%NGUYÊN LIỆU%'
-            AND ISNULL(LoaiNPL, N'') NOT LIKE N'%NGUYEN LIEU%'
-            AND ISNULL(LoaiNPL, N'') NOT LIKE N'%VẢI%'
-            AND ISNULL(LoaiNPL, N'') NOT LIKE N'%VAI%'
-          )`;
+    const loaiFilter = (dto.loaiDatHang || 'ALL').trim();
+    let filterLoaiSql = '';
+    if (loaiFilter.toLowerCase() === 'nguyenlieu') {
+      filterLoaiSql = `
+        AND (
+          ISNULL(LoaiNPL, N'') COLLATE Latin1_General_CI_AI LIKE N'%NGUYEN LIEU%'
+          OR ISNULL(LoaiNPL, N'') COLLATE Latin1_General_CI_AI LIKE N'%VAI%'
+          OR ISNULL(LoaiNPL, N'') COLLATE Latin1_General_CI_AI LIKE N'%MEX%'
+        )
+      `;
+    } else if (loaiFilter.toLowerCase() === 'phulieu') {
+      filterLoaiSql = `
+        AND (
+          ISNULL(LoaiNPL, N'') COLLATE Latin1_General_CI_AI LIKE N'%PHU LIEU%'
+          OR (
+            ISNULL(LoaiNPL, N'') COLLATE Latin1_General_CI_AI NOT LIKE N'%NGUYEN LIEU%'
+            AND ISNULL(LoaiNPL, N'') COLLATE Latin1_General_CI_AI NOT LIKE N'%VAI%'
+            AND ISNULL(LoaiNPL, N'') COLLATE Latin1_General_CI_AI NOT LIKE N'%MEX%'
+          )
+        )
+      `;
+    }
 
     const results: any[] = [];
+    const lotText = (dto.ghiChuLot || '').trim();
 
     for (const poId of distinctPoIds) {
       const poRows = validRows.filter((r) => Number(r.poId) === poId);
@@ -259,30 +342,39 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
         SELECT 
           PDMId,
           POId,
-          VTId,
-          ISNULL(NULLIF(LTRIM(RTRIM(Item)), N''), ISNULL(MaChungLoai, N'')) AS MaVatTu,
-          ISNULL(NULLIF(LTRIM(RTRIM(DienGiai)), N''), ISNULL(TenChungLoai, N'')) AS TenVatTu,
+          ISNULL(VTId, 0) AS VTId,
           ISNULL(MaChungLoai, N'') AS MaChungLoai,
           ISNULL(TenChungLoai, N'') AS TenChungLoai,
+          ISNULL(Item, N'') AS Item,
           ISNULL(MaMau, N'') AS MaMau,
+          ISNULL(DienGiai, N'') AS DienGiai,
           ISNULL(MauSanPham, N'') AS MauSanPham,
           ISNULL(CodeMauSP, N'') AS CodeMauSP,
           ISNULL(PhoiSize, N'') AS PhoiSize,
           ISNULL(Size, N'') AS Size,
           ISNULL(DVT, N'') AS DVT,
           ISNULL(LoaiNPL, N'') AS LoaiNPL,
-          COALESCE(NULLIF(DinhMuc, 0), NULLIF(DinhMucChuan, 0), NULLIF(DinhMucKhachHang, 0), 0) AS DinhMuc,
-          ISNULL(QuyCach, N'') AS GhiChu
+          COALESCE(NULLIF(DinhMuc, 0), NULLIF(DinhMucChuan, 0), NULLIF(DinhMucKhachHang, 0), 0) AS DinhMucVal,
+          ISNULL(QuyCach, N'') AS QuyCach
         FROM dbo.OMM_PO_BangDinhMuc
-        WHERE POId = @POId ${filterLoai}
+        WHERE POId = @POId ${filterLoaiSql}
         ORDER BY LoaiNPL, PDMId
       `);
 
       for (const bom of bomRes.recordset) {
+        const dinhMuc = Number(bom.DinhMucVal || 0);
+        if (dinhMuc <= 0) {
+          continue;
+        }
+
+        const bcdCodeMauSP = (bom.CodeMauSP || '').trim();
+        const bcdMauSP = (bom.MauSanPham || '').trim();
+        const bcdSize = (bom.Size || '').trim();
+
         const matchingRows = poRows.filter(
           (row) =>
-            this.matchesColor(bom.CodeMauSP, bom.MauSanPham, row) &&
-            this.matchesSize(bom.Size, bom.PhoiSize, row),
+            this.matchesColor(bcdCodeMauSP, bcdMauSP, row) &&
+            this.matchesSize(bcdSize, bom.PhoiSize, row),
         );
 
         const soLuongSP = matchingRows.reduce(
@@ -294,35 +386,70 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
           continue;
         }
 
-        const dinhMuc = Number(bom.DinhMuc || 0);
         const soLuongYeuCau = Math.round(dinhMuc * soLuongSP * 10000) / 10000;
 
-        const ghiChuParts: string[] = [];
-        if (bom.CodeMauSP) ghiChuParts.push(`Màu SP: ${bom.CodeMauSP}`);
-        if (bom.Size) ghiChuParts.push(`Size: ${bom.Size}`);
-        if (bom.GhiChu) ghiChuParts.push(bom.GhiChu);
+        const itemCode = (bom.Item || '').trim();
+        const maMau = (bom.MaMau || '').trim();
+        const maChungLoai = (bom.MaChungLoai || '').trim();
+        const dienGiai = (bom.DienGiai || '').trim();
+        const rawLoaiNPL = (bom.LoaiNPL || '').trim();
+
+        const loaiNPLGroup = this.normalizeLoaiNPL(rawLoaiNPL, maChungLoai);
+
+        let maVatTuDisplay = itemCode || maChungLoai;
+        if (
+          maMau &&
+          !maVatTuDisplay.toUpperCase().endsWith(`(${maMau.toUpperCase()})`)
+        ) {
+          maVatTuDisplay = `${maVatTuDisplay} (${maMau})`.trim();
+        }
+        if (maVatTuDisplay.length > 50) {
+          maVatTuDisplay = maVatTuDisplay.substring(0, 50);
+        }
+
+        let tenVatTuDisplay = dienGiai;
+        if (
+          maChungLoai &&
+          !tenVatTuDisplay.toUpperCase().startsWith(maChungLoai.toUpperCase())
+        ) {
+          tenVatTuDisplay = tenVatTuDisplay
+            ? `${maChungLoai} - ${tenVatTuDisplay}`
+            : maChungLoai;
+        }
+        if (bcdSize && bcdSize.toUpperCase() !== 'ALL') {
+          tenVatTuDisplay = `${tenVatTuDisplay} [Cỡ: ${bcdSize}]`.trim();
+        }
+        if (tenVatTuDisplay.length > 250) {
+          tenVatTuDisplay = tenVatTuDisplay.substring(0, 250);
+        }
 
         results.push({
           PDMId: bom.PDMId,
           POId: bom.POId,
-          VTId: bom.VTId,
-          MaVatTu: bom.MaVatTu,
-          TenVatTu: bom.TenVatTu,
-          MaChungLoai: bom.MaChungLoai,
-          MaMau: bom.MaMau,
-          CodeMauSP: bom.CodeMauSP,
-          Size: bom.Size,
-          DVT: bom.DVT,
-          LoaiNPL: bom.LoaiNPL,
+          VTId: Number(bom.VTId || 0),
+          MaVatTu: maVatTuDisplay,
+          TenVatTu: tenVatTuDisplay,
+          MaChungLoai: maChungLoai,
+          MaMau: maMau,
+          CodeMauSP: bcdCodeMauSP,
+          Size: bcdSize,
+          DVT: (bom.DVT || '').trim(),
+          LoaiNPL: loaiNPLGroup,
           DinhMuc: dinhMuc,
           SoLuongSanPham: soLuongSP,
           SoLuongYeuCau: soLuongYeuCau,
-          GhiChu: ghiChuParts.join(' | '),
+          GhiChuLot: lotText,
+          GhiChu: lotText,
         });
       }
     }
 
-    return results;
+    return results.sort((a, b) => {
+      const groupA = a.LoaiNPL === 'NGUYÊN LIỆU' ? 0 : 1;
+      const groupB = b.LoaiNPL === 'NGUYÊN LIỆU' ? 0 : 1;
+      if (groupA !== groupB) return groupA - groupB;
+      return String(a.TenVatTu || '').localeCompare(String(b.TenVatTu || ''));
+    });
   }
 
   async taoDonDatHangVatTu(dto: CreateMaterialOrderDto): Promise<any> {
@@ -340,6 +467,23 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
       );
     }
 
+    // Phân nhóm vật tư đã chọn theo Nguyên liệu (Kho Vải) và Phụ liệu (Kho Phụ Liệu) giống Desktop
+    const groupsByKho = new Map<'NguyenLieu' | 'PhuLieu', typeof validItems>();
+    for (const item of validItems) {
+      let loaiKho: 'NguyenLieu' | 'PhuLieu';
+      if (item.loaiNPL && item.loaiNPL.trim()) {
+        loaiKho = this.isNguyenLieuGroup(item.loaiNPL)
+          ? 'NguyenLieu'
+          : 'PhuLieu';
+      } else {
+        loaiKho = dto.loaiDatHang === 'PhuLieu' ? 'PhuLieu' : 'NguyenLieu';
+      }
+      if (!groupsByKho.has(loaiKho)) {
+        groupsByKho.set(loaiKho, []);
+      }
+      groupsByKho.get(loaiKho)!.push(item);
+    }
+
     const pool = await this.databaseService.getPool();
     const tx = new sql.Transaction(pool);
 
@@ -354,88 +498,109 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
       const seqRes = await new sql.Request(tx)
         .input('Prefix', sql.NVarChar(30), `${prefix}%`)
         .query(`
-          SELECT ISNULL(MAX(TRY_CAST(RIGHT(SoDonDatHang, 4) AS INT)), 0) + 1 AS NextSeq
+          SELECT ISNULL(MAX(TRY_CAST(RIGHT(SoDonDatHang, 4) AS INT)), 0) AS MaxSeq
           FROM dbo.OMM_DonDatHang_LSX WITH (UPDLOCK, HOLDLOCK)
           WHERE SoDonDatHang LIKE @Prefix
         `);
 
-      const nextSeq = Number(seqRes.recordset[0]?.NextSeq ?? 1);
-      const soDonDatHang = `${prefix}${String(nextSeq).padStart(4, '0')}`;
+      let currentSeq = Number(seqRes.recordset[0]?.MaxSeq ?? 0);
+      const createdOrders: Array<{
+        donDatHangId: number;
+        soDonDatHang: string;
+        loaiDatHang: string;
+        soMatHang: number;
+      }> = [];
 
-      const insertHeaderReq = new sql.Request(tx);
-      insertHeaderReq.input('SoDDH', sql.NVarChar(50), soDonDatHang);
-      insertHeaderReq.input('LSXId', sql.BigInt, dto.lsxId);
-      insertHeaderReq.input(
-        'Loai',
-        sql.NVarChar(50),
-        dto.loaiDatHang || 'NguyenLieu',
-      );
-      insertHeaderReq.input('NguoiDat', sql.NVarChar(150), dto.nguoiDat || '');
-      insertHeaderReq.input('TKId', sql.BigInt, dto.tkId || null);
-      insertHeaderReq.input(
-        'NgayGiao',
-        sql.DateTime,
-        dto.ngayCanGiao ? new Date(dto.ngayCanGiao) : null,
-      );
-      insertHeaderReq.input('Lot', sql.NVarChar(500), dto.ghiChuLot || '');
-      insertHeaderReq.input('GhiChu', sql.NVarChar(500), dto.ghiChu || '');
+      for (const [loaiKho, groupItems] of groupsByKho.entries()) {
+        currentSeq += 1;
+        const soDonDatHang = `${prefix}${String(currentSeq).padStart(4, '0')}`;
 
-      const headerInsertRes = await insertHeaderReq.query(`
-        INSERT INTO dbo.OMM_DonDatHang_LSX (
-          SoDonDatHang, LSXId, LoaiDatHang, NguoiDat, TKId, NgayDat,
-          NgayCanGiao, GhiChuLot, GhiChu, TrangThai
-        )
-        VALUES (
-          @SoDDH, @LSXId, @Loai, @NguoiDat, @TKId, GETDATE(),
-          @NgayGiao, @Lot, @GhiChu, N'ChoSoanHang'
+        const insertHeaderReq = new sql.Request(tx);
+        insertHeaderReq.input('SoDDH', sql.NVarChar(50), soDonDatHang);
+        insertHeaderReq.input('LSXId', sql.BigInt, dto.lsxId);
+        insertHeaderReq.input('Loai', sql.NVarChar(50), loaiKho);
+        insertHeaderReq.input(
+          'NguoiDat',
+          sql.NVarChar(150),
+          dto.nguoiDat || '',
         );
-        SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS DonDatHangId;
-      `);
-
-      const donDatHangId = Number(headerInsertRes.recordset[0].DonDatHangId);
-
-      for (const item of validItems) {
-        const detailReq = new sql.Request(tx);
-        detailReq.input('DDHId', sql.BigInt, donDatHangId);
-        detailReq.input(
-          'VTId',
-          sql.BigInt,
-          item.vtId != null ? Number(item.vtId) : null,
+        insertHeaderReq.input('TKId', sql.BigInt, dto.tkId || null);
+        insertHeaderReq.input(
+          'NgayGiao',
+          sql.DateTime,
+          dto.ngayCanGiao ? new Date(dto.ngayCanGiao) : null,
         );
-        detailReq.input('MaVT', sql.NVarChar(100), item.maVatTu || '');
-        detailReq.input('TenVT', sql.NVarChar(500), item.tenVatTu || '');
-        detailReq.input('DVT', sql.NVarChar(50), item.dvt || '');
-        detailReq.input('LoaiNPL', sql.NVarChar(100), item.loaiNPL || '');
-        detailReq.input('DM', sql.Float, Number(item.dinhMuc || 0));
-        detailReq.input(
-          'SLSP',
-          sql.Int,
-          Math.round(Number(item.soLuongSanPham || 0)),
-        );
-        detailReq.input('SLYC', sql.Float, Number(item.soLuongYeuCau || 0));
-        detailReq.input('GhiChu', sql.NVarChar(500), item.ghiChu || '');
+        insertHeaderReq.input('Lot', sql.NVarChar(500), dto.ghiChuLot || '');
+        insertHeaderReq.input('GhiChu', sql.NVarChar(500), dto.ghiChu || '');
 
-        await detailReq.query(`
-          INSERT INTO dbo.OMM_DonDatHang_LSX_ChiTiet (
-            DonDatHangId, VTId, MaVatTu, TenVatTu, DVT, LoaiNPL,
-            DinhMuc, SoLuongSanPham, SoLuongYeuCau, GhiChu
+        const headerInsertRes = await insertHeaderReq.query(`
+          INSERT INTO dbo.OMM_DonDatHang_LSX (
+            SoDonDatHang, LSXId, LoaiDatHang, NguoiDat, TKId, NgayDat,
+            NgayCanGiao, GhiChuLot, GhiChu, TrangThai
           )
           VALUES (
-            @DDHId, @VTId, @MaVT, @TenVT, @DVT, @LoaiNPL,
-            @DM, @SLSP, @SLYC, @GhiChu
-          )
+            @SoDDH, @LSXId, @Loai, @NguoiDat, @TKId, GETDATE(),
+            @NgayGiao, @Lot, @GhiChu, N'ChoSoanHang'
+          );
+          SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS DonDatHangId;
         `);
+
+        const donDatHangId = Number(headerInsertRes.recordset[0].DonDatHangId);
+
+        for (const item of groupItems) {
+          const detailReq = new sql.Request(tx);
+          const ghiChuItem =
+            (item.ghiChuLot || item.ghiChu || dto.ghiChuLot || '').trim();
+          detailReq.input('DDHId', sql.BigInt, donDatHangId);
+          detailReq.input(
+            'VTId',
+            sql.BigInt,
+            item.vtId != null ? Number(item.vtId) : 0,
+          );
+          detailReq.input('MaVT', sql.NVarChar(100), item.maVatTu || '');
+          detailReq.input('TenVT', sql.NVarChar(500), item.tenVatTu || '');
+          detailReq.input('DVT', sql.NVarChar(50), item.dvt || '');
+          detailReq.input('LoaiNPL', sql.NVarChar(100), item.loaiNPL || '');
+          detailReq.input('DM', sql.Float, Number(item.dinhMuc || 0));
+          detailReq.input(
+            'SLSP',
+            sql.Int,
+            Math.round(Number(item.soLuongSanPham || 0)),
+          );
+          detailReq.input('SLYC', sql.Float, Number(item.soLuongYeuCau || 0));
+          detailReq.input('GhiChu', sql.NVarChar(500), ghiChuItem);
+
+          await detailReq.query(`
+            INSERT INTO dbo.OMM_DonDatHang_LSX_ChiTiet (
+              DonDatHangId, VTId, MaVatTu, TenVatTu, DVT, LoaiNPL,
+              DinhMuc, SoLuongSanPham, SoLuongYeuCau, GhiChu
+            )
+            VALUES (
+              @DDHId, @VTId, @MaVT, @TenVT, @DVT, @LoaiNPL,
+              @DM, @SLSP, @SLYC, @GhiChu
+            )
+          `);
+        }
+
+        createdOrders.push({
+          donDatHangId,
+          soDonDatHang,
+          loaiDatHang: loaiKho,
+          soMatHang: groupItems.length,
+        });
       }
 
       await tx.commit();
 
+      const lastOrder = createdOrders[createdOrders.length - 1];
       return {
-        donDatHangId,
-        soDonDatHang,
+        donDatHangId: lastOrder.donDatHangId,
+        soDonDatHang: createdOrders.map((o) => o.soDonDatHang).join(', '),
         lsxId: dto.lsxId,
-        loaiDatHang: dto.loaiDatHang,
+        loaiDatHang: lastOrder.loaiDatHang,
         trangThai: 'ChoSoanHang',
         soMatHang: validItems.length,
+        createdOrders,
       };
     } catch (error) {
       await tx.rollback();
@@ -465,6 +630,10 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
         lsx.ToMay,
         lsx.NhaCat,
         d.LoaiDatHang,
+        CASE
+          WHEN d.LoaiDatHang = N'NguyenLieu' THEN N'Nguyên liệu (Kho Vải)'
+          ELSE N'Phụ liệu (Kho Phụ Liệu)'
+        END AS TenLoaiDatHang,
         d.NguoiDat,
         d.TKId,
         d.NgayDat,
@@ -472,9 +641,16 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
         d.GhiChuLot,
         d.GhiChu,
         d.TrangThai,
+        CASE
+          WHEN d.TrangThai = N'DaHuy' THEN N'Đã hủy'
+          WHEN d.TrangThai = N'HoanThanh' OR ISNULL(psh.TinhTrang, N'') = N'hoanthanh' THEN N'Đã hoàn tất xuất kho'
+          WHEN ISNULL(psh.TinhTrang, N'') = N'dangthuchien' THEN N'Kho đang quét soạn hàng'
+          WHEN d.PhieuSoanHangId IS NOT NULL AND ISNULL(psh.TinhTrang, N'') = N'moitao' THEN N'Đã tạo Phiếu soạn (Chưa quét)'
+          ELSE N'Chờ Kho tạo Phiếu soạn'
+        END AS TenTrangThai,
         d.PhieuSoanHangId,
-        psh.MaSoPhieuSoan,
-        psh.TinhTrang AS TinhTrangPSH,
+        CASE WHEN ISNULL(psh.TinhTrang, N'') = N'huy' THEN N'' ELSE ISNULL(psh.MaSoPhieuSoan, N'') END AS MaSoPhieuSoan,
+        ISNULL(psh.TinhTrang, N'') AS TinhTrangPSH,
         (SELECT COUNT(*) FROM dbo.OMM_DonDatHang_LSX_ChiTiet ct WHERE ct.DonDatHangId = d.DonDatHangId) AS SoMatHang
       FROM dbo.OMM_DonDatHang_LSX d
       INNER JOIN dbo.OMM_LenhSanXuat lsx ON d.LSXId = lsx.LSXId
@@ -497,13 +673,24 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
       .query(`
         SELECT 
           d.*,
+          CASE
+            WHEN d.LoaiDatHang = N'NguyenLieu' THEN N'Nguyên liệu (Kho Vải)'
+            ELSE N'Phụ liệu (Kho Phụ Liệu)'
+          END AS TenLoaiDatHang,
+          CASE
+            WHEN d.TrangThai = N'DaHuy' THEN N'Đã hủy'
+            WHEN d.TrangThai = N'HoanThanh' OR ISNULL(psh.TinhTrang, N'') = N'hoanthanh' THEN N'Đã hoàn tất xuất kho'
+            WHEN ISNULL(psh.TinhTrang, N'') = N'dangthuchien' THEN N'Kho đang quét soạn hàng'
+            WHEN d.PhieuSoanHangId IS NOT NULL AND ISNULL(psh.TinhTrang, N'') = N'moitao' THEN N'Đã tạo Phiếu soạn (Chưa quét)'
+            ELSE N'Chờ Kho tạo Phiếu soạn'
+          END AS TenTrangThai,
           lsx.SoLSX,
           lsx.MaHang,
           lsx.KhachHang,
           lsx.ToMay,
           lsx.NhaCat,
-          psh.MaSoPhieuSoan,
-          psh.TinhTrang AS TinhTrangPSH
+          CASE WHEN ISNULL(psh.TinhTrang, N'') = N'huy' THEN N'' ELSE ISNULL(psh.MaSoPhieuSoan, N'') END AS MaSoPhieuSoan,
+          ISNULL(psh.TinhTrang, N'') AS TinhTrangPSH
         FROM dbo.OMM_DonDatHang_LSX d
         INNER JOIN dbo.OMM_LenhSanXuat lsx ON d.LSXId = lsx.LSXId
         LEFT JOIN dbo.WH_PhieuSoanHang psh ON d.PhieuSoanHangId = psh.PhieuSoanHangId
@@ -540,5 +727,106 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
       header: headerRes.recordset[0] || null,
       chiTiet: chiTietRes.recordset,
     };
+  }
+
+  async huyDonDatHangLSX(
+    donDatHangId: number,
+    nguoiHuy?: string,
+  ): Promise<any> {
+    if (!donDatHangId || Number(donDatHangId) <= 0) {
+      throw new BadRequestException('Mã đơn đặt hàng không hợp lệ');
+    }
+
+    const pool = await this.databaseService.getPool();
+    const tx = new sql.Transaction(pool);
+
+    await tx.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
+
+    try {
+      const checkRes = await new sql.Request(tx)
+        .input('DonDatHangId', sql.BigInt, Number(donDatHangId))
+        .query(`
+          SELECT 
+            d.DonDatHangId,
+            d.SoDonDatHang,
+            d.TrangThai,
+            d.PhieuSoanHangId,
+            psh.MaSoPhieuSoan,
+            psh.TinhTrang AS TinhTrangPSH
+          FROM dbo.OMM_DonDatHang_LSX d WITH (UPDLOCK, HOLDLOCK)
+          LEFT JOIN dbo.WH_PhieuSoanHang psh WITH (UPDLOCK, HOLDLOCK)
+            ON psh.PhieuSoanHangId = d.PhieuSoanHangId
+          WHERE d.DonDatHangId = @DonDatHangId
+        `);
+
+      if (!checkRes.recordset.length) {
+        throw new BadRequestException(
+          'Không tìm thấy Đơn đặt hàng trên hệ thống.',
+        );
+      }
+
+      const row = checkRes.recordset[0];
+      const soDDH = String(row.SoDonDatHang || '');
+      const trangThai = String(row.TrangThai || '').trim();
+      const pshId =
+        row.PhieuSoanHangId != null ? Number(row.PhieuSoanHangId) : null;
+      const maPSH = String(row.MaSoPhieuSoan || '');
+      const tinhTrangPSH = String(row.TinhTrangPSH || '')
+        .trim()
+        .toLowerCase();
+
+      if (trangThai.toLowerCase() === 'dahuy') {
+        throw new BadRequestException(
+          `Đơn đặt hàng [${soDDH}] đã ở trạng thái Đã hủy.`,
+        );
+      }
+
+      if (
+        trangThai.toLowerCase() === 'hoanthanh' ||
+        tinhTrangPSH === 'hoanthanh'
+      ) {
+        throw new BadRequestException(
+          `Đơn đặt hàng [${soDDH}] đã hoàn tất xuất kho (PSH: ${maPSH}), không thể hủy!`,
+        );
+      }
+
+      if (tinhTrangPSH === 'dangthuchien') {
+        throw new BadRequestException(
+          `Kho đang thực hiện quét soạn hàng cho phiếu [${maPSH}] của đơn [${soDDH}], không thể hủy!`,
+        );
+      }
+
+      // Nếu đã tạo PSH ở trạng thái 'moitao' thì tự động hủy luôn PSH đó
+      if (pshId && pshId > 0 && tinhTrangPSH !== 'huy') {
+        await new sql.Request(tx)
+          .input('PSHId', sql.BigInt, pshId)
+          .query(`
+            UPDATE dbo.WH_PhieuSoanHang
+            SET TinhTrang = N'huy'
+            WHERE PhieuSoanHangId = @PSHId
+          `);
+      }
+
+      await new sql.Request(tx)
+        .input('DonDatHangId', sql.BigInt, Number(donDatHangId))
+        .query(`
+          UPDATE dbo.OMM_DonDatHang_LSX
+          SET TrangThai = N'DaHuy',
+              PhieuSoanHangId = NULL
+          WHERE DonDatHangId = @DonDatHangId
+        `);
+
+      await tx.commit();
+
+      return {
+        donDatHangId: Number(donDatHangId),
+        soDonDatHang: soDDH,
+        trangThai: 'DaHuy',
+        nguoiHuy: nguoiHuy || '',
+      };
+    } catch (error) {
+      await tx.rollback();
+      throw error;
+    }
   }
 }
