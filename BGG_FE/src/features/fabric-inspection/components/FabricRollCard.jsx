@@ -1,106 +1,235 @@
-import { useState } from "react";
-import { Modal, QRCode } from "antd";
+import { useEffect, useState } from "react";
+//ICON
 import {
-  CheckCheck,
   ClipboardList,
-  FilePenLine,
   Layers3,
-  ListChecks,
   Package,
-  Plus,
   Ruler,
-  Trash2,
   X,
+  Trash2,
+  Construction,
 } from "lucide-react";
 
+//DATA
+import { ROLL_ACTIONS, ACTION_STYLES } from "../data/rollActions";
+
+//API
+import {
+  themLoiCay,
+  doKho,
+  loadKetQuaDoKho,
+  capNhatGhiChuHuongXuLyCayVai,
+  xoaCayVai,
+  xongCayVai,
+} from "../api/fabric-inspections.api";
+
+//COMPONENT
+import { Modal, QRCode } from "antd";
+import {
+  showSuccessToast,
+  showErrorToast,
+} from "../../../shared/components/ui/CustomToast";
+
+//FORM THÊM LỖI
 import AddDefectForm from "./AddFabricDefectForm";
+//FORM ĐO KHỔ
+import FabricWidthForm from "./FabricWidthForm";
+//CẬP NHẬT
+import FabricNoteForm from "./FabricNoteForm";
+//XONG CÂY
+import CompleteFabricRollForm from "./CompleteFabricRollForm";
+import { getCurrentUser } from "../../../shared/auth/session";
 
-const display = (value) =>
-  value === null || value === undefined || value === "" ? "—" : String(value);
+export function FabricRollCard({ item, index, onReload }) {
+  const user = getCurrentUser();
 
-const ROLL_ACTIONS = [
-  { key: "add-defect", label: "Thêm lỗi", icon: Plus, tone: "primary" },
-  { key: "measure", label: "Đo khổ", icon: Ruler },
-  { key: "complete", label: "Xong cây", icon: CheckCheck, tone: "success" },
-  { key: "notes", label: "Ghi chú", icon: FilePenLine },
-  { key: "fabric-edge", label: "Loại biên", icon: ListChecks },
-  { key: "delete", label: "Xóa", icon: Trash2, tone: "quiet" },
-];
-
-const ACTION_STYLES = {
-  default:
-    "border-egmf-border bg-white text-egmf-ink-secondary hover:border-egmf-primary-border hover:bg-egmf-primary-hover-soft hover:text-egmf-primary",
-  primary:
-    "border-egmf-primary bg-egmf-primary text-white hover:bg-egmf-primary-strong",
-  success:
-    "border-egmf-success-soft bg-white text-egmf-success hover:border-egmf-success hover:bg-egmf-success-soft",
-  quiet:
-    "border-egmf-border bg-white text-egmf-muted hover:border-egmf-primary-border hover:bg-egmf-primary-hover-soft hover:text-egmf-primary",
-};
-
-export function FabricRollCard({ item, index }) {
-  console.log(item);
   const initialFormData = {
     "add-defect": {
-      CTId: item?.CTId ?? null,
+      CTId: Number(item?.CTId) ?? null,
       MaLoi: "",
       TenLoi: "",
-      ViTriKiem: "",
       SoDiem: 1,
-      TuViTri: 0,
-      DenViTri: 0,
       SoLoi: null,
       TongDiem: item?.TongDiem ?? 0,
       SoDiemTrungBinh: item?.DiemTrungBinh ?? 0,
-      SoYard: 0,
+    },
+    measure: {
+      "ĐẦU CÂY": {
+        CTId: Number(item?.CTId) ?? null,
+        ViTri: "",
+        KhoCM: 0,
+        KhoIN: 0,
+      },
+      "GIỮA CÂY": {
+        CTId: Number(item?.CTId) ?? null,
+        ViTri: "",
+        KhoCM: 0,
+        KhoIN: 0,
+      },
+      "CUỐI CÂY": {
+        CTId: Number(item?.CTId) ?? null,
+        ViTri: "",
+        KhoCM: 0,
+        KhoIN: 0,
+      },
+    },
+    update: {
+      CTId: Number(item?.CTId) ?? null,
+      GhiChu: "",
+      HuongXuLy: "",
+    },
+    complete: {
+      CTId: item?.CTId != null ? Number(item.CTId) : null,
+      GhiChu: "",
+      KetQuaKiem: null,
+      KetQuaDoAm: false,
+      DoAm: null,
+      DiemTrungBinh: null,
+      SoLuongThucTe: null,
+      NguoiXongCay: `${user.data.HoVaTenLot} ${user.data.Ten}`,
+      TrongLuongVai: null,
     },
   };
+
+  //console.log(item);
+
   const [open, setOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
 
   if (!item) return null;
 
-  const materialDetails = [
-    { label: "Mã hàng", value: item.MaHang },
-    { label: "Mùa", value: item.Mua },
-    { label: "Số roll", value: item.SoRoll },
-    { label: "LOT", value: item.Lot },
-  ];
-  const measurements = [
-    { label: "Khổ chứng từ", value: item.KhoVaiTenTem },
-    { label: "Khổ thực tế", value: item.KhoVaiThucTe },
-    { label: "SL chứng từ", value: item.SoLuongChungTu },
-    { label: "SL thực tế", value: item.SoLuongThucTe },
-  ];
-  const resultDetails = [
-    { label: "Điểm trung bình", value: item.DiemTrungBinh, strong: true },
-    { label: "Số cây", value: item.SoCay, strong: true },
-    { label: "Người tạo", value: item.TenNguoiTao },
-  ];
+  const fetchKQDoKho = async () => {
+    try {
+      if (!item?.CTId) throw new Error("Không tồn tại CTId");
 
-  const isComplete = String(item.KQKiem ?? "")
-    .toLocaleLowerCase("vi-VN")
-    .includes("xong");
+      const response = await loadKetQuaDoKho(Number(item.CTId));
 
-  const handleActionClick = (action) => {
+      if (!response?.success) return;
+
+      const update = structuredClone(initialFormData.measure);
+
+      response.data.forEach((row) => {
+        const viTri = row.ViTri.trim();
+
+        if (update[viTri]) {
+          update[viTri] = {
+            ...update[viTri],
+            ViTri: viTri,
+            KhoCM: row.KhoCM,
+            KhoIN: row.KhoIN,
+          };
+        }
+      });
+
+      setFormData(update);
+    } catch (error) {
+      console.error(error);
+      showErrorToast(error.message || "Có lỗi xảy ra");
+    }
+  };
+
+  const handleActionClick = async (action) => {
     setSelectedAction(action);
 
     const data = initialFormData[action.key];
-    if (data) {
-      setFormData({ ...data });
-    } else {
-      setFormData({});
-    }
 
+    // Khởi tạo formData mặc định
+    setFormData(data ? { ...data } : {});
     setOpen(true);
+
+    // Nếu chọn đo khổ thì lấy dữ liệu từ Database
+    if (action.key === "measure") {
+      await fetchKQDoKho();
+    }
   };
 
-  const handleSubmit = () => {
-    console.log("submit");
+  const handleSubmit = async () => {
+    try {
+      let response;
+
+      switch (selectedAction?.key) {
+        case "add-defect":
+          let {
+            CTId,
+            MaLoi,
+            TenLoi,
+            SoDiem,
+            SoLoi,
+            TongDiem,
+            SoDiemTrungBinh,
+          } = formData;
+
+          response = await themLoiCay(
+            CTId,
+            MaLoi,
+            TenLoi,
+            SoDiem,
+            SoLoi,
+            TongDiem,
+            SoDiemTrungBinh,
+          );
+          break;
+        case "measure":
+          for (const item of Object.values(formData)) {
+            response = await doKho(
+              item.CTId,
+              item.ViTri,
+              item.KhoCM,
+              item.KhoIN,
+            );
+          }
+          break;
+        case "update": {
+          const { CTId, GhiChu, HuongXuLy } = formData;
+          response = await capNhatGhiChuHuongXuLyCayVai(
+            CTId,
+            GhiChu,
+            HuongXuLy,
+          );
+          break;
+        }
+        case "complete": {
+          const payload = {
+            ...formData,
+            CTId: Number(formData.CTId),
+            DoAm:
+              formData.DoAm === "" || formData.DoAm == null
+                ? null
+                : Number(formData.DoAm),
+            SoLuongThucTe:
+              formData.SoLuongThucTe === "" || formData.SoLuongThucTe == null
+                ? null
+                : Number(formData.SoLuongThucTe),
+            DiemTrungBinh:
+              formData.DiemTrungBinh == null
+                ? null
+                : Number(formData.DiemTrungBinh),
+          };
+          response = await xongCayVai(payload);
+          break;
+        }
+        case "delete": {
+          response = await xoaCayVai(item.CTId, item.CayId, item.MaCayVai);
+          break;
+        }
+
+        default:
+          return;
+      }
+      if (response?.success) {
+        showSuccessToast(response.message || "Thêm lỗi thành công");
+        setOpen(false);
+        onReload?.();
+      } else {
+        showErrorToast(response.message || "Thêm lỗi thất bại");
+      }
+    } catch (error) {
+      showErrorToast(error.message || "Có lỗi xảy ra");
+    }
   };
 
-  console.log(formData);
+  //console.log(formData);
 
   return (
     <>
@@ -114,21 +243,13 @@ export function FabricRollCard({ item, index }) {
               Cây vải #{index + 1}
             </p>
             <h3 className="m-0 mt-1 break-all text-xl font-extrabold leading-tight text-egmf-ink sm:text-[22px]">
-              {display(item.MaCayVai)}
+              {item.MaCayVai === null ||
+              item.MaCayVai === undefined ||
+              item.MaCayVai === ""
+                ? "—"
+                : String(item.MaCayVai)}
             </h3>
           </div>
-          {item.KQKiem && (
-            <span
-              className={`inline-flex max-w-[45%] shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-bold ${isComplete ? "bg-egmf-success-soft text-egmf-success" : "bg-egmf-warning-soft text-egmf-warning"}`}
-            >
-              <span
-                className={`size-1.5 shrink-0 rounded-full ${isComplete ? "bg-egmf-success" : "bg-egmf-warning"}`}
-              />
-              <span className="truncate" title={display(item.KQKiem)}>
-                {display(item.KQKiem)}
-              </span>
-            </span>
-          )}
         </header>
 
         <div className="px-4 py-4 sm:px-5">
@@ -145,19 +266,54 @@ export function FabricRollCard({ item, index }) {
                 </h4>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
-                {materialDetails.map(({ label, value }) => (
-                  <div key={label} className="min-w-0">
-                    <p
-                      className="m-0 truncate text-[13px] font-medium text-egmf-muted"
-                      title={label}
-                    >
-                      {label}
-                    </p>
-                    <p className="m-0 mt-1 break-words text-[15px] font-semibold text-egmf-ink-secondary sm:text-base">
-                      {display(value)}
-                    </p>
-                  </div>
-                ))}
+                <div className="min-w-0">
+                  <p className="m-0 truncate text-[13px] font-medium text-egmf-muted">
+                    Mã hàng
+                  </p>
+                  <p className="m-0 mt-1 break-words text-[15px] font-semibold text-egmf-ink-secondary sm:text-base">
+                    {item.MaHang === null ||
+                    item.MaHang === undefined ||
+                    item.MaHang === ""
+                      ? "—"
+                      : String(item.MaHang)}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <p className="m-0 truncate text-[13px] font-medium text-egmf-muted">
+                    Mùa
+                  </p>
+                  <p className="m-0 mt-1 break-words text-[15px] font-semibold text-egmf-ink-secondary sm:text-base">
+                    {item.Mua === null ||
+                    item.Mua === undefined ||
+                    item.Mua === ""
+                      ? "—"
+                      : String(item.Mua)}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <p className="m-0 truncate text-[13px] font-medium text-egmf-muted">
+                    Số roll
+                  </p>
+                  <p className="m-0 mt-1 break-words text-[15px] font-semibold text-egmf-ink-secondary sm:text-base">
+                    {item.SoRoll === null ||
+                    item.SoRoll === undefined ||
+                    item.SoRoll === ""
+                      ? "—"
+                      : String(item.SoRoll)}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <p className="m-0 truncate text-[13px] font-medium text-egmf-muted">
+                    LOT
+                  </p>
+                  <p className="m-0 mt-1 break-words text-[15px] font-semibold text-egmf-ink-secondary sm:text-base">
+                    {item.Lot === null ||
+                    item.Lot === undefined ||
+                    item.Lot === ""
+                      ? "—"
+                      : String(item.Lot)}
+                  </p>
+                </div>
               </div>
             </div>
             {item.MaCayVai && (
@@ -179,7 +335,11 @@ export function FabricRollCard({ item, index }) {
               Diễn giải / tên nguyên phụ liệu
             </p>
             <p className="m-0 mt-1.5 break-words text-[15px] font-semibold leading-7 text-egmf-ink-secondary sm:text-base">
-              {display(item.TenNPL)}
+              {item.TenNPL === null ||
+              item.TenNPL === undefined ||
+              item.TenNPL === ""
+                ? "—"
+                : String(item.TenNPL)}
             </p>
           </div>
 
@@ -198,19 +358,54 @@ export function FabricRollCard({ item, index }) {
               </h4>
             </div>
             <div className="mt-3 grid grid-cols-2 divide-x divide-y divide-egmf-border-subtle overflow-hidden rounded-xl border border-egmf-border-subtle sm:grid-cols-4 sm:divide-y-0">
-              {measurements.map(({ label, value }) => (
-                <div key={label} className="min-w-0 px-3 py-3">
-                  <p
-                    className="m-0 truncate text-[12px] font-medium text-egmf-muted"
-                    title={label}
-                  >
-                    {label}
-                  </p>
-                  <p className="m-0 mt-1 break-all text-[17px] font-bold text-egmf-ink">
-                    {display(value)}
-                  </p>
-                </div>
-              ))}
+              <div className="min-w-0 px-3 py-3">
+                <p className="m-0 truncate text-[12px] font-medium text-egmf-muted">
+                  Khổ chứng từ
+                </p>
+                <p className="m-0 mt-1 break-all text-[17px] font-bold text-egmf-ink">
+                  {item.KhoVaiTenTem === null ||
+                  item.KhoVaiTenTem === undefined ||
+                  item.KhoVaiTenTem === ""
+                    ? "—"
+                    : String(item.KhoVaiTenTem)}
+                </p>
+              </div>
+              <div className="min-w-0 px-3 py-3">
+                <p className="m-0 truncate text-[12px] font-medium text-egmf-muted">
+                  Khổ thực tế
+                </p>
+                <p className="m-0 mt-1 break-all text-[17px] font-bold text-egmf-ink">
+                  {item.KhoVaiThucTe === null ||
+                  item.KhoVaiThucTe === undefined ||
+                  item.KhoVaiThucTe === ""
+                    ? "—"
+                    : String(item.KhoVaiThucTe)}
+                </p>
+              </div>
+              <div className="min-w-0 px-3 py-3">
+                <p className="m-0 truncate text-[12px] font-medium text-egmf-muted">
+                  SL chứng từ
+                </p>
+                <p className="m-0 mt-1 break-all text-[17px] font-bold text-egmf-ink">
+                  {item.SoLuongChungTu === null ||
+                  item.SoLuongChungTu === undefined ||
+                  item.SoLuongChungTu === ""
+                    ? "—"
+                    : String(item.SoLuongChungTu)}
+                </p>
+              </div>
+              <div className="min-w-0 px-3 py-3">
+                <p className="m-0 truncate text-[12px] font-medium text-egmf-muted">
+                  SL thực tế
+                </p>
+                <p className="m-0 mt-1 break-all text-[17px] font-bold text-egmf-ink">
+                  {item.SoLuongThucTe === null ||
+                  item.SoLuongThucTe === undefined ||
+                  item.SoLuongThucTe === ""
+                    ? "—"
+                    : String(item.SoLuongThucTe)}
+                </p>
+              </div>
             </div>
           </section>
 
@@ -229,18 +424,42 @@ export function FabricRollCard({ item, index }) {
               </h4>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-              {resultDetails.map(({ label, value, strong }) => (
-                <div key={label} className="min-w-0">
-                  <p className="m-0 truncate text-[13px] font-medium text-egmf-muted">
-                    {label}
-                  </p>
-                  <p
-                    className={`m-0 mt-1 break-words ${strong ? "text-[18px] font-extrabold text-egmf-ink" : "text-[15px] font-semibold text-egmf-ink-secondary sm:text-base"}`}
-                  >
-                    {display(value)}
-                  </p>
-                </div>
-              ))}
+              <div className="min-w-0">
+                <p className="m-0 truncate text-[13px] font-medium text-egmf-muted">
+                  Điểm trung bình
+                </p>
+                <p className="m-0 mt-1 break-words text-[18px] font-extrabold text-egmf-ink">
+                  {item.DiemTrungBinh === null ||
+                  item.DiemTrungBinh === undefined ||
+                  item.DiemTrungBinh === ""
+                    ? "—"
+                    : String(item.DiemTrungBinh)}
+                </p>
+              </div>
+              <div className="min-w-0">
+                <p className="m-0 truncate text-[13px] font-medium text-egmf-muted">
+                  Số cây
+                </p>
+                <p className="m-0 mt-1 break-words text-[18px] font-extrabold text-egmf-ink">
+                  {item.SoCay === null ||
+                  item.SoCay === undefined ||
+                  item.SoCay === ""
+                    ? "—"
+                    : String(item.SoCay)}
+                </p>
+              </div>
+              <div className="min-w-0">
+                <p className="m-0 truncate text-[13px] font-medium text-egmf-muted">
+                  Người tạo
+                </p>
+                <p className="m-0 mt-1 break-words text-[15px] font-semibold text-egmf-ink-secondary sm:text-base">
+                  {item.TenNguoiTao === null ||
+                  item.TenNguoiTao === undefined ||
+                  item.TenNguoiTao === ""
+                    ? "—"
+                    : String(item.TenNguoiTao)}
+                </p>
+              </div>
             </div>
           </section>
 
@@ -252,7 +471,11 @@ export function FabricRollCard({ item, index }) {
                     Ghi chú
                   </p>
                   <p className="m-0 mt-1 break-words text-[15px] leading-7 text-egmf-muted">
-                    {display(item.GhiChu)}
+                    {item.GhiChu === null ||
+                    item.GhiChu === undefined ||
+                    item.GhiChu === ""
+                      ? "—"
+                      : String(item.GhiChu)}
                   </p>
                 </div>
               )}
@@ -262,7 +485,11 @@ export function FabricRollCard({ item, index }) {
                     Hướng xử lý
                   </p>
                   <p className="m-0 mt-1 break-words text-[15px] leading-7 text-egmf-muted">
-                    {display(item.HuongXuLy)}
+                    {item.HuongXuLy === null ||
+                    item.HuongXuLy === undefined ||
+                    item.HuongXuLy === ""
+                      ? "—"
+                      : String(item.HuongXuLy)}
                   </p>
                 </div>
               )}
@@ -303,10 +530,16 @@ export function FabricRollCard({ item, index }) {
         open={open}
         onCancel={() => setOpen(false)}
         onOk={handleSubmit}
-        okText="Cập nhật"
+        okText={
+          selectedAction?.key === "delete"
+            ? "Xóa"
+            : selectedAction?.key === "complete"
+              ? "Hoàn tất kiểm cây"
+              : "Cập nhật"
+        }
         cancelText="Hủy"
         centered
-        width={460}
+        width="min(460px, calc(100vw - 32px))"
         styles={{
           content: {
             overflow: "hidden",
@@ -319,6 +552,9 @@ export function FabricRollCard({ item, index }) {
             borderBottom: "1px solid var(--egmf-border-subtle)",
           },
           body: {
+            maxHeight: "calc(100dvh - 200px)",
+            overflowY: "auto",
+            overscrollBehavior: "contain",
             padding: "16px 20px",
           },
           footer: {
@@ -342,8 +578,16 @@ export function FabricRollCard({ item, index }) {
           },
         }}
         okButtonProps={{
-          className:
-            "!m-0 !h-14 !flex-1 !rounded-xl !bg-egmf-primary !px-4 !text-[15px] !font-bold hover:!bg-egmf-primary-strong",
+          danger: selectedAction?.key === "delete",
+          className: `
+            !m-0 !h-14 !flex-1 !rounded-xl !px-4
+            !text-[15px] !font-bold
+            ${
+              selectedAction?.key === "delete"
+                ? "!bg-red-600 hover:!bg-red-700"
+                : "!bg-egmf-primary hover:!bg-egmf-primary-strong"
+            }
+          `,
         }}
         cancelButtonProps={{
           className:
@@ -353,9 +597,59 @@ export function FabricRollCard({ item, index }) {
         {selectedAction?.key === "add-defect" && (
           <AddDefectForm formData={formData} setFormData={setFormData} />
         )}
-        {selectedAction?.key === "measure" && <div>Form đo khổ cây vải</div>}
-        {selectedAction?.key === "notes" && (
-          <div>Form ghi chú / hướng xử lý</div>
+        {selectedAction?.key === "measure" && (
+          <FabricWidthForm formData={formData} setFormData={setFormData} />
+        )}
+        {selectedAction?.key === "update" && (
+          <FabricNoteForm formData={formData} setFormData={setFormData} />
+        )}
+        {selectedAction?.key === "delete" && (
+          <div className="flex flex-col items-center py-4 text-center">
+            {/* Icon */}
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+              <Trash2 size={28} strokeWidth={2} className="text-red-500" />
+            </div>
+
+            {/* Nội dung */}
+            <p className="text-base font-medium text-gray-600">
+              Bạn có chắc muốn xóa cây vải này?
+            </p>
+
+            {/* Mã cây vải */}
+            <div className="mt-4 w-full rounded-xl bg-gray-50 px-4 py-4">
+              <p className="text-xs font-medium text-gray-500">Mã cây vải</p>
+              <p className="mt-1 break-all text-lg font-bold text-gray-900">
+                {item.MaCayVai}
+              </p>
+            </div>
+
+            {/* Cảnh báo */}
+            <p className="mt-4 text-sm text-red-500">
+              Dữ liệu đã xóa không thể khôi phục.
+            </p>
+          </div>
+        )}
+        {selectedAction?.key === "complete" && (
+          <CompleteFabricRollForm
+            formData={formData}
+            setFormData={setFormData}
+            item={item}
+          />
+        )}
+        {selectedAction?.key === "fabric-edge" && (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-gray-50 px-6 py-12 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E9E8FB]">
+              <Construction size={32} className="text-[#6865D9]" />
+            </div>
+
+            <h3 className="text-lg font-bold text-gray-800">
+              Tính năng đang phát triển
+            </h3>
+
+            <p className="max-w-xs text-sm leading-relaxed text-gray-500">
+              Chức năng này hiện chưa được hỗ trợ. Vui lòng quay lại sau!
+            </p>
+          </div>
         )}
       </Modal>
     </>

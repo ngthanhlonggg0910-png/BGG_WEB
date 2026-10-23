@@ -31,7 +31,6 @@ function parseDienGiai(value) {
       lan: Number(match[1]),
       soLuong: match[2],
       po: match[3].trim(),
-      soLuongPO: match[4],
     });
   }
 

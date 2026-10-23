@@ -1,7 +1,14 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { ArrowLeft, Barcode, Check, Clock3, LoaderCircle, MapPin } from "lucide-react";
+import {
+  ArrowLeft,
+  Barcode,
+  Check,
+  Clock3,
+  LoaderCircle,
+  MapPin,
+} from "lucide-react";
 
 import { getCurrentUser } from "../../../shared/auth/session";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
@@ -14,6 +21,7 @@ export default function MaterialLocationUpdate() {
   const [scannedLabels, setScannedLabels] = useState([]);
   const [loading, setLoading] = useState(false);
   const submittingRef = useRef(false);
+  const maNPLRef = useRef(null);
 
   const confirmUpdate = async () => {
     if (submittingRef.current) return;
@@ -69,6 +77,8 @@ export default function MaterialLocationUpdate() {
       ]);
 
       setMaNPL("");
+      maNPLRef.current?.focus();
+
       toast.success(result.message || "Cập nhật thành công.");
     } catch (err) {
       console.error(err);
@@ -126,6 +136,7 @@ export default function MaterialLocationUpdate() {
                 placeholder="Nhập mã NPL..."
                 type="text"
                 value={maNPL}
+                ref={maNPLRef}
               />
             </div>
           </div>

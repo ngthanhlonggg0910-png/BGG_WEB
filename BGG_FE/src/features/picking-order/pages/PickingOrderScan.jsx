@@ -1,7 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Keyboard, ScanBarcode, ScanQrCode } from "lucide-react";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { useLocation, useNavigate } from "react-router-dom";
+import { getCurrentUser } from "../../../shared/auth/session";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "../../../shared/components/ui/CustomToast";
+import { taoPhieuKiemVaiAuto } from "../../fabric-inspection/api/fabric-inspections.api";
 
 export default function PickingOrderScan() {
   const location = useLocation();
@@ -10,24 +16,66 @@ export default function PickingOrderScan() {
   const [basketCode, setBasketCode] = useState("");
   const PhieuSoanHangId = location.state?.PhieuSoanHangId;
 
-  const handleScan = (e) => {
+  const user = getCurrentUser();
+  const TKId = user?.data?.TKId;
+
+  const handleScan = async (e) => {
     e.preventDefault();
 
-    const MaRo = basketCode.trim();
+    const code = basketCode.trim();
 
-    if (!PhieuSoanHangId || !MaRo) {
-      toast.warning("Thiếu mã phiếu soạn hàng hoặc mã rổ");
+    if (!code) {
+      toast.warning("Vui lòng nhập hoặc quét mã");
       return;
     }
 
-    const payload = {
-      PhieuSoanHangId: PhieuSoanHangId,
-      MaRo: basketCode,
-    };
+    // TRƯỜNG HỢP 1: SOẠN HÀNG - QUÉT MÃ RỔ
+    if (location.state?.scanType === "picking") {
+      if (!PhieuSoanHangId || !code) {
+        toast.warning("Thiếu mã phiếu soạn hàng hoặc mã rổ");
+        return;
+      }
 
-    navigate("/picking-order-materials", {
-      state: payload,
-    });
+      const payload = {
+        PhieuSoanHangId: PhieuSoanHangId,
+        MaRo: basketCode,
+      };
+
+      navigate("/picking-order-materials", {
+        state: payload,
+      });
+    }
+
+    //TRƯỜNG HỢP 2: TẠO PHIẾU KIỂM VẢI
+    if (location.state?.scanType === "fabric-inspection") {
+      try {
+        const response = await taoPhieuKiemVaiAuto(TKId, code);
+        console.log(response);
+
+        // 1. SQL báo thất bại
+        if (!response.success) {
+          showErrorToast(response.message);
+          return;
+        }
+
+        // 2. Cây đã tồn tại trong phiếu khác
+        if (response.data.SoPhieuKiem == null) {
+          toast.warning(response.message);
+          return;
+        }
+
+        // 3. Thêm cây thành công
+        showSuccessToast(response.message);
+
+        // Chuyển đến phiếu kiểm vải
+        navigate(`/fabric-inspection/${response.data.PKVID}/rolls`);
+      } catch (error) {
+        showErrorToast(
+          error.response?.data?.message ||
+            "Có lỗi xảy ra khi tạo phiếu kiểm vải",
+        );
+      }
+    }
 
     return;
   };
@@ -78,7 +126,7 @@ export default function PickingOrderScan() {
                 type="text"
                 value={basketCode}
                 onChange={(e) => setBasketCode(e.target.value)}
-                placeholder="Nhập hoặc quét mã rổ..."
+                placeholder="Nhập hoặc quét mã ..."
                 autoComplete="off"
                 spellCheck={false}
                 aria-label="Mã rổ"

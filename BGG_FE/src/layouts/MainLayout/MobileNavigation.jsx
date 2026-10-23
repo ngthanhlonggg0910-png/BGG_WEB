@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import {
   LayoutGrid,
   Warehouse,
-  MapPin,
+  FileSignature,
   UserRound,
   ScanBarcode,
 } from "lucide-react";
@@ -19,9 +20,9 @@ const mobileItems = [
     label: "Kho",
   },
   {
-    key: "materialLocation",
-    icon: MapPin,
-    label: "Cập nhật",
+    key: "signature",
+    icon: FileSignature,
+    label: "Ký duyệt",
   },
   {
     key: "Thông tin",
@@ -32,8 +33,31 @@ const mobileItems = [
 
 // BOTTOM NAVIGATION MOBILE
 export default function MobileNavigation({ onScan, onSelect, selectedKey }) {
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const leftItems = mobileItems.slice(0, 2);
   const rightItems = mobileItems.slice(2);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return undefined;
+
+    const syncKeyboardOffset = () => {
+      const offset = Math.max(
+        0,
+        window.innerHeight - viewport.height - viewport.offsetTop,
+      );
+      setKeyboardOffset(offset);
+    };
+
+    syncKeyboardOffset();
+    viewport.addEventListener("resize", syncKeyboardOffset);
+    viewport.addEventListener("scroll", syncKeyboardOffset);
+
+    return () => {
+      viewport.removeEventListener("resize", syncKeyboardOffset);
+      viewport.removeEventListener("scroll", syncKeyboardOffset);
+    };
+  }, []);
 
   const renderNavItem = (item) => {
     const Icon = item.icon;
@@ -75,7 +99,8 @@ export default function MobileNavigation({ onScan, onSelect, selectedKey }) {
   return (
     <nav
       aria-label="Điều hướng nhanh"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-egmf-border bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(15,23,42,0.06)] backdrop-blur-xl md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-egmf-border bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-[bottom] duration-150 ease-out md:hidden"
+      style={{ bottom: keyboardOffset }}
     >
       <div className="mx-auto grid h-[68px] max-w-[560px] grid-cols-[minmax(0,1fr)_minmax(0,1fr)_88px_minmax(0,1fr)_minmax(0,1fr)] items-stretch px-2">
         {leftItems.map(renderNavItem)}

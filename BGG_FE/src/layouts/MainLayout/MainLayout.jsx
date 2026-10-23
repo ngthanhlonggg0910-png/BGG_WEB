@@ -1,11 +1,18 @@
-import { ArrowLeft, Menu, Layers3 } from "lucide-react";
+import {
+  ArrowLeft,
+  Layers3,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ScanBarcode,
+} from "lucide-react";
 
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import BarcodeScannerModal from "../../shared/components/ui/BarcodeScannerModal";
 import Drawer from "../../shared/components/ui/Drawer";
-import { clearSession } from "../../shared/auth/session";
+import { clearSession, getCurrentUser } from "../../shared/auth/session";
 import { useFocusedInputScanner } from "../../shared/hooks/useFocusedInputScanner";
 import Sidebar from "./Sidebar";
 import MobileNavigation from "./MobileNavigation";
@@ -17,6 +24,8 @@ export default function MainLayout({ children, screenTitle }) {
   const isHomePage = location.pathname === "/home";
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isTabletSidebarCollapsed, setIsTabletSidebarCollapsed] =
+    useState(false);
   const {
     closeScanner,
     focusedInputLabel,
@@ -42,7 +51,7 @@ export default function MainLayout({ children, screenTitle }) {
   })();
 
   // XỬ LÝ MENU
-  const handleSelect = (key) => {
+  const handleSelect = async (key) => {
     setDrawerOpen(false);
 
     switch (key) {
@@ -54,9 +63,9 @@ export default function MainLayout({ children, screenTitle }) {
         navigate("/warehouse");
         break;
 
-      case "materialLocation":
-        navigate("/material-location-update");
+      case "signature": {
         break;
+      }
 
       case "Thông tin":
         navigate("/infor");
@@ -91,19 +100,26 @@ export default function MainLayout({ children, screenTitle }) {
     <div className="min-h-dvh bg-egmf-surface">
       {/* DESKTOP SIDEBAR */}
       <aside
-        className="
+        className={`
           fixed inset-y-0 left-0 z-20
-          hidden w-[270px] flex-col
+          hidden w-[248px] flex-col
           overflow-y-auto
           border-r border-egmf-border
           bg-white md:flex
-        "
+          transition-transform duration-300 ease-out
+          xl:w-[270px] xl:translate-x-0
+          ${isTabletSidebarCollapsed ? "-translate-x-full" : "translate-x-0"}
+        `}
       >
         <Sidebar selectedKey={selectedKey} onSelect={handleSelect} />
       </aside>
 
       {/* MAIN CONTENT */}
-      <div className="min-w-0 md:ml-[270px]">
+      <div
+        className={`min-w-0 transition-[margin] duration-300 ease-out ${
+          isTabletSidebarCollapsed ? "md:ml-0" : "md:ml-[248px]"
+        } xl:!ml-[270px]`}
+      >
         {/* HEADER */}
         <header
           className="
@@ -152,6 +168,30 @@ export default function MainLayout({ children, screenTitle }) {
           </button>
 
           {/* SCREEN TITLE */}
+          <button
+            type="button"
+            aria-label={
+              isTabletSidebarCollapsed
+                ? "Mở thanh điều hướng"
+                : "Thu gọn thanh điều hướng"
+            }
+            title={
+              isTabletSidebarCollapsed
+                ? "Mở thanh điều hướng"
+                : "Thu gọn thanh điều hướng"
+            }
+            onClick={() =>
+              setIsTabletSidebarCollapsed((isCollapsed) => !isCollapsed)
+            }
+            className="hidden size-11 shrink-0 items-center justify-center rounded-xl border border-egmf-border bg-white text-egmf-primary transition-colors hover:border-egmf-primary-border hover:bg-egmf-primary-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 md:inline-flex xl:hidden"
+          >
+            {isTabletSidebarCollapsed ? (
+              <PanelLeftOpen size={21} strokeWidth={2.2} />
+            ) : (
+              <PanelLeftClose size={21} strokeWidth={2.2} />
+            )}
+          </button>
+
           <h1 className="m-0 min-w-0 flex-1 truncate text-[16px] font-extrabold text-slate-900 sm:text-lg">
             {screenTitle}
           </h1>
@@ -160,19 +200,22 @@ export default function MainLayout({ children, screenTitle }) {
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-egmf-primary-tint p-1.5 md:hidden">
             <img
               src="/ic_launcher_512.png"
-              alt="eGMF"
+              alt="BGG"
               className="h-full w-full object-contain"
             />
           </div>
 
-          {/* DESKTOP BRAND BADGE */}
-          <div className="hidden items-center gap-2 rounded-lg bg-egmf-primary-tint px-3 py-2 md:flex">
-            <Layers3 size={17} className="text-egmf-primary" />
-
-            <span className="text-sm font-bold text-egmf-primary-strong">
-              eGMF
-            </span>
-          </div>
+          {/* DESKTOP SCAN ACTION */}
+          <button
+            aria-label="Mở trình quét mã"
+            className="hidden min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-egmf-primary-border bg-egmf-primary-soft px-3 text-egmf-primary transition-colors hover:border-egmf-primary hover:bg-egmf-primary hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 md:inline-flex lg:px-4"
+            onClick={startScan}
+            title="Quét mã"
+            type="button"
+          >
+            <ScanBarcode size={21} strokeWidth={2.25} />
+            <span className="hidden text-sm font-bold lg:inline">Quét mã</span>
+          </button>
         </header>
 
         {/* PAGE CONTENT */}

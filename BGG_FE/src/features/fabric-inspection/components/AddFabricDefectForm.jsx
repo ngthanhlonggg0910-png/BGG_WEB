@@ -14,6 +14,7 @@ export default function AddFabricDefectForm({ formData, setFormData }) {
     setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
+  //Chặn người dùng nhập một số ký tự không mong muốn vào ô input
   const preventNonNumericKey = (event) => {
     if (["e", "E", "+", "-", "."].includes(event.key)) event.preventDefault();
   };
@@ -52,11 +53,16 @@ export default function AddFabricDefectForm({ formData, setFormData }) {
           loading={loading}
           value={formData.MaLoi || null}
           placeholder="Chọn mã lỗi..."
-          options={dsLoi.map((option) => ({
-            value: option.MaLoi,
-            label: option.TenLoi,
-          }))}
-          onChange={(value) => handleChange("MaLoi", value || "")}
+          options={dsLoi.map((option) => {
+            return {
+              value: option.MaLoi,
+              label: option.TenLoi,
+            };
+          })}
+          onChange={(value, option) => {
+            handleChange("MaLoi", value || "");
+            handleChange("TenLoi", option?.label || "");
+          }}
           aria-label="Chọn mã lỗi"
         />
       </div>

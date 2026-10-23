@@ -50,7 +50,7 @@ export default function Sidebar({ selectedKey, onSelect }) {
         <LogoutButton onClick={() => onSelect("Đăng xuất")} />
 
         <p className="m-0 mt-4 text-center text-xs font-medium text-slate-400">
-          eGMF WebApp · v1.0
+          BGG-Garment
         </p>
       </div>
     </div>
@@ -144,7 +144,7 @@ function Brand() {
 
       <div className="min-w-0">
         <h2 className="m-0 text-[22px] font-extrabold tracking-tight text-slate-900">
-          eGMF
+          BGG-Garment
         </h2>
 
         <p className="m-0 mt-0.5 text-xs font-medium text-slate-500">

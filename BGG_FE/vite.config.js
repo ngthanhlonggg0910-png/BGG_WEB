@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: "autoUpdate",
 
       manifest: {
-        name: "eGMF",
-        short_name: "eGMF",
+        name: "BGG-Garment",
+        short_name: "BGG",
 
         start_url: "/",
         display: "standalone",
@@ -45,8 +45,20 @@ export default defineConfig({
 
     // Chuyển API từ Frontend sang Backend
     proxy: {
+      //Backend NestJS
       "/api": {
         target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+
+      //Backend login web Chữ ký
+      "/api/csrf": {
+        target: "https://kyduyet.bgg.vn:8080",
+        changeOrigin: true,
+      },
+
+      "/api/auth/login": {
+        target: "https://kyduyet.bgg.vn:8080",
         changeOrigin: true,
       },
     },
