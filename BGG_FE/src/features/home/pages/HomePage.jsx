@@ -60,6 +60,8 @@ export default function Home() {
       navigate("/picking-orders");
     } else if (item.key === "production-order-material") {
       navigate("/production-orders");
+    } else if (item.key === "material-orders-list") {
+      navigate("/production-orders?tab=ddh");
     } else if (item.key === "fabric-inspection") {
       navigate("/fabric-inspection");
     } else {
@@ -78,152 +80,141 @@ export default function Home() {
               "linear-gradient(135deg, var(--egmf-primary) 0%, var(--egmf-primary-deep) 100%)",
           }}
         >
-          {/* TRANG TRÍ NHẸ */}
-          <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />
-          <div className="pointer-events-none absolute -bottom-16 right-20 h-36 w-36 rounded-full bg-white/5" />
+          {/* LỚP TRANG TRÍ NỀN */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full opacity-10"
+            style={{ background: "#ffffff" }}
+          />
 
-          <div className="relative z-10">
-            {/* TITLE */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="m-0 text-xs font-bold uppercase tracking-wider text-white/80">
-                  TRUNG TÂM VẬN HÀNH
-                </p>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-0 right-1/4 h-32 w-32 rounded-full opacity-5"
+            style={{ background: "#ffffff" }}
+          />
 
-                <h1 className="m-0 mt-2 text-[24px] font-extrabold leading-tight text-white sm:text-[30px]">
-                  Không gian làm việc
-                </h1>
+          <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* THÔNG TIN CHÍNH */}
+            <div className="space-y-1 sm:space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-sm sm:text-xs">
+                  <Layers3 size={13} />
+                  <span>Hệ thống Quản lý Kho & Sản xuất</span>
+                </span>
 
-                <p className="m-0 mt-2 text-[14px] font-medium leading-6 text-white/85 sm:text-[15px]">
-                  Truy cập nhanh các chức năng trong ca làm việc.
-                </p>
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold">
+                  <span>v1.0</span>
+                </span>
               </div>
 
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/15 sm:h-14 sm:w-14">
-                <LayoutGrid size={27} strokeWidth={2} />
-              </div>
+              <h1 className="text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
+                Không gian làm việc
+              </h1>
+
+              <p className="max-w-xl text-xs text-white/80 sm:text-sm">
+                Truy cập nhanh các nghiệp vụ kho, kiểm vải và cấp phát nguyên
+                liệu
+              </p>
             </div>
 
-            {/* THỐNG KÊ */}
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/15 p-3 sm:p-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
-                  <Layers3 size={21} />
+            {/* THỐNG KÊ TỔNG QUAN */}
+            <div className="flex items-center gap-3 self-start sm:self-auto">
+              <div className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
+                  <Blocks size={20} className="text-white" />
                 </div>
 
-                <div className="min-w-0">
-                  <p className="m-0 text-xs font-medium text-white/85">
-                    Nhóm chức năng
-                  </p>
-                  <p className="m-0 mt-1 text-[22px] font-extrabold leading-none text-white">
-                    {menuGroups.length}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/15 p-3 sm:p-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
-                  <Blocks size={21} />
-                </div>
-
-                <div className="min-w-0">
-                  <p className="m-0 text-xs font-medium text-white/85">
-                    Tổng chức năng
-                  </p>
-                  <p className="m-0 mt-1 text-[22px] font-extrabold leading-none text-white">
+                <div>
+                  <div className="text-xl font-extrabold leading-none">
                     {totalFunctions}
-                  </p>
+                  </div>
+
+                  <div className="mt-0.5 text-xs text-white/70">
+                    Chức năng khả dụng
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ================= SEARCH ================= */}
-        <div
-          role="search"
-          className="
-            flex h-14 w-full items-center gap-3
-            rounded-xl border border-egmf-primary-border-soft
-            bg-white px-4
-            transition-all duration-200
-            focus-within:border-egmf-primary
-            focus-within:ring-[3px]
-            focus-within:ring-egmf-primary/10
-          "
-        >
-          <Search
-            size={22}
-            strokeWidth={2.3}
-            className="shrink-0 text-egmf-primary"
-          />
+        {/* ================= KHU VỰC TÌM KIẾM ================= */}
+        <section className="relative">
+          <div className="flex items-center gap-3 rounded-xl border border-egmf-border bg-white px-4 py-3 shadow-xs transition focus-within:border-egmf-primary focus-within:ring-2 focus-within:ring-egmf-primary/10">
+            <Search size={18} className="shrink-0 text-egmf-muted" />
 
-          <input
-            type="search"
-            value={searchValue}
-            onChange={(event) => setSearchValue(event.target.value)}
-            placeholder="Tìm kiếm chức năng..."
-            aria-label="Tìm kiếm chức năng"
-            autoComplete="off"
-            className="
-              h-full min-w-0 flex-1
-              bg-transparent text-[16px] font-medium
-              text-slate-900 outline-none
-              placeholder:text-slate-400
-            "
-          />
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Tìm kiếm nhanh chức năng (ví dụ: quét rổ, kiểm vải, đặt hàng, vị trí...)"
+              className="w-full bg-transparent text-sm text-egmf-ink placeholder:text-egmf-muted focus:outline-none"
+            />
 
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => setSearchValue("")}
+                className="flex h-6 w-6 items-center justify-center rounded-full text-egmf-muted transition hover:bg-slate-100 hover:text-egmf-ink"
+                aria-label="Xoá tìm kiếm"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* DÒNG THÔNG BÁO KẾT QUẢ KHI ĐANG TÌM KIẾM */}
           {searchValue && (
-            <button
-              type="button"
-              onClick={() => setSearchValue("")}
-              aria-label="Xóa tìm kiếm"
-              className="
-                flex h-9 w-9 shrink-0 items-center justify-center
-                rounded-full bg-egmf-primary-soft text-egmf-primary
-                transition-colors hover:bg-egmf-primary-hover
-              "
-            >
-              <X size={19} strokeWidth={2.4} />
-            </button>
-          )}
-        </div>
-
-        {/* ================= FUNCTION GROUPS ================= */}
-        <section aria-label="Danh sách chức năng" className="space-y-4">
-          {visibleGroups.length > 0 ? (
-            visibleGroups.map((group, index) => (
-              <FunctionGroup
-                key={group.key}
-                group={group}
-                defaultOpen={searchValue.trim().length > 0 || index === 0}
-                onFunctionClick={handleFunctionClick}
-              />
-            ))
-          ) : (
-            <div className="rounded-2xl border border-dashed border-egmf-primary-border-soft bg-white px-5 py-10 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-egmf-primary-soft text-egmf-primary">
-                <Search size={27} />
-              </div>
-
-              <EmptyState>Không tìm thấy chức năng phù hợp</EmptyState>
+            <div className="mt-2 flex items-center justify-between px-1 text-xs text-egmf-muted">
+              <span>
+                Tìm thấy{" "}
+                <strong className="text-egmf-ink">
+                  {visibleFunctionCount}
+                </strong>{" "}
+                chức năng phù hợp với &ldquo;{searchValue}&rdquo;
+              </span>
 
               <button
                 type="button"
                 onClick={() => setSearchValue("")}
-                className="
-                  mt-4 inline-flex min-h-11 items-center gap-2
-                  rounded-xl bg-egmf-primary px-5
-                  text-[15px] font-semibold text-white
-                  transition-colors hover:bg-egmf-primary-strong
-                  active:scale-[0.98]
-                "
+                className="font-medium text-egmf-primary hover:underline"
               >
-                Xóa tìm kiếm
-                <ArrowRight size={18} />
+                Xoá bộ lọc
               </button>
             </div>
           )}
+        </section>
+
+        {/* ================= DANH SÁCH NHÓM CHỨC NĂNG ================= */}
+        {visibleGroups.length === 0 ? (
+          <EmptyState
+            title="Không tìm thấy chức năng"
+            description={`Không có chức năng nào khớp với từ khóa "${searchValue}". Vui lòng thử lại với từ khóa khác.`}
+          />
+        ) : (
+          <div className="space-y-6">
+            {visibleGroups.map((group) => (
+              <FunctionGroup
+                key={group.key}
+                group={group}
+                onItemClick={handleFunctionClick}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* ================= FOOTER NHANH ================= */}
+        <section className="flex flex-col items-center justify-between gap-3 rounded-xl border border-egmf-border bg-white px-5 py-4 text-xs text-egmf-muted sm:flex-row">
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+            <span>Hệ thống hoạt động bình thường · Kết nối máy chủ ổn định</span>
+          </div>
+
+          <div className="flex items-center gap-1 font-medium text-egmf-ink-secondary">
+            <span>BGG Mobile Web</span>
+            <span>·</span>
+            <span>Phiên bản PWA 2026</span>
+          </div>
         </section>
       </div>
     </MainLayout>

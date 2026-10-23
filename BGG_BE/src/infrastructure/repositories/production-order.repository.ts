@@ -612,12 +612,44 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
     lsxId?: number;
     loaiDatHang?: string;
     trangThai?: string;
+    search?: string;
+    tuNgay?: string;
+    denNgay?: string;
   }): Promise<any[]> {
     const pool = await this.databaseService.getPool();
     const req = pool.request();
     req.input('LSXId', sql.BigInt, params.lsxId ? Number(params.lsxId) : null);
-    req.input('LoaiDatHang', sql.NVarChar(50), params.loaiDatHang || null);
-    req.input('TrangThai', sql.NVarChar(50), params.trangThai || null);
+    req.input(
+      'LoaiDatHang',
+      sql.NVarChar(50),
+      params.loaiDatHang && params.loaiDatHang !== 'ALL'
+        ? params.loaiDatHang
+        : null,
+    );
+    req.input(
+      'TrangThai',
+      sql.NVarChar(50),
+      params.trangThai && params.trangThai !== 'ALL'
+        ? params.trangThai
+        : null,
+    );
+    req.input(
+      'TuNgay',
+      sql.DateTime,
+      params.tuNgay ? new Date(params.tuNgay) : null,
+    );
+    req.input(
+      'DenNgay',
+      sql.DateTime,
+      params.denNgay ? new Date(`${params.denNgay}T23:59:59`) : null,
+    );
+    req.input(
+      'Search',
+      sql.NVarChar(100),
+      params.search && params.search.trim() !== ''
+        ? `%${params.search.trim()}%`
+        : null,
+    );
 
     const res = await req.query(`
       SELECT 
@@ -658,6 +690,17 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
       WHERE (@LSXId IS NULL OR d.LSXId = @LSXId)
         AND (@LoaiDatHang IS NULL OR d.LoaiDatHang = @LoaiDatHang)
         AND (@TrangThai IS NULL OR d.TrangThai = @TrangThai)
+        AND (@TuNgay IS NULL OR d.NgayDat >= @TuNgay)
+        AND (@DenNgay IS NULL OR d.NgayDat <= @DenNgay)
+        AND (
+          @Search IS NULL
+          OR d.SoDonDatHang LIKE @Search
+          OR lsx.SoLSX LIKE @Search
+          OR lsx.MaHang LIKE @Search
+          OR lsx.KhachHang LIKE @Search
+          OR d.NguoiDat LIKE @Search
+          OR psh.MaSoPhieuSoan LIKE @Search
+        )
       ORDER BY d.NgayDat DESC, d.DonDatHangId DESC
     `);
 
@@ -823,6 +866,153 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
         soDonDatHang: soDDH,
         trangThai: 'DaHuy',
         nguoiHuy: nguoiHuy || '',
+      };
+    } catch (error) {
+      await tx.rollback();
+      throw error;
+    }
+  }
+
+  async taoPhieuSoanHangTuDonDatHang(
+    donDatHangId: number,
+    tkId?: number,
+    nguoiTao?: string,
+  ): Promise<any> {
+    if (!donDatHangId || Number(donDatHangId) <= 0) {
+      throw new BadRequestException('Mã đơn đặt hàng không hợp lệ');
+    }
+
+    const pool = await this.databaseService.getPool();
+    const tx = new sql.Transaction(pool);
+
+    await tx.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
+
+    try {
+      const checkRes = await new sql.Request(tx)
+        .input('DonDatHangId', sql.BigInt, Number(donDatHangId))
+        .query(`
+          SELECT 
+            d.DonDatHangId,
+            d.SoDonDatHang,
+            d.LoaiDatHang,
+            d.NgayCanGiao,
+            d.GhiChuLot,
+            d.GhiChu,
+            d.TrangThai,
+            d.PhieuSoanHangId,
+            psh.TinhTrang AS TinhTrangPSH,
+            psh.MaSoPhieuSoan
+          FROM dbo.OMM_DonDatHang_LSX d WITH (UPDLOCK, HOLDLOCK)
+          LEFT JOIN dbo.WH_PhieuSoanHang psh WITH (UPDLOCK, HOLDLOCK)
+            ON psh.PhieuSoanHangId = d.PhieuSoanHangId
+          WHERE d.DonDatHangId = @DonDatHangId
+        `);
+
+      if (!checkRes.recordset.length) {
+        throw new BadRequestException(
+          'Không tìm thấy Đơn đặt hàng trên hệ thống.',
+        );
+      }
+
+      const ddh = checkRes.recordset[0];
+      const soDDH = String(ddh.SoDonDatHang || '');
+      const loaiDatHang = String(ddh.LoaiDatHang || '');
+      const trangThaiDDH = String(ddh.TrangThai || '').trim();
+      const existingPshId = ddh.PhieuSoanHangId
+        ? Number(ddh.PhieuSoanHangId)
+        : null;
+      const tinhTrangPSH = String(ddh.TinhTrangPSH || '')
+        .trim()
+        .toLowerCase();
+      const maSoPSHCu = String(ddh.MaSoPhieuSoan || '');
+
+      if (trangThaiDDH.toLowerCase() === 'dahuy') {
+        throw new BadRequestException(
+          `Đơn đặt hàng [${soDDH}] đã bị hủy, không thể tạo Phiếu Soạn Hàng.`,
+        );
+      }
+
+      if (existingPshId && existingPshId > 0 && tinhTrangPSH !== 'huy') {
+        throw new BadRequestException(
+          `Đơn đặt hàng này đã được tạo Phiếu Soạn Hàng trước đó (Số phiếu: ${maSoPSHCu}).`,
+        );
+      }
+
+      const prefixKho = loaiDatHang === 'NguyenLieu' ? 'NA' : 'PA';
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(-2);
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const prefix = `${prefixKho}${yy}${mm}`;
+
+      const countRes = await new sql.Request(tx)
+        .input('Prefix', sql.NVarChar(30), `${prefix}%`)
+        .query(`
+          SELECT ISNULL(MAX(TRY_CAST(RIGHT(MaSoPhieuSoan, 4) AS INT)), 0) AS MaxCount
+          FROM dbo.WH_PhieuSoanHang WITH (UPDLOCK, HOLDLOCK)
+          WHERE MaSoPhieuSoan LIKE @Prefix
+        `);
+
+      const nextCount = Number(countRes.recordset[0]?.MaxCount ?? 0) + 1;
+      const maPSH = `${prefix}${String(nextCount).padStart(4, '0')}`;
+
+      const ngaySoan = ddh.NgayCanGiao ? new Date(ddh.NgayCanGiao) : now;
+      const pshGhiChu =
+        `LSX: Đặt hàng ${loaiDatHang}. ${ddh.GhiChuLot || ''} ${ddh.GhiChu || ''}`.trim();
+
+      const insertPshRes = await new sql.Request(tx)
+        .input('MaSoPhieuSoan', sql.NVarChar(50), maPSH)
+        .input('NgaySoan', sql.DateTime, ngaySoan)
+        .input('NguoiTao', sql.NVarChar(200), nguoiTao || '')
+        .input('TenNguoiTao', sql.NVarChar(200), nguoiTao || '')
+        .input('TKId', sql.BigInt, tkId || null)
+        .input('LenhId', sql.BigInt, Number(donDatHangId))
+        .input('GhiChu', sql.NVarChar(500), pshGhiChu)
+        .query(`
+          INSERT INTO dbo.WH_PhieuSoanHang (
+            MaSoPhieuSoan, NgayTao, NgaySoan, TinhTrang, NguoiTao, TenNguoiTao, TKId,
+            LoaiLenh, LenhId, GhiChu, DaXacNhan
+          ) VALUES (
+            @MaSoPhieuSoan, GETDATE(), @NgaySoan, 'moitao', @NguoiTao, @TenNguoiTao, @TKId,
+            'DonDatHang', @LenhId, @GhiChu, 0
+          );
+          SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS PhieuSoanHangId;
+        `);
+
+      const newPshId = Number(insertPshRes.recordset[0].PhieuSoanHangId);
+
+      await new sql.Request(tx)
+        .input('PSHId', sql.BigInt, newPshId)
+        .input('DonDatHangId', sql.BigInt, Number(donDatHangId))
+        .query(`
+          INSERT INTO dbo.WH_ChiTietPhieuSoanHang (
+            PhieuSoanHangId, ChiTietLenhId, VTId, MaChungLoai, Item, MaMau, DVT,
+            QuyCach, LoaiNPL, DienGiai, LOT, SoLuongYeuCau, SoLuongThucSoan, TieuHao1, isXacNhan
+          )
+          SELECT 
+            @PSHId, ct.CTDonDatHangId, ISNULL(ct.VTId, 0), '', LEFT(ISNULL(ct.MaVatTu, ''), 50), '', ct.DVT,
+            ct.GhiChu, ct.LoaiNPL, ct.TenVatTu, d.GhiChuLot, ct.SoLuongYeuCau, 0, ct.SoLuongYeuCau, 0
+          FROM dbo.OMM_DonDatHang_LSX_ChiTiet ct
+          JOIN dbo.OMM_DonDatHang_LSX d ON d.DonDatHangId = ct.DonDatHangId
+          WHERE ct.DonDatHangId = @DonDatHangId;
+        `);
+
+      await new sql.Request(tx)
+        .input('PSHId', sql.BigInt, newPshId)
+        .input('DonDatHangId', sql.BigInt, Number(donDatHangId))
+        .query(`
+          UPDATE dbo.OMM_DonDatHang_LSX
+          SET PhieuSoanHangId = @PSHId, TrangThai = 'DaTaoPSH'
+          WHERE DonDatHangId = @DonDatHangId;
+        `);
+
+      await tx.commit();
+
+      return {
+        donDatHangId: Number(donDatHangId),
+        soDonDatHang: soDDH,
+        phieuSoanHangId: newPshId,
+        maSoPhieuSoan: maPSH,
+        trangThai: 'DaTaoPSH',
       };
     } catch (error) {
       await tx.rollback();

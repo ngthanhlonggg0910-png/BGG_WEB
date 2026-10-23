@@ -27,9 +27,21 @@ export async function createMaterialOrderFromLsx(payload) {
 
 // Hủy đơn đặt hàng vật tư từ LSX (chỉ khi Kho chưa quét/xuất)
 export async function cancelMaterialOrderFromLsx(donDatHangId, nguoiHuy) {
-  return postJson(`/api/production-order/cancel-material-order/${donDatHangId}`, {
-    nguoiHuy,
-  });
+  return postJson(
+    `/api/production-order/cancel-material-order/${donDatHangId}`,
+    { nguoiHuy },
+  );
+}
+
+// Thủ kho duyệt đơn và Tạo Phiếu Soạn Hàng (WH_PhieuSoanHang) trực tiếp từ Đơn đặt hàng LSX
+export async function createPickingOrderFromMaterialOrder(
+  donDatHangId,
+  payload = {},
+) {
+  return postJson(
+    `/api/production-order/create-picking-order/${donDatHangId}`,
+    payload,
+  );
 }
 
 // Lấy danh sách đơn đặt hàng LSX đã tạo
@@ -38,6 +50,9 @@ export async function getMaterialOrders(params = {}) {
   if (params.lsxId) query.set("lsxId", String(params.lsxId));
   if (params.loaiDatHang) query.set("loaiDatHang", params.loaiDatHang);
   if (params.trangThai) query.set("trangThai", params.trangThai);
+  if (params.search) query.set("search", params.search);
+  if (params.tuNgay) query.set("tuNgay", params.tuNgay);
+  if (params.denNgay) query.set("denNgay", params.denNgay);
   const qs = query.toString();
   return getJson(`/api/production-order/material-orders${qs ? `?${qs}` : ""}`);
 }

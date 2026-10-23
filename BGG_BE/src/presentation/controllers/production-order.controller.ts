@@ -12,6 +12,7 @@ import {
   CalculateBomDto,
   CancelMaterialOrderDto,
   CreateMaterialOrderDto,
+  CreatePickingOrderDto,
   GetProductionOrdersDto,
 } from '../../application/dtos/production-order.dto.js';
 
@@ -53,16 +54,34 @@ export class ProductionOrderController {
     );
   }
 
+  @Post('create-picking-order/:donDatHangId')
+  async taoPhieuSoanHangTuDonDatHang(
+    @Param('donDatHangId') donDatHangId: string,
+    @Body() dto?: CreatePickingOrderDto,
+  ) {
+    return this.productionOrderService.taoPhieuSoanHangTuDonDatHang(
+      Number(donDatHangId),
+      dto?.tkId,
+      dto?.nguoiTao,
+    );
+  }
+
   @Get('material-orders')
   async getDanhSachDonDatHangLSX(
     @Query('lsxId') lsxId?: string,
     @Query('loaiDatHang') loaiDatHang?: string,
     @Query('trangThai') trangThai?: string,
+    @Query('search') search?: string,
+    @Query('tuNgay') tuNgay?: string,
+    @Query('denNgay') denNgay?: string,
   ) {
     return this.productionOrderService.getDanhSachDonDatHangLSX({
       lsxId: lsxId ? Number(lsxId) : undefined,
       loaiDatHang,
       trangThai,
+      search,
+      tuNgay,
+      denNgay,
     });
   }
 
