@@ -16,6 +16,8 @@ import { useNavigate } from "react-router-dom";
 import { Empty, Modal, Spin, message } from "antd";
 import dayjs from "dayjs";
 
+import "../order-mobile.css";
+
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { getCurrentProfile } from "../../../shared/auth/session";
 import {
@@ -299,7 +301,7 @@ export default function ProductionOrderListPage() {
 
   return (
     <MainLayout screenTitle="Đặt hàng vật tư theo LSX">
-      <div className="min-h-full bg-egmf-surface p-2.5 sm:p-4 md:p-5">
+      <div className="order-page min-h-full bg-egmf-surface p-2.5 sm:p-4 md:p-5">
         <div className="mx-auto max-w-6xl space-y-3 sm:space-y-4">
           {/* HEADER & CHUYỂN TAB (TỐI ƯU TOUCH CHO MOBILE & TABLET) */}
           <section className="overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-egmf-card">
@@ -310,10 +312,10 @@ export default function ProductionOrderListPage() {
                 </div>
                 <div className="min-w-0">
                   <h2 className="truncate text-[16px] font-extrabold leading-tight text-egmf-ink sm:text-lg">
-                    Đặt hàng Nhà Cắt & Nhà May
+                    Đặt hàng vật tư
                   </h2>
                   <p className="mt-0.5 truncate text-xs text-egmf-muted sm:text-sm">
-                    Cấp phát Nguyên phụ liệu theo Lệnh sản xuất (LSX)
+                    Chọn mã hàng, sau đó chọn loại vật tư cần đặt.
                   </p>
                 </div>
               </div>
@@ -323,7 +325,7 @@ export default function ProductionOrderListPage() {
                 onClick={() =>
                   activeTab === "lsx" ? fetchLsxList() : fetchDdhList()
                 }
-                className="inline-flex h-11 shrink-0 touch-manipulation items-center gap-1.5 rounded-xl border border-egmf-border bg-white px-3 text-xs font-bold text-egmf-ink-secondary transition active:scale-95 hover:border-egmf-primary hover:text-egmf-primary sm:px-3.5 sm:text-sm"
+                className="inline-flex h-11 shrink-0 touch-manipulation items-center gap-1.5 rounded-xl border border-egmf-border bg-white px-3 text-sm font-bold text-egmf-ink-secondary transition active:scale-95 hover:border-egmf-primary hover:text-egmf-primary sm:px-3.5 sm:text-sm"
               >
                 <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
                 <span className="hidden xs:inline sm:inline">Làm mới</span>
@@ -336,7 +338,7 @@ export default function ProductionOrderListPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("lsx")}
-                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-extrabold transition-all sm:gap-2 sm:text-sm ${
+                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-extrabold transition-all sm:gap-2 sm:text-sm ${
                     activeTab === "lsx"
                       ? "bg-egmf-primary text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
@@ -344,14 +346,14 @@ export default function ProductionOrderListPage() {
                 >
                   <ClipboardList size={17} className="shrink-0" />
                   <span className="truncate">
-                    Lệnh SX ({lsxList.length})
+                    Đặt hàng ({lsxList.length})
                   </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveTab("ddh")}
-                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-extrabold transition-all sm:gap-2 sm:text-sm ${
+                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-extrabold transition-all sm:gap-2 sm:text-sm ${
                     activeTab === "ddh"
                       ? "bg-egmf-primary text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
@@ -403,7 +405,7 @@ export default function ProductionOrderListPage() {
                         key={st.key}
                         type="button"
                         onClick={() => setStatusFilter(st.key)}
-                        className={`h-11 shrink-0 touch-manipulation rounded-xl border px-3.5 text-xs font-extrabold transition sm:text-sm ${
+                        className={`h-11 shrink-0 touch-manipulation rounded-xl border px-3.5 text-sm font-extrabold transition sm:text-sm ${
                           statusFilter === st.key
                             ? "border-egmf-primary bg-egmf-primary-tint text-egmf-primary-strong"
                             : "border-egmf-border bg-white text-egmf-ink-secondary"
@@ -424,7 +426,7 @@ export default function ProductionOrderListPage() {
                         key={tp.key}
                         type="button"
                         onClick={() => setDdhTypeFilter(tp.key)}
-                        className={`h-11 shrink-0 touch-manipulation rounded-xl border px-3.5 text-xs font-extrabold transition sm:text-sm ${
+                        className={`h-11 shrink-0 touch-manipulation rounded-xl border px-3.5 text-sm font-extrabold transition sm:text-sm ${
                           ddhTypeFilter === tp.key
                             ? "border-egmf-primary bg-egmf-primary-tint text-egmf-primary-strong"
                             : "border-egmf-border bg-white text-egmf-ink-secondary"
@@ -451,7 +453,7 @@ export default function ProductionOrderListPage() {
                   <Empty description="Không tìm thấy Lệnh sản xuất phù hợp" />
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
                   {filteredLsx.map((lsx) => {
                     const st = LSX_STATUS_MAP[lsx.TrangThai] || {
                       label: lsx.TrangThai || "Mới tạo",
@@ -468,11 +470,11 @@ export default function ProductionOrderListPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5">
-                                <span className="inline-flex items-center gap-1 rounded-lg bg-egmf-primary-tint px-2 py-0.5 text-xs font-extrabold text-egmf-primary-strong">
+                                <span className="inline-flex items-center gap-1 rounded-lg bg-egmf-primary-tint px-2 py-0.5 text-sm font-extrabold text-egmf-primary-strong">
                                   <Layers size={13} />
                                   {lsx.SoLSX}
                                 </span>
-                                <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-extrabold text-emerald-700">
+                                <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-sm font-extrabold text-emerald-700">
                                   {Number(
                                     lsx.TongSanLuong || 0,
                                   ).toLocaleString("vi-VN")}{" "}
@@ -486,7 +488,7 @@ export default function ProductionOrderListPage() {
                             </div>
 
                             <span
-                              className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold sm:text-xs ${st.cls}`}
+                              className={`shrink-0 rounded-full border px-2.5 py-1 text-sm font-bold sm:text-xs ${st.cls}`}
                             >
                               {st.label}
                             </span>
@@ -495,7 +497,7 @@ export default function ProductionOrderListPage() {
                           {/* LƯỚI THÔNG TIN 2 CỘT GỌN GÀNG CHO MOBILE & TABLET */}
                           <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-2.5 text-xs sm:gap-2.5 sm:p-3 sm:text-sm">
                             <div className="min-w-0">
-                              <span className="block text-[11px] font-medium text-slate-400">
+                              <span className="block text-xs font-medium text-slate-500">
                                 Khách hàng
                               </span>
                               <strong className="mt-0.5 block truncate text-slate-800">
@@ -504,16 +506,16 @@ export default function ProductionOrderListPage() {
                             </div>
 
                             <div className="min-w-0">
-                              <span className="block text-[11px] font-medium text-slate-400">
+                              <span className="block text-xs font-medium text-slate-500">
                                 Chi tiết cỡ/màu
                               </span>
                               <strong className="mt-0.5 block truncate text-slate-800">
-                                {lsx.SoDongChiTiet || 0} dòng PO/Size
+                                {lsx.SoDongChiTiet || 0} cỡ / màu
                               </strong>
                             </div>
 
                             <div className="min-w-0">
-                              <span className="block text-[11px] font-medium text-slate-400">
+                              <span className="block text-xs font-medium text-slate-500">
                                 Nhà cắt • Ngày cần
                               </span>
                               <strong className="mt-0.5 block truncate text-slate-800">
@@ -522,7 +524,7 @@ export default function ProductionOrderListPage() {
                             </div>
 
                             <div className="min-w-0">
-                              <span className="block text-[11px] font-medium text-slate-400">
+                              <span className="block text-xs font-medium text-slate-500">
                                 Tổ may • Vào chuyền
                               </span>
                               <strong className="mt-0.5 block truncate text-slate-800">
@@ -549,19 +551,19 @@ export default function ProductionOrderListPage() {
                           <button
                             type="button"
                             onClick={() => handleOpenBooking(lsx, "NguyenLieu")}
-                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-blue-700 active:scale-[0.98] sm:text-sm"
+                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2.5 text-sm font-extrabold text-white shadow-xs transition hover:bg-blue-700 active:scale-[0.98] sm:text-sm"
                           >
                             <Scissors size={16} className="shrink-0" />
-                            <span>Nhà Cắt Đặt NL</span>
+                            <span>Đặt nguyên liệu</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => handleOpenBooking(lsx, "PhuLieu")}
-                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-amber-700 active:scale-[0.98] sm:text-sm"
+                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2.5 text-sm font-extrabold text-white shadow-xs transition hover:bg-amber-700 active:scale-[0.98] sm:text-sm"
                           >
                             <Shirt size={16} className="shrink-0" />
-                            <span>Nhà May Đặt PL</span>
+                            <span>Đặt phụ liệu</span>
                           </button>
                         </div>
                       </article>
@@ -574,7 +576,7 @@ export default function ProductionOrderListPage() {
                 <Empty description="Chưa có đơn đặt hàng LSX nào" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
                 {filteredDdh.map((ddh) => {
                   const isCat = ddh.LoaiDatHang === "NguyenLieu";
                   const st = getDdhStatusBadge(ddh);
@@ -603,7 +605,7 @@ export default function ProductionOrderListPage() {
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span
-                                className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-extrabold ${
+                                className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-sm font-extrabold ${
                                   isCat
                                     ? "bg-blue-100 text-blue-800"
                                     : "bg-amber-100 text-amber-800"
@@ -618,7 +620,7 @@ export default function ProductionOrderListPage() {
                                   ? "Nhà cắt (NL)"
                                   : "Nhà may (PL)"}
                               </span>
-                              <span className="text-xs font-bold text-slate-500">
+                              <span className="text-sm font-bold text-slate-500">
                                 • {ddh.SoLSX}
                               </span>
                             </div>
@@ -626,7 +628,7 @@ export default function ProductionOrderListPage() {
                             <h3
                               className={`mt-1.5 text-base font-extrabold sm:text-lg ${
                                 ddh.TrangThai === "DaHuy"
-                                  ? "text-slate-400 line-through"
+                                  ? "text-slate-500 line-through"
                                   : "text-slate-900"
                               }`}
                             >
@@ -635,7 +637,7 @@ export default function ProductionOrderListPage() {
                           </div>
 
                           <span
-                            className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold sm:text-xs ${st.cls}`}
+                            className={`shrink-0 rounded-full border px-2.5 py-1 text-sm font-bold sm:text-xs ${st.cls}`}
                           >
                             {st.label}
                           </span>
@@ -643,7 +645,7 @@ export default function ProductionOrderListPage() {
 
                         <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-2.5 text-xs sm:p-3 sm:text-sm">
                           <div className="min-w-0">
-                            <span className="block text-[11px] text-slate-400">
+                            <span className="block text-xs text-slate-500">
                               Mã hàng
                             </span>
                             <strong className="mt-0.5 block truncate text-slate-800">
@@ -651,15 +653,15 @@ export default function ProductionOrderListPage() {
                             </strong>
                           </div>
                           <div className="min-w-0">
-                            <span className="block text-[11px] text-slate-400">
+                            <span className="block text-xs text-slate-500">
                               Số mặt hàng
                             </span>
                             <strong className="mt-0.5 block truncate text-egmf-primary-strong">
-                              {ddh.SoMatHang || 0} dòng NPL
+                              {ddh.SoMatHang || 0} vật tư
                             </strong>
                           </div>
                           <div className="min-w-0">
-                            <span className="block text-[11px] text-slate-400">
+                            <span className="block text-xs text-slate-500">
                               Người đặt
                             </span>
                             <strong className="mt-0.5 block truncate text-slate-800">
@@ -667,7 +669,7 @@ export default function ProductionOrderListPage() {
                             </strong>
                           </div>
                           <div className="min-w-0">
-                            <span className="block text-[11px] text-slate-400">
+                            <span className="block text-xs text-slate-500">
                               Ngày cần giao
                             </span>
                             <strong className="mt-0.5 block truncate text-slate-800">
@@ -679,7 +681,7 @@ export default function ProductionOrderListPage() {
                               <span className="text-xs text-slate-600">
                                 Phiếu soạn kho:{" "}
                               </span>
-                              <strong className="text-xs font-extrabold text-egmf-primary sm:text-sm">
+                              <strong className="text-sm font-extrabold text-egmf-primary sm:text-sm">
                                 {ddh.MaSoPhieuSoan}
                               </strong>
                             </div>
@@ -694,7 +696,7 @@ export default function ProductionOrderListPage() {
                       </div>
 
                       <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5">
-                        <span className="text-[11px] font-medium text-slate-400 sm:text-xs">
+                        <span className="text-xs font-medium text-slate-500 sm:text-xs">
                           {formatDateTime(ddh.NgayDat)}
                         </span>
 
@@ -704,16 +706,16 @@ export default function ProductionOrderListPage() {
                               type="button"
                               disabled={cancelling}
                               onClick={(e) => handleCancelDdh(ddh, e)}
-                              className="inline-flex min-h-[38px] touch-manipulation items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-extrabold text-rose-600 active:scale-95 hover:bg-rose-100"
+                              className="inline-flex min-h-[38px] touch-manipulation items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-sm font-extrabold text-rose-600 active:scale-95 hover:bg-rose-100"
                             >
                               <Ban size={14} />
                               <span>Hủy đơn</span>
                             </button>
                           )}
 
-                          <span className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-egmf-primary-tint px-3 py-1.5 text-xs font-extrabold text-egmf-primary-strong">
+                          <span className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-egmf-primary-tint px-3 py-1.5 text-sm font-extrabold text-egmf-primary-strong">
                             <Eye size={15} />
-                            <span>Chi tiết NPL</span>
+                            <span>Xem vật tư</span>
                           </span>
                         </div>
                       </div>
@@ -745,7 +747,7 @@ export default function ProductionOrderListPage() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span
-                    className={`rounded-md px-2 py-0.5 text-xs font-extrabold ${
+                    className={`rounded-md px-2 py-0.5 text-sm font-extrabold ${
                       selectedDdh.LoaiDatHang === "NguyenLieu"
                         ? "bg-blue-100 text-blue-800"
                         : "bg-amber-100 text-amber-800"
@@ -755,11 +757,11 @@ export default function ProductionOrderListPage() {
                       ? "Nhà cắt (Nguyên liệu)"
                       : "Nhà may (Phụ liệu)"}
                   </span>
-                  <span className="text-xs font-bold text-slate-500">
+                  <span className="text-sm font-bold text-slate-500">
                     • {selectedDdh.SoLSX}
                   </span>
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${
+                    className={`rounded-full border px-2 py-0.5 text-sm font-bold ${
                       getDdhStatusBadge(selectedDdh).cls
                     }`}
                   >
@@ -785,7 +787,7 @@ export default function ProductionOrderListPage() {
               {/* TÓM TẮT ĐƠN */}
               <div className="mb-3.5 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs sm:grid-cols-4 sm:text-sm">
                 <div>
-                  <span className="block text-[11px] text-slate-400">
+                  <span className="block text-xs text-slate-500">
                     Người đặt
                   </span>
                   <strong className="text-slate-800">
@@ -793,7 +795,7 @@ export default function ProductionOrderListPage() {
                   </strong>
                 </div>
                 <div>
-                  <span className="block text-[11px] text-slate-400">
+                  <span className="block text-xs text-slate-500">
                     Ngày cần giao
                   </span>
                   <strong className="text-slate-800">
@@ -801,7 +803,7 @@ export default function ProductionOrderListPage() {
                   </strong>
                 </div>
                 <div>
-                  <span className="block text-[11px] text-slate-400">
+                  <span className="block text-xs text-slate-500">
                     Phiếu soạn kho
                   </span>
                   <strong className="text-egmf-primary">
@@ -809,7 +811,7 @@ export default function ProductionOrderListPage() {
                   </strong>
                 </div>
                 <div>
-                  <span className="block text-[11px] text-slate-400">
+                  <span className="block text-xs text-slate-500">
                     Ghi chú Lot
                   </span>
                   <strong className="text-slate-800">
@@ -827,7 +829,7 @@ export default function ProductionOrderListPage() {
               ) : (
                 <>
                   {/* GIAO DIỆN THẺ (CARDS) CHO MOBILE & TABLET NHỎ - KHÔNG CẦN CUỘN NGANG */}
-                  <div className="space-y-2.5 md:hidden">
+                  <div className="space-y-2.5 lg:hidden">
                     {selectedDdhItems.map((it, idx) => (
                       <div
                         key={it.ChiTietId || idx}
@@ -835,14 +837,14 @@ export default function ProductionOrderListPage() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-xs font-extrabold text-slate-700">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-sm font-extrabold text-slate-700">
                               {idx + 1}
                             </span>
                             <span className="font-extrabold text-slate-900">
                               {it.MaVatTu}
                             </span>
                           </div>
-                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
+                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-sm font-bold text-slate-700">
                             ĐVT: {it.DVT || "—"}
                           </span>
                         </div>
@@ -853,7 +855,7 @@ export default function ProductionOrderListPage() {
 
                         <div className="mt-2.5 grid grid-cols-3 gap-2 rounded-lg bg-slate-50 p-2 text-xs">
                           <div>
-                            <span className="block text-[10px] text-slate-400">
+                            <span className="block text-xs text-slate-500">
                               Định mức × SP
                             </span>
                             <strong className="text-slate-700">
@@ -867,7 +869,7 @@ export default function ProductionOrderListPage() {
                             </strong>
                           </div>
                           <div>
-                            <span className="block text-[10px] text-slate-400">
+                            <span className="block text-xs text-slate-500">
                               SL Yêu cầu
                             </span>
                             <strong className="text-sm font-extrabold text-egmf-primary">
@@ -878,7 +880,7 @@ export default function ProductionOrderListPage() {
                             </strong>
                           </div>
                           <div>
-                            <span className="block text-[10px] text-slate-400">
+                            <span className="block text-xs text-slate-500">
                               Thực xuất
                             </span>
                             <strong className="text-sm font-extrabold text-emerald-700">
@@ -894,7 +896,7 @@ export default function ProductionOrderListPage() {
                   </div>
 
                   {/* BẢNG TRÊN TABLET NGANG & DESKTOP */}
-                  <div className="hidden overflow-x-auto rounded-xl border border-slate-200 md:block">
+                  <div className="hidden overflow-x-auto rounded-xl border border-slate-200 lg:block">
                     <table className="w-full border-collapse text-left text-sm">
                       <thead>
                         <tr className="border-b border-slate-200 bg-slate-50 font-bold text-slate-700">
@@ -923,7 +925,7 @@ export default function ProductionOrderListPage() {
                             <td className="px-3 py-2.5 text-slate-700">
                               <div>{it.TenVatTu}</div>
                               {it.GhiChu && (
-                                <div className="text-xs text-slate-400">
+                                <div className="text-xs text-slate-500">
                                   {it.GhiChu}
                                 </div>
                               )}

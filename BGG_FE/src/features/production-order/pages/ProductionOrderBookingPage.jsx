@@ -22,6 +22,8 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Empty, Modal, Spin, message } from "antd";
 import dayjs from "dayjs";
 
+import "../order-mobile.css";
+
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { getCurrentProfile } from "../../../shared/auth/session";
 import {
@@ -176,6 +178,7 @@ export default function ProductionOrderBookingPage() {
 
     try {
       setCalculating(true);
+      setBomDirty(true);
       const res = await calculateBomMaterial({
         lsxId,
         loaiDatHang: targetLoai,
@@ -310,6 +313,7 @@ export default function ProductionOrderBookingPage() {
 
   // Chuyển sang Bước 2 (Vật tư BOM) -> tự động tính lại BOM nếu có thay đổi ở Bước 1
   const handleGoToBomStep = async () => {
+    if (calculating || submitting || selectedSizeCount === 0) return;
     setActiveStep("bom");
     if (bomDirty) {
       await runCalculateBom(sizeRows, loaiDatHang, ghiChuLot);
@@ -444,7 +448,7 @@ export default function ProductionOrderBookingPage() {
     await runCalculateBom(updated, loaiDatHang, ghiChuLot);
   };
 
-  // Thao tác chọn vật tư BOM giống hệt Desktop (Chọn tất cả VT / Chọn Nguyên liệu / Chọn Phụ liệu / Bỏ chọn)
+  // Thao tác chọn vật tư BOM giống hệt Desktop (Chọn tất cả / Chọn Nguyên liệu / Chọn Phụ liệu / Bỏ chọn)
   const handleToggleBomItem = (rowKey) => {
     setBomItems((prev) =>
       prev.map((it) =>
@@ -536,6 +540,11 @@ export default function ProductionOrderBookingPage() {
 
   // Gửi đơn đặt hàng xuống Kho (tự động tách đơn Kho Vải & Kho Phụ Liệu nếu chọn cả 2 loại giống Desktop)
   const handleSubmitOrder = async () => {
+    if (submitting || calculating) return;
+    if (bomDirty) {
+      message.warning("Số lượng đã thay đổi. Vui lòng tính lại vật tư trước khi gửi.");
+      return;
+    }
     if (selectedSizeCount === 0) {
       message.warning("Vui lòng tích chọn ít nhất 1 cỡ có Số lượng đặt > 0!");
       return;
@@ -616,6 +625,7 @@ export default function ProductionOrderBookingPage() {
 
   return (
     <MainLayout
+      hideMobileNavigation
       screenTitle={
         isCat
           ? "Nhà Cắt đặt Nguyên liệu (LSX)"
@@ -624,7 +634,7 @@ export default function ProductionOrderBookingPage() {
             : "Đặt hàng Vật tư Tổng hợp (LSX)"
       }
     >
-      <div className="min-h-full bg-egmf-surface p-2.5 sm:p-4 md:p-5">
+      <div className="order-page order-booking min-h-full bg-egmf-surface p-2.5 sm:p-4 md:p-5">
         <div className="mx-auto max-w-6xl space-y-3 sm:space-y-4">
           {loading ? (
             <div className="flex min-h-64 items-center justify-center rounded-2xl border border-egmf-border bg-white">
@@ -634,7 +644,7 @@ export default function ProductionOrderBookingPage() {
             <>
               {/* 1. THẺ THÔNG TIN LSX & CHUYỂN ĐỔI BỘ PHẬN (TỐI ƯU MOBILE / TABLET, ĐỒNG BỘ DESKTOP) */}
               <section className="overflow-hidden rounded-2xl border border-egmf-border bg-white shadow-egmf-card">
-                <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/70 p-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/70 p-3.5 xl:flex-row xl:items-center xl:justify-between sm:px-5">
                   <div className="flex items-start gap-2.5 sm:items-center">
                     <button
                       type="button"
@@ -647,12 +657,12 @@ export default function ProductionOrderBookingPage() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-egmf-primary-tint px-2 py-0.5 text-xs font-extrabold text-egmf-primary-strong">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-egmf-primary-tint px-2 py-0.5 text-sm font-extrabold text-egmf-primary-strong">
                           <Layers size={13} />
                           {lsxHeader?.SoLSX}
                         </span>
-                        <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-extrabold text-emerald-700">
-                          KH:{" "}
+                        <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-sm font-extrabold text-emerald-700">
+                          Kế hoạch:{" "}
                           {Number(
                             lsxHeader?.TongSanLuong || 0,
                           ).toLocaleString("vi-VN")}{" "}
@@ -667,42 +677,42 @@ export default function ProductionOrderBookingPage() {
                   </div>
 
                   {/* CHUYỂN ĐỔI NHÀ CẮT / NHÀ MAY / TẤT CẢ (ĐỒNG BỘ VỚI DESKTOP) */}
-                  <div className="grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 sm:flex">
+                  <div className="grid grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 sm:shrink-0">
                     <button
                       type="button"
                       onClick={() => handleSwitchLoaiDatHang("NguyenLieu")}
-                      className={`flex min-h-[42px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition sm:px-3 sm:text-sm ${
+                      className={`flex min-h-[42px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-extrabold transition sm:px-3 sm:text-sm ${
                         isCat
                           ? "bg-blue-600 text-white shadow-xs"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       <Scissors size={14} className="shrink-0" />
-                      <span>Nhà Cắt (NL)</span>
+                      <span>Nhà cắt</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleSwitchLoaiDatHang("PhuLieu")}
-                      className={`flex min-h-[42px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition sm:px-3 sm:text-sm ${
+                      className={`flex min-h-[42px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-extrabold transition sm:px-3 sm:text-sm ${
                         isMay
                           ? "bg-amber-600 text-white shadow-xs"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       <Shirt size={14} className="shrink-0" />
-                      <span>Nhà May (PL)</span>
+                      <span>Nhà may</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleSwitchLoaiDatHang("ALL")}
-                      className={`flex min-h-[42px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition sm:px-3 sm:text-sm ${
+                      className={`flex min-h-[42px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-extrabold transition sm:px-3 sm:text-sm ${
                         isAll
                           ? "bg-slate-800 text-white shadow-xs"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       <Layers size={14} className="shrink-0" />
-                      <span>Tất cả (NL&PL)</span>
+                      <span>Cả hai</span>
                     </button>
                   </div>
                 </div>
@@ -711,6 +721,7 @@ export default function ProductionOrderBookingPage() {
                 <div className="px-3.5 py-2.5 sm:px-5 sm:py-3">
                   <button
                     type="button"
+                    aria-expanded={infoExpanded}
                     onClick={() => setInfoExpanded((prev) => !prev)}
                     className="flex w-full touch-manipulation items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-left transition hover:bg-slate-100"
                   >
@@ -742,7 +753,7 @@ export default function ProductionOrderBookingPage() {
                       )}
                     </div>
 
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-egmf-primary shadow-2xs">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-sm font-bold text-egmf-primary shadow-2xs">
                       {infoExpanded ? (
                         <>
                           <span>Thu gọn</span>
@@ -760,7 +771,7 @@ export default function ProductionOrderBookingPage() {
                   {infoExpanded && (
                     <div className="mt-3 grid gap-3 border-t border-slate-100 pt-3 sm:grid-cols-2 lg:grid-cols-4">
                       <div>
-                        <label className="mb-1 block text-xs font-bold text-slate-600">
+                        <label className="mb-1 block text-sm font-bold text-slate-600">
                           Bộ phận / Kho nhận đơn
                         </label>
                         <div
@@ -798,7 +809,7 @@ export default function ProductionOrderBookingPage() {
                       </div>
 
                       <div>
-                        <label className="mb-1 block text-xs font-bold text-slate-600">
+                        <label className="mb-1 block text-sm font-bold text-slate-600">
                           Ngày cần giao NPL
                         </label>
                         <input
@@ -810,7 +821,7 @@ export default function ProductionOrderBookingPage() {
                       </div>
 
                       <div>
-                        <label className="mb-1 block text-xs font-bold text-slate-600">
+                        <label className="mb-1 block text-sm font-bold text-slate-600">
                           Người đặt hàng
                         </label>
                         <input
@@ -823,7 +834,7 @@ export default function ProductionOrderBookingPage() {
                       </div>
 
                       <div>
-                        <label className="mb-1 block text-xs font-bold text-slate-600">
+                        <label className="mb-1 block text-sm font-bold text-slate-600">
                           Ghi chú Lot vải
                         </label>
                         <input
@@ -839,7 +850,7 @@ export default function ProductionOrderBookingPage() {
                       </div>
 
                       <div className="sm:col-span-2 lg:col-span-4">
-                        <label className="mb-1 block text-xs font-bold text-slate-600">
+                        <label className="mb-1 block text-sm font-bold text-slate-600">
                           Ghi chú đơn đặt hàng (Gửi Thủ kho)
                         </label>
                         <input
@@ -856,9 +867,10 @@ export default function ProductionOrderBookingPage() {
 
                 {/* LỊCH SỬ ĐƠN ĐẶT ĐÃ GỬI CỦA LSX NÀY - CHO PHÉP HỦY ĐƠN KHI CHƯA QUÉT GIỐNG DESKTOP */}
                 {existingOrders.length > 0 && (
-                  <div className="border-t border-slate-100 bg-slate-50/60 px-3.5 py-2.5 sm:px-5">
+                  <details className="border-t border-slate-100 px-3.5 py-2.5 sm:px-5">
+                    <summary className="cursor-pointer py-2 text-sm font-semibold text-slate-700">Xem đơn đã gửi ({existingOrders.length})</summary>
                     <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-                      <span className="shrink-0 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                      <span className="shrink-0 text-sm font-extrabold uppercase tracking-wider text-slate-500">
                         Đơn đã tạo ({existingOrders.length}):
                       </span>
                       {existingOrders.map((od) => {
@@ -870,7 +882,7 @@ export default function ProductionOrderBookingPage() {
                             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-2xs"
                           >
                             <span
-                              className={`rounded px-1.5 py-0.5 text-[10px] font-extrabold ${
+                              className={`rounded px-1.5 py-0.5 text-sm font-extrabold ${
                                 od.LoaiDatHang === "NguyenLieu"
                                   ? "bg-blue-100 text-blue-700"
                                   : "bg-amber-100 text-amber-700"
@@ -881,14 +893,14 @@ export default function ProductionOrderBookingPage() {
                             <strong
                               className={
                                 od.TrangThai === "DaHuy"
-                                  ? "text-slate-400 line-through"
+                                  ? "text-slate-500 line-through"
                                   : "text-slate-800"
                               }
                             >
                               {od.SoDonDatHang}
                             </strong>
                             <span
-                              className={`rounded-full border px-1.5 py-0.5 text-[10px] font-bold ${chip.cls}`}
+                              className={`rounded-full border px-1.5 py-0.5 text-sm font-bold ${chip.cls}`}
                             >
                               {chip.text}
                             </span>
@@ -897,7 +909,7 @@ export default function ProductionOrderBookingPage() {
                                 type="button"
                                 disabled={cancellingId === od.DonDatHangId}
                                 onClick={() => handleCancelOrder(od)}
-                                className="ml-0.5 inline-flex h-6 items-center gap-1 rounded-lg bg-rose-50 px-1.5 text-[11px] font-extrabold text-rose-600 transition active:scale-95 hover:bg-rose-100"
+                                className="ml-0.5 inline-flex h-6 items-center gap-1 rounded-lg bg-rose-50 px-1.5 text-sm font-extrabold text-rose-600 transition active:scale-95 hover:bg-rose-100"
                                 title="Hủy đơn đặt hàng này"
                               >
                                 <Ban size={12} />
@@ -908,7 +920,7 @@ export default function ProductionOrderBookingPage() {
                         );
                       })}
                     </div>
-                  </div>
+                  </details>
                 )}
               </section>
 
@@ -917,7 +929,8 @@ export default function ProductionOrderBookingPage() {
                 <button
                   type="button"
                   onClick={() => setActiveStep("size")}
-                  className={`flex min-h-[50px] touch-manipulation items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-extrabold transition-all sm:text-sm ${
+                  aria-current={activeStep === "size" ? "step" : undefined}
+                  className={`flex min-h-[50px] touch-manipulation items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-extrabold transition-all sm:text-sm ${
                     activeStep === "size"
                       ? "bg-egmf-primary text-white shadow-sm"
                       : "bg-slate-50 text-slate-600 hover:bg-slate-100"
@@ -933,12 +946,12 @@ export default function ProductionOrderBookingPage() {
                     1
                   </span>
                   <div className="min-w-0 text-left">
-                    <div className="truncate">Chọn Cỡ & SL Đặt</div>
+                    <div className="truncate">Chọn số lượng</div>
                     <div
-                      className={`text-[11px] font-semibold ${
+                      className={`text-xs font-semibold ${
                         activeStep === "size"
                           ? "text-blue-100"
-                          : "text-slate-400"
+                          : "text-slate-500"
                       }`}
                     >
                       {selectedSizeCount} cỡ •{" "}
@@ -950,7 +963,9 @@ export default function ProductionOrderBookingPage() {
                 <button
                   type="button"
                   onClick={handleGoToBomStep}
-                  className={`flex min-h-[50px] touch-manipulation items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-extrabold transition-all sm:text-sm ${
+                  disabled={calculating || submitting || selectedSizeCount === 0}
+                  aria-current={activeStep === "bom" ? "step" : undefined}
+                  className={`flex min-h-[50px] touch-manipulation items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-extrabold transition-all sm:text-sm ${
                     activeStep === "bom"
                       ? "bg-egmf-primary text-white shadow-sm"
                       : "bg-slate-50 text-slate-600 hover:bg-slate-100"
@@ -966,19 +981,19 @@ export default function ProductionOrderBookingPage() {
                     2
                   </span>
                   <div className="min-w-0 text-left">
-                    <div className="truncate">Chọn Vật tư (BOM)</div>
+                    <div className="truncate">Kiểm tra vật tư</div>
                     <div
-                      className={`text-[11px] font-semibold ${
+                      className={`text-xs font-semibold ${
                         activeStep === "bom"
                           ? "text-blue-100"
                           : bomDirty
                             ? "text-amber-600"
-                            : "text-slate-400"
+                            : "text-slate-500"
                       }`}
                     >
                       {bomDirty
-                        ? "Chạm để cập nhật BOM"
-                        : `Đã chọn ${checkedBomItems.length}/${bomItems.length} VT`}
+                        ? "Cần cập nhật vật tư"
+                        : `Đã chọn ${checkedBomItems.length}/${bomItems.length} vật tư`}
                     </div>
                   </div>
                 </button>
@@ -989,12 +1004,13 @@ export default function ProductionOrderBookingPage() {
                 <section className="overflow-hidden rounded-2xl border border-egmf-border bg-white shadow-egmf-card">
                   {/* THANH LỌC MÀU & CÔNG CỤ NHANH */}
                   <div className="space-y-2.5 border-b border-slate-100 bg-slate-50/70 p-3.5 sm:px-5">
-                    {/* PILLS CHỌN MÀU CUỘN NGANG */}
+                    <p className="text-sm text-slate-600">Đã chọn sẵn số lượng kế hoạch. Chỉ sửa nếu cần đặt ít hơn.</p>
+                    {/* Lọc màu chỉ thay đổi hiển thị, không đổi lựa chọn. */}
                     <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
                       <button
                         type="button"
                         onClick={() => setColorFilter("ALL")}
-                        className={`min-h-[40px] shrink-0 touch-manipulation rounded-xl px-3.5 py-1.5 text-xs font-extrabold transition ${
+                        className={`min-h-[40px] shrink-0 touch-manipulation rounded-xl px-3.5 py-1.5 text-sm font-extrabold transition ${
                           colorFilter === "ALL"
                             ? "bg-slate-900 text-white shadow-2xs"
                             : "border border-slate-200 bg-white text-slate-700"
@@ -1006,25 +1022,30 @@ export default function ProductionOrderBookingPage() {
                         <button
                           key={c}
                           type="button"
-                          onClick={() => handleSelectOnlyColor(c)}
-                          className={`min-h-[40px] shrink-0 touch-manipulation rounded-xl px-3.5 py-1.5 text-xs font-extrabold transition ${
+                          onClick={() => setColorFilter(c)}
+                          className={`min-h-[40px] shrink-0 touch-manipulation rounded-xl px-3.5 py-1.5 text-sm font-extrabold transition ${
                             colorFilter === c
                               ? "bg-egmf-primary text-white shadow-2xs"
                               : "border border-slate-200 bg-white text-slate-700"
                           }`}
                         >
-                          Chỉ đặt màu {c}
+                          {c}
                         </button>
                       ))}
                     </div>
 
+                    {colorFilter !== "ALL" && (
+                      <button type="button" className="order-color-only" onClick={() => handleSelectOnlyColor(colorFilter)}>
+                        Chỉ đặt màu {colorFilter} (bỏ các màu khác)
+                      </button>
+                    )}
                     {/* NÚT THAO TÁC NHANH */}
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleToggleAllVisible(true)}
-                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 active:scale-95"
+                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 active:scale-95"
                         >
                           <CheckSquare
                             size={15}
@@ -1035,22 +1056,22 @@ export default function ProductionOrderBookingPage() {
                         <button
                           type="button"
                           onClick={() => handleToggleAllVisible(false)}
-                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 active:scale-95"
+                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 active:scale-95"
                         >
-                          <Square size={15} className="text-slate-400" />
+                          <Square size={15} className="text-slate-500" />
                           <span>Bỏ chọn</span>
                         </button>
                         <button
                           type="button"
                           onClick={handleResetPlannedQty}
-                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 active:scale-95"
+                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-700 active:scale-95"
                         >
                           <RotateCcw size={14} className="text-slate-500" />
                           <span>Đặt đủ SL Kế hoạch</span>
                         </button>
                       </div>
 
-                      <span className="rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700">
+                      <span className="rounded-xl bg-emerald-50 px-3 py-1.5 text-sm font-extrabold text-emerald-700">
                         Tổng chọn: {totalSelectedQty.toLocaleString("vi-VN")} SP
                       </span>
                     </div>
@@ -1092,12 +1113,12 @@ export default function ProductionOrderBookingPage() {
                                   <span className="text-sm font-extrabold text-slate-900">
                                     PO: {group.poNo || "—"}
                                   </span>
-                                  <span className="rounded-lg bg-egmf-primary-tint px-2 py-0.5 text-xs font-extrabold text-egmf-primary-strong">
+                                  <span className="rounded-lg bg-egmf-primary-tint px-2 py-0.5 text-sm font-extrabold text-egmf-primary-strong">
                                     Màu: {group.tenMau || "—"}
                                   </span>
                                 </div>
                                 {(group.lotVaiChinh || group.lotVaiLot) && (
-                                  <div className="mt-0.5 text-[11px] text-slate-500">
+                                  <div className="mt-0.5 text-xs text-slate-500">
                                     {group.lotVaiChinh && (
                                       <span className="mr-2">
                                         Lot VC:{" "}
@@ -1119,13 +1140,13 @@ export default function ProductionOrderBookingPage() {
                               </div>
                             </button>
 
-                            <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-extrabold text-emerald-700">
+                            <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-sm font-extrabold text-emerald-700">
                               {groupSum.toLocaleString("vi-VN")} SP
                             </span>
                           </div>
 
                           {/* LƯỚI CÁC CỠ (SIZE) TRONG NHÓM */}
-                          <div className="grid grid-cols-1 gap-2 p-2.5 sm:grid-cols-2 lg:grid-cols-3 sm:p-3">
+                          <div className="order-size-grid grid grid-cols-1 gap-2 p-2.5 sm:p-3">
                             {group.rows.map((row) => (
                               <div
                                 key={row.ChiTietLSXId}
@@ -1156,8 +1177,8 @@ export default function ProductionOrderBookingPage() {
                                     <div className="text-sm font-extrabold text-slate-900">
                                       Cỡ {row.TenSize}
                                     </div>
-                                    <div className="text-[11px] font-medium text-slate-500">
-                                      KH:{" "}
+                                    <div className="text-xs font-medium text-slate-500">
+                                      Kế hoạch:{" "}
                                       {Number(row.SoLuong || 0).toLocaleString(
                                         "vi-VN",
                                       )}{" "}
@@ -1172,10 +1193,10 @@ export default function ProductionOrderBookingPage() {
                                     type="button"
                                     disabled={!row.checked}
                                     onClick={() =>
-                                      handleStepRowQty(row.ChiTietLSXId, -10)
+                                      handleStepRowQty(row.ChiTietLSXId, -1)
                                     }
                                     className="flex h-10 w-9 touch-manipulation items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700 active:scale-95 disabled:opacity-40"
-                                    aria-label="Giảm số lượng"
+                                    aria-label={`Giảm 1 sản phẩm cỡ ${row.TenSize}`}
                                   >
                                     <Minus size={15} />
                                   </button>
@@ -1185,6 +1206,7 @@ export default function ProductionOrderBookingPage() {
                                     inputMode="numeric"
                                     min={0}
                                     disabled={!row.checked}
+                                    aria-label={`Số lượng đặt cỡ ${row.TenSize}`}
                                     value={row.SoLuongDat}
                                     onChange={(e) =>
                                       handleChangeRowQty(
@@ -1192,17 +1214,17 @@ export default function ProductionOrderBookingPage() {
                                         e.target.value,
                                       )
                                     }
-                                    className="h-10 w-20 rounded-lg border border-slate-300 bg-white px-1.5 text-center text-base font-extrabold text-egmf-primary outline-none focus:border-egmf-primary disabled:bg-slate-100 disabled:text-slate-400"
+                                    className="h-10 w-20 rounded-lg border border-slate-300 bg-white px-1.5 text-center text-base font-extrabold text-egmf-primary outline-none focus:border-egmf-primary disabled:bg-slate-100 disabled:text-slate-500"
                                   />
 
                                   <button
                                     type="button"
                                     disabled={!row.checked}
                                     onClick={() =>
-                                      handleStepRowQty(row.ChiTietLSXId, 10)
+                                      handleStepRowQty(row.ChiTietLSXId, 1)
                                     }
                                     className="flex h-10 w-9 touch-manipulation items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700 active:scale-95 disabled:opacity-40"
-                                    aria-label="Tăng số lượng"
+                                    aria-label={`Tăng 1 sản phẩm cỡ ${row.TenSize}`}
                                   >
                                     <Plus size={15} />
                                   </button>
@@ -1224,13 +1246,11 @@ export default function ProductionOrderBookingPage() {
                     <div className="flex flex-wrap items-center justify-between gap-2.5">
                       <div>
                         <h3 className="text-[15px] font-extrabold text-slate-900 sm:text-base">
-                          2. Tích chọn Vật tư cần đặt (Đã chọn{" "}
+                          Kiểm tra vật tư (Đã chọn{" "}
                           {checkedBomItems.length}/{bomItems.length} mặt hàng)
                         </h3>
                         <p className="text-xs text-slate-500">
-                          Tự động tính từ Bảng Định Mức (BCD) • Nếu chọn cả
-                          Nguyên liệu & Phụ liệu sẽ tự tách thành 2 đơn cho 2
-                          Kho
+                          Số lượng đã được tính sẵn. Kiểm tra trước khi gửi kho.
                         </p>
                       </div>
 
@@ -1240,28 +1260,30 @@ export default function ProductionOrderBookingPage() {
                           runCalculateBom(sizeRows, loaiDatHang, ghiChuLot)
                         }
                         disabled={calculating}
-                        className="inline-flex min-h-[40px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-700 active:scale-95 hover:border-egmf-primary hover:text-egmf-primary"
+                        className="inline-flex min-h-[40px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-extrabold text-slate-700 active:scale-95 hover:border-egmf-primary hover:text-egmf-primary"
                       >
                         <Calculator size={15} />
-                        <span>Tính lại BOM</span>
+                        <span>Tính lại vật tư</span>
                       </button>
                     </div>
 
                     {/* THANH NÚT CHỌN VẬT TƯ NHANH GIỐNG HỆT DESKTOP */}
-                    <div className="flex flex-wrap items-center gap-1.5">
+                    <details>
+                      <summary className="cursor-pointer py-2 text-sm font-semibold text-slate-700">Thay đổi vật tư được chọn</summary>
+                      <div className="flex flex-wrap items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleSelectBomByType("ALL")}
-                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-700 active:scale-95 hover:border-egmf-primary"
+                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-extrabold text-slate-700 active:scale-95 hover:border-egmf-primary"
                       >
                         <CheckSquare size={14} className="text-egmf-primary" />
-                        <span>Chọn tất cả VT</span>
+                        <span>Chọn tất cả</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleSelectBomByType("NGUYEN_LIEU")}
-                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-extrabold text-blue-700 active:scale-95 hover:bg-blue-100"
+                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-extrabold text-blue-700 active:scale-95 hover:bg-blue-100"
                       >
                         <Scissors size={14} />
                         <span>Chọn Nguyên liệu</span>
@@ -1270,7 +1292,7 @@ export default function ProductionOrderBookingPage() {
                       <button
                         type="button"
                         onClick={() => handleSelectBomByType("PHU_LIEU")}
-                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-extrabold text-amber-800 active:scale-95 hover:bg-amber-100"
+                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-extrabold text-amber-800 active:scale-95 hover:bg-amber-100"
                       >
                         <Shirt size={14} />
                         <span>Chọn Phụ liệu</span>
@@ -1279,12 +1301,13 @@ export default function ProductionOrderBookingPage() {
                       <button
                         type="button"
                         onClick={() => handleSelectBomByType("NONE")}
-                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 active:scale-95"
+                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-600 active:scale-95"
                       >
-                        <Square size={14} className="text-slate-400" />
+                        <Square size={14} className="text-slate-500" />
                         <span>Bỏ chọn</span>
                       </button>
                     </div>
+                    </details>
                   </div>
 
                   <div className="p-3 sm:p-5">
@@ -1297,7 +1320,7 @@ export default function ProductionOrderBookingPage() {
                         <Empty description="Không tìm thấy định mức vật tư (BCD) phù hợp cho PO/Màu/Cỡ đã chọn" />
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                         {bomItems.map((item, idx) => {
                           const isNL = isNguyenLieuItem(item.LoaiNPL);
                           return (
@@ -1331,11 +1354,11 @@ export default function ProductionOrderBookingPage() {
 
                                     <div className="min-w-0 flex-1">
                                       <div className="flex flex-wrap items-center gap-1.5">
-                                        <span className="text-xs font-bold text-slate-400">
+                                        <span className="text-sm font-bold text-slate-500">
                                           #{idx + 1}
                                         </span>
                                         <span
-                                          className={`rounded-md px-1.5 py-0.5 text-[10px] font-extrabold ${
+                                          className={`rounded-md px-1.5 py-0.5 text-sm font-extrabold ${
                                             isNL
                                               ? "bg-blue-100 text-blue-800"
                                               : "bg-amber-100 text-amber-800"
@@ -1353,7 +1376,7 @@ export default function ProductionOrderBookingPage() {
                                     </div>
                                   </button>
 
-                                  <span className="shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-700">
+                                  <span className="shrink-0 rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-extrabold text-slate-700">
                                     {item.DVT || "—"}
                                   </span>
                                 </div>
@@ -1365,10 +1388,10 @@ export default function ProductionOrderBookingPage() {
                                   }
                                   className="mt-2 cursor-pointer"
                                 >
-                                  <p className="text-xs font-semibold leading-relaxed text-slate-700 sm:text-sm">
+                                  <p className="text-base font-semibold leading-relaxed text-slate-700">
                                     {item.TenVatTu}
                                   </p>
-                                  <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+                                  <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs">
                                     {item.CodeMauSP && (
                                       <span className="rounded-md bg-blue-50 px-2 py-0.5 font-bold text-blue-700">
                                         Màu SP: {item.CodeMauSP}
@@ -1408,9 +1431,9 @@ export default function ProductionOrderBookingPage() {
 
                               {/* Ô NHẬP SỐ LƯỢNG YÊU CẦU & GHI CHÚ LOT */}
                               <div className="mt-3 space-y-2 border-t border-slate-100 pt-2.5">
-                                <div className="flex items-center justify-between gap-2">
-                                  <label className="text-xs font-extrabold text-slate-700">
-                                    SL Yêu cầu ({item.DVT || "ĐVT"}):
+                                <div className="order-material-quantity flex items-center justify-between gap-2">
+                                  <label className="text-sm font-extrabold text-slate-700">
+                                    Số lượng đặt ({item.DVT || "ĐVT"}):
                                   </label>
 
                                   <div className="flex items-center gap-1.5">
@@ -1432,6 +1455,7 @@ export default function ProductionOrderBookingPage() {
                                       step="0.01"
                                       min={0}
                                       disabled={!item.checked}
+                                      aria-label={`Số lượng đặt vật tư ${item.MaVatTu}`}
                                       value={item.SoLuongYeuCau}
                                       onChange={(e) =>
                                         handleBomQtyChange(
@@ -1439,7 +1463,7 @@ export default function ProductionOrderBookingPage() {
                                           e.target.value,
                                         )
                                       }
-                                      className="h-11 w-28 rounded-xl border border-egmf-primary/60 bg-blue-50/40 px-2.5 text-center text-base font-extrabold text-egmf-primary outline-none focus:border-egmf-primary focus:bg-white disabled:bg-slate-100 disabled:text-slate-400 sm:w-32"
+                                      className="h-11 w-28 rounded-xl border border-egmf-primary/60 bg-blue-50/40 px-2.5 text-center text-base font-extrabold text-egmf-primary outline-none focus:border-egmf-primary focus:bg-white disabled:bg-slate-100 disabled:text-slate-500 sm:w-32"
                                     />
 
                                     <button
@@ -1459,6 +1483,7 @@ export default function ProductionOrderBookingPage() {
                                 <input
                                   type="text"
                                   disabled={!item.checked}
+                                  aria-label={`Ghi chú vật tư ${item.MaVatTu}`}
                                   value={item.GhiChu || ""}
                                   onChange={(e) =>
                                     handleBomNoteChange(
@@ -1480,23 +1505,23 @@ export default function ProductionOrderBookingPage() {
               )}
 
               {/* 3. THANH HÀNH ĐỘNG CỐ ĐỊNH PHÍA DƯỚI (STICKY ACTION BAR) */}
-              <div className="sticky bottom-[calc(76px+env(safe-area-inset-bottom))] z-20 rounded-2xl border border-slate-200/90 bg-white/95 p-3 shadow-[0_-4px_20px_rgba(15,23,42,0.08)] backdrop-blur-md md:bottom-3 sm:p-4">
+              <div className="order-action-bar">
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs sm:text-sm">
                     <span className="font-semibold text-slate-500">
-                      Cỡ đặt:{" "}
+                      Đặt:{" "}
                       <strong className="font-extrabold text-slate-900">
                         {totalSelectedQty.toLocaleString("vi-VN")} SP
                       </strong>
                     </span>
                     <span className="hidden text-slate-300 sm:inline">•</span>
                     <span className="font-semibold text-slate-500">
-                      Vật tư tích chọn:{" "}
+                      Vật tư:{" "}
                       <strong className="font-extrabold text-egmf-primary">
                         {checkedBomItems.length}/{bomItems.length} mặt hàng
                       </strong>
                       {checkedNlCount > 0 && checkedPlCount > 0 && (
-                        <span className="ml-1 text-[11px] font-bold text-emerald-700">
+                        <span className="ml-1 text-sm font-bold text-emerald-700">
                           (Tự tách 2 đơn: {checkedNlCount} NL + {checkedPlCount}{" "}
                           PL)
                         </span>
@@ -1515,7 +1540,7 @@ export default function ProductionOrderBookingPage() {
                         <span>
                           {calculating
                             ? "Đang tính định mức..."
-                            : "Tiếp tục: Chọn Vật tư (BOM)"}
+                            : "Tiếp tục"}
                         </span>
                         <ArrowRight size={18} />
                       </button>
@@ -1525,16 +1550,16 @@ export default function ProductionOrderBookingPage() {
                       <button
                         type="button"
                         onClick={() => setActiveStep("size")}
-                        className="flex min-h-[48px] shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-xs font-extrabold text-slate-700 active:scale-95 sm:text-sm"
+                        className="flex min-h-[48px] shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-sm font-extrabold text-slate-700 active:scale-95 sm:text-sm"
                       >
                         <ArrowLeft size={16} />
-                        <span>Sửa Cỡ/SL</span>
+                        <span>Quay lại</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={handleSubmitOrder}
-                        disabled={submitting || checkedBomItems.length === 0}
+                        disabled={submitting || calculating || bomDirty || selectedSizeCount === 0 || checkedBomItems.length === 0}
                         className={`flex min-h-[48px] flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-extrabold text-white shadow-md transition active:scale-[0.99] disabled:opacity-50 sm:flex-initial sm:text-base ${
                           isCat
                             ? "bg-blue-600 hover:bg-blue-700"
@@ -1547,7 +1572,7 @@ export default function ProductionOrderBookingPage() {
                         <span className="truncate">
                           {submitting
                             ? "Đang gửi đơn..."
-                            : `Gửi Đơn Đặt Hàng (${checkedBomItems.length} VT)`}
+                            : `Gửi đơn (${checkedBomItems.length})`}
                         </span>
                       </button>
                     </div>

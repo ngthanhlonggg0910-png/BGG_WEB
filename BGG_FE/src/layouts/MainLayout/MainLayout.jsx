@@ -14,9 +14,10 @@ import Sidebar from "./Sidebar";
 import MobileNavigation from "./MobileNavigation";
 
 // MAIN LAYOUT
-export default function MainLayout({ children, screenTitle }) {
+export default function MainLayout({ children, screenTitle, hideMobileNavigation = false }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isOrderPage = location.pathname.startsWith("/production-order");
   const isHomePage = location.pathname === "/home";
   const pwa = usePwa();
 
@@ -98,13 +99,13 @@ export default function MainLayout({ children, screenTitle }) {
     <div className="min-h-dvh bg-egmf-surface">
       {/* DESKTOP SIDEBAR */}
       <aside
-        className="
+        className={`
           fixed inset-y-0 left-0 z-20
           hidden w-[270px] flex-col
           overflow-y-auto
           border-r border-egmf-border
-          bg-white md:flex
-        "
+          bg-white ${isOrderPage ? "lg:flex" : "md:flex"}
+        `}
       >
         <Sidebar
           selectedKey={selectedKey}
@@ -114,7 +115,7 @@ export default function MainLayout({ children, screenTitle }) {
       </aside>
 
       {/* MAIN CONTENT */}
-      <div className="min-w-0 md:ml-[270px]">
+      <div className={`min-w-0 ${isOrderPage ? "lg:ml-[270px]" : "md:ml-[270px]"}`}>
         {/* HEADER */}
         <header
           className="
@@ -135,7 +136,7 @@ export default function MainLayout({ children, screenTitle }) {
             }
             title={isHomePage ? "Mở menu" : "Quay lại"}
             onClick={handleMobileHeaderAction}
-            className="
+            className={`
               group flex size-14 shrink-0 touch-manipulation
               items-center justify-center
               text-egmf-primary
@@ -144,8 +145,8 @@ export default function MainLayout({ children, screenTitle }) {
               active:scale-90
               focus-visible:outline-none
               focus-visible:ring-4 focus-visible:ring-egmf-primary/25
-              md:hidden
-            "
+              ${isOrderPage ? "lg:hidden" : "md:hidden"}
+            `}
           >
             {isHomePage ? (
               <Menu
@@ -178,7 +179,7 @@ export default function MainLayout({ children, screenTitle }) {
           </span>
 
           {/* LOGO MOBILE */}
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-egmf-primary-tint p-1.5 md:hidden">
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-egmf-primary-tint p-1.5 ${isOrderPage ? "lg:hidden" : "md:hidden"}`}>
             <img
               src="/ic_launcher_512.png"
               alt="eGMF"
@@ -187,7 +188,7 @@ export default function MainLayout({ children, screenTitle }) {
           </div>
 
           {/* DESKTOP BRAND BADGE */}
-          <div className="hidden items-center gap-2 rounded-lg bg-egmf-primary-tint px-3 py-2 md:flex">
+          <div className={`hidden items-center gap-2 rounded-lg bg-egmf-primary-tint px-3 py-2 ${isOrderPage ? "lg:flex" : "md:flex"}`}>
             <Layers3 size={17} className="text-egmf-primary" />
 
             <span className="text-sm font-bold text-egmf-primary-strong">
@@ -205,24 +206,24 @@ export default function MainLayout({ children, screenTitle }) {
 
         {/* PAGE CONTENT */}
         <main
-          className="
+          className={`
             flex flex-col
             min-h-[calc(100dvh-80px)]
-            pb-[calc(96px+env(safe-area-inset-bottom))]
+            ${hideMobileNavigation ? "pb-0" : isOrderPage ? "pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-0" : "pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0"}
             md:min-h-[calc(100dvh-88px)]
-            md:pb-0
-          "
+          `}
         >
           {children}
         </main>
       </div>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      <MobileNavigation
+      {!hideMobileNavigation && <MobileNavigation
+        tabletLayout={isOrderPage}
         onScan={startScan}
         onSelect={handleSelect}
         selectedKey={selectedKey}
-      />
+      />}
 
       {/* MOBILE DRAWER */}
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
