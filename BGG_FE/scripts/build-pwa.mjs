@@ -1,13 +1,16 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, readdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const root = resolve(import.meta.dirname, '../dist');
+// Keep the previous URL available for existing installs on servers that support
+// .webmanifest. New installs and the offline cache use .json for IIS compatibility.
+await copyFile(resolve(root, 'manifest.json'), resolve(root, 'manifest.webmanifest'));
 const assets = (await readdir(resolve(root, 'assets'))).map(file => '/assets/' + file);
 const shell = [
   '/',
   '/index.html',
-  '/manifest.webmanifest',
+  '/manifest.json',
   '/ic_launcher_192.png',
   '/ic_launcher_512.png',
   '/icons/icon.svg',
