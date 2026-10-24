@@ -4,6 +4,8 @@ import {
   Warehouse,
   ScanSearch,
   Factory,
+  Scissors,
+  Shirt,
   FileSpreadsheet,
 } from "lucide-react";
 
@@ -37,10 +39,16 @@ export const menuGroups = [
         icon: Factory,
       },
       {
-        key: "material-orders-list",
-        title: "Đơn đặt hàng & Tạo phiếu soạn",
-        path: "/production-orders?tab=ddh",
-        icon: FileSpreadsheet,
+        key: "material-orders-list-cat",
+        title: "Đơn đặt Kho Vải (Cắt)",
+        path: "/production-orders?tab=ddh&type=NguyenLieu",
+        icon: Scissors,
+      },
+      {
+        key: "material-orders-list-may",
+        title: "Đơn đặt Kho Phụ Liệu (May)",
+        path: "/production-orders?tab=ddh&type=PhuLieu",
+        icon: Shirt,
       },
       {
         key: "soanhang",

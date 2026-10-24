@@ -171,6 +171,7 @@ export default function ProductionOrderListPage({ initialTab }) {
         next.set("tab", "ddh");
       } else {
         next.delete("tab");
+        next.delete("type");
       }
       return next;
     });
@@ -207,7 +208,20 @@ export default function ProductionOrderListPage({ initialTab }) {
     if (tabFromUrl && tabFromUrl !== activeTab) {
       setActiveTab(tabFromUrl);
     }
+    const typeFromUrl = searchParams.get("type");
+    if (typeFromUrl && ["ALL", "NguyenLieu", "PhuLieu"].includes(typeFromUrl)) {
+      setDdhTypeFilter(typeFromUrl);
+    }
   }, [searchParams, initialTab]);
+
+  const countCat = useMemo(
+    () => ddhList.filter((d) => d.LoaiDatHang === "NguyenLieu").length,
+    [ddhList],
+  );
+  const countMay = useMemo(
+    () => ddhList.filter((d) => d.LoaiDatHang === "PhuLieu").length,
+    [ddhList],
+  );
 
   useEffect(() => {
     if (activeTab === "lsx") {
@@ -607,6 +621,80 @@ export default function ProductionOrderListPage({ initialTab }) {
                   </span>
                 </button>
               </div>
+
+              {/* PHÂN LOẠI KHO NHẬN ĐƠN (KHO VẢI CẮT / KHO PHỤ LIỆU MAY) */}
+              {activeTab === "ddh" && (
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <span className="text-xs font-bold text-slate-500">Kho nhận đơn:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDdhTypeFilter("ALL");
+                      setSearchParams((prev) => {
+                        const next = new URLSearchParams(prev);
+                        next.delete("type");
+                        return next;
+                      });
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all active:scale-95 ${
+                      ddhTypeFilter === "ALL"
+                        ? "bg-slate-900 text-white shadow-xs"
+                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span>Tất cả đơn</span>
+                    <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
+                      {ddhList.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDdhTypeFilter("NguyenLieu");
+                      setSearchParams((prev) => {
+                        const next = new URLSearchParams(prev);
+                        next.set("type", "NguyenLieu");
+                        return next;
+                      });
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all active:scale-95 ${
+                      ddhTypeFilter === "NguyenLieu"
+                        ? "bg-blue-600 text-white shadow-xs"
+                        : "border border-blue-200 bg-blue-50/60 text-blue-700 hover:bg-blue-100"
+                    }`}
+                  >
+                    <Scissors size={13} />
+                    <span>Kho Vải (Cắt)</span>
+                    <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
+                      {countCat}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDdhTypeFilter("PhuLieu");
+                      setSearchParams((prev) => {
+                        const next = new URLSearchParams(prev);
+                        next.set("type", "PhuLieu");
+                        return next;
+                      });
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all active:scale-95 ${
+                      ddhTypeFilter === "PhuLieu"
+                        ? "bg-amber-600 text-white shadow-xs"
+                        : "border border-amber-200 bg-amber-50/60 text-amber-800 hover:bg-amber-100"
+                    }`}
+                  >
+                    <Shirt size={13} />
+                    <span>Kho Phụ Liệu (May)</span>
+                    <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">
+                      {countMay}
+                    </span>
+                  </button>
+                </div>
+              )}
 
               {/* SEARCH + HORIZONTAL FILTER PILLS */}
               <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
