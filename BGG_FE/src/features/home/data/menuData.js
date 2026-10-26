@@ -7,6 +7,7 @@ import {
   Scissors,
   Shirt,
   FileSpreadsheet,
+  QrCode,
 } from "lucide-react";
 
 export const menuGroups = [
@@ -25,6 +26,12 @@ export const menuGroups = [
         title: "Kho",
         path: "/warehouse",
         icon: Warehouse,
+      },
+      {
+        key: "mapping-qr",
+        title: "Mapping QR",
+        path: "/mapping-qr-option",
+        icon: QrCode,
       },
     ],
   },
