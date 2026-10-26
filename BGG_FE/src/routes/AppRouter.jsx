@@ -16,6 +16,10 @@ import FabricInspectionList from "../features/fabric-inspection/pages/FabricInsp
 import FabricInspectionRollListPage from "../features/fabric-inspection/pages/FabricInspectionRollList";
 import ProductionOrderListPage from "../features/production-order/pages/ProductionOrderListPage";
 import ProductionOrderBookingPage from "../features/production-order/pages/ProductionOrderBookingPage";
+import MappingOptionPage from "../features/mapping-qr/pages/MappingOptionPage";
+import MappingQrListPage from "../features/mapping-qr/pages/MappingQrListPage";
+import MappingQrBarcodePage from "../features/mapping-qr/pages/MappingQrBarcodePage";
+import InspectionDetailPage from "../features/mapping-qr/pages/InspectionDetailPage";
 
 // Kiểm tra user đã đăng nhập chưa
 function PrivateRoute({ children }) {
@@ -164,6 +168,43 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <FabricInspectionRollListPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* //Maping QR */}
+        <Route
+          path="/mapping-qr-option"
+          element={
+            <PrivateRoute>
+              <MappingOptionPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/mapping-qr-list"
+          element={
+            <PrivateRoute>
+              <MappingQrListPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/mapping-qr-barcode"
+          element={
+            <PrivateRoute>
+              <MappingQrBarcodePage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/mapping-qr-detail/:PGDId"
+          element={
+            <PrivateRoute>
+              <InspectionDetailPage />
             </PrivateRoute>
           }
         />

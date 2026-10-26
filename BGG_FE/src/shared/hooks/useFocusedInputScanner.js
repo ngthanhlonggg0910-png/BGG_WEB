@@ -71,8 +71,6 @@ export function useFocusedInputScanner() {
         return;
       }
 
-      closeScanner();
-
       navigate("/picking-order-materials", {
         state: {
           PhieuSoanHangId,
@@ -106,8 +104,18 @@ export function useFocusedInputScanner() {
     toast.success("Quét mã thành công.");
   };
 
-  const { closeScanner, openScanner, scanError, scanTarget, videoRef } =
-    useBarcodeScanner(handleScannedValue);
+  const {
+    cameraFeatures,
+    closeScanner,
+    openScanner,
+    scanError,
+    scanStatus,
+    scanTarget,
+    setZoom,
+    toggleTorch,
+    torchOn,
+    videoRef,
+  } = useBarcodeScanner(handleScannedValue);
 
   const startScan = () => {
     //Trang tạo phiếu kiểm vải -> chuyển đến trang quét
@@ -152,11 +160,16 @@ export function useFocusedInputScanner() {
   };
 
   return {
+    cameraFeatures,
     closeScanner,
     focusedInputLabel,
     scanError,
+    scanStatus,
     scanTarget,
     startScan,
+    setZoom,
+    toggleTorch,
+    torchOn,
     videoRef,
   };
 }

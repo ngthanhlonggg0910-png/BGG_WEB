@@ -8,7 +8,7 @@ import { MaterialLocationModule } from './presentation/modules/updateNPL.module.
 import { PickingOrderModule } from './presentation/modules/picking-order.module.js';
 import { FabricInspectionModule } from './presentation/modules/fabric-inspection.module.js';
 import { ProductionOrderModule } from './presentation/modules/production-order.module.js';
-
+import { MappingQrModule } from './presentation/modules/mapping-qr.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,6 +21,7 @@ import { ProductionOrderModule } from './presentation/modules/production-order.m
     PickingOrderModule,
     FabricInspectionModule,
     ProductionOrderModule,
+    MappingQrModule,
   ],
 })
 export class AppModule {}

@@ -24,11 +24,16 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const {
+    cameraFeatures,
     closeScanner,
     focusedInputLabel,
     scanError,
+    scanStatus,
     scanTarget,
+    setZoom,
     startScan,
+    toggleTorch,
+    torchOn,
     videoRef,
   } = useFocusedInputScanner();
 
@@ -270,10 +275,15 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
       </Drawer>
 
       <BarcodeScannerModal
+        cameraFeatures={cameraFeatures}
         error={scanError}
         onClose={closeScanner}
         open={Boolean(scanTarget)}
+        scanStatus={scanStatus}
+        setZoom={setZoom}
         title={`Quét vào ${focusedInputLabel}`}
+        toggleTorch={toggleTorch}
+        torchOn={torchOn}
         videoRef={videoRef}
       />
 
