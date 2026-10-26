@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 const DEFAULT_CAMERA_FEATURES = { torch: false, zoom: null };
+const REQUIRED_STABLE_READS = 2;
+const STABLE_READ_WINDOW_MS = 900;
 
 const HIGH_QUALITY_REAR_CAMERA = {
   audio: false,
@@ -42,7 +44,7 @@ async function applyVideoConstraint(track, constraint) {
 }
 
 /**
- * Opens the device camera and returns one detected barcode to the caller.
+ * Opens the device camera and returns one detected QR Code value to the caller.
  * `target` is an application-defined field identifier, so the hook can be
  * reused by any form without owning its input state.
  */
@@ -54,13 +56,39 @@ export function useBarcodeScanner(onDetected) {
     DEFAULT_CAMERA_FEATURES,
   );
   const [torchOn, setTorchOn] = useState(false);
+  const [isDocumentVisible, setIsDocumentVisible] = useState(
+    () => typeof document === "undefined" || !document.hidden,
+  );
   const videoRef = useRef(null);
   const videoTrackRef = useRef(null);
   const onDetectedRef = useRef(onDetected);
+  const processingRef = useRef(false);
+  const resultCandidateRef = useRef(null);
+  const scanTargetRef = useRef(null);
 
   useEffect(() => {
     onDetectedRef.current = onDetected;
   }, [onDetected]);
+
+  useEffect(() => {
+    scanTargetRef.current = scanTarget;
+  }, [scanTarget]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = !document.hidden;
+      setIsDocumentVisible(visible);
+
+      if (!visible && scanTargetRef.current) {
+        setScanStatus("paused");
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const openScanner = useCallback((target) => {
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
@@ -72,6 +100,8 @@ export function useBarcodeScanner(onDetected) {
     setScanStatus("starting");
     setCameraFeatures(DEFAULT_CAMERA_FEATURES);
     setTorchOn(false);
+    processingRef.current = false;
+    resultCandidateRef.current = null;
     setScanTarget(target);
   }, []);
 
@@ -81,6 +111,8 @@ export function useBarcodeScanner(onDetected) {
     setScanStatus("idle");
     setCameraFeatures(DEFAULT_CAMERA_FEATURES);
     setTorchOn(false);
+    processingRef.current = false;
+    resultCandidateRef.current = null;
   }, []);
 
   const toggleTorch = useCallback(async () => {
@@ -123,12 +155,13 @@ export function useBarcodeScanner(onDetected) {
 
   useEffect(() => {
     if (!scanTarget) return undefined;
+    if (!isDocumentVisible) return undefined;
 
     let active = true;
-    let detected = false;
     let controls;
     let stream;
     let closeTimer;
+    const startedAt = performance.now();
 
     const releaseResources = () => {
       controls?.stop();
@@ -152,6 +185,9 @@ export function useBarcodeScanner(onDetected) {
       const supportsContinuousFocus = Array.isArray(capabilities.focusMode)
         ? capabilities.focusMode.includes("continuous")
         : false;
+      const supportsContinuousExposure = Array.isArray(capabilities.exposureMode)
+        ? capabilities.exposureMode.includes("continuous")
+        : false;
       const supportsZoom =
         Number.isFinite(capabilities.zoom?.min) &&
         Number.isFinite(capabilities.zoom?.max) &&
@@ -160,6 +196,10 @@ export function useBarcodeScanner(onDetected) {
       // Best effort only: focus controls are not available in every browser.
       if (supportsContinuousFocus) {
         await applyVideoConstraint(track, { focusMode: "continuous" });
+      }
+
+      if (supportsContinuousExposure) {
+        await applyVideoConstraint(track, { exposureMode: "continuous" });
       }
 
       let zoom = null;
@@ -191,7 +231,9 @@ export function useBarcodeScanner(onDetected) {
 
     const startScanner = async () => {
       try {
-        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        // QR-only reader avoids spending CPU on Code128/EAN/Code39 and makes
+        // it impossible for a 1D barcode to be accepted by this scan flow.
+        const { BrowserQRCodeReader } = await import("@zxing/browser");
 
         if (!active || !videoRef.current) return;
 
@@ -210,26 +252,57 @@ export function useBarcodeScanner(onDetected) {
         videoTrackRef.current = track;
         await configureTrack(track);
 
-        const reader = new BrowserMultiFormatReader(undefined, {
-          // 10 attempts/second stays responsive without a hot decoding loop.
-          delayBetweenScanAttempts: 100,
-          delayBetweenScanSuccess: 300,
+        const reader = new BrowserQRCodeReader(undefined, {
+          // ~8 attempts/second is responsive at Full HD without making
+          // warehouse phones run a continuously hot decode loop.
+          delayBetweenScanAttempts: 120,
+          delayBetweenScanSuccess: 120,
         });
 
         controls = await reader.decodeFromStream(
           stream,
           videoRef.current,
           async (result) => {
-            if (!active || detected || !result) return;
+            if (!active || processingRef.current || !result) return;
 
-            const value = result.getText()?.trim();
-            if (!value) return;
+            // Preserve the decoded QR payload exactly. Whitespace-only values
+            // are rejected, but leading/trailing whitespace is not altered.
+            const value = result.getText();
+            if (typeof value !== "string" || value.trim().length === 0) return;
+
+            // ZXing may produce a transient false positive on an unfocused or
+            // reflective label. Confirm the same normalized value twice in a
+            // short window before any business callback/API can run.
+            const now = performance.now();
+            const previous = resultCandidateRef.current;
+            const isSameRecentValue =
+              previous?.value === value &&
+              now - previous.lastSeenAt <= STABLE_READ_WINDOW_MS;
+
+            const candidate = {
+              hits: isSameRecentValue ? previous.hits + 1 : 1,
+              lastSeenAt: now,
+              value,
+            };
+            resultCandidateRef.current = candidate;
+
+            if (candidate.hits < REQUIRED_STABLE_READS) {
+              setScanStatus("confirming");
+              return;
+            }
 
             // Lock before handing the value to app code so a QR held in the
             // frame cannot trigger duplicate callbacks or API calls.
-            detected = true;
+            processingRef.current = true;
             setScanStatus("processing");
             releaseResources();
+
+            if (import.meta.env.DEV) {
+              console.debug("[Scanner] Stable result confirmed", {
+                durationMs: Math.round(now - startedAt),
+                format: result.getBarcodeFormat?.()?.toString?.() ?? "unknown",
+              });
+            }
 
             try {
               await onDetectedRef.current?.(value, scanTarget);
@@ -274,7 +347,7 @@ export function useBarcodeScanner(onDetected) {
       window.clearTimeout(closeTimer);
       releaseResources();
     };
-  }, [scanTarget]);
+  }, [isDocumentVisible, scanTarget]);
 
   return {
     cameraFeatures,

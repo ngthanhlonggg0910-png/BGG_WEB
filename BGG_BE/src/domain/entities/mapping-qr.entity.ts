@@ -18,7 +18,7 @@ export class wh_DanhSachPhieuGiamDinhTheoThoiGian {
   ghiChu: string | null;
   danhSachPO: string | null;
   maHang: string | null;
-
+  TenNguoiGiamDinh: string | null;
   tenNguoiTao: string | null;
   tKId: number;
   trangThai: string;

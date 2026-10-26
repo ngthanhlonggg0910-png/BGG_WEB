@@ -38,7 +38,7 @@ export default function InspectionDetailPage() {
   const [maSoKien, setMaSoKien] = useState("");
   const [saving, setSaving] = useState(false);
 
-  //   console.log(materials);
+  //console.log(materials);
 
   const fetchData = async () => {
     setLoading(true);
@@ -128,8 +128,6 @@ export default function InspectionDetailPage() {
       };
     });
   };
-
-  console.log(selected);
 
   const handleConfirmMapping = async () => {
     if (saving) return;
@@ -303,6 +301,8 @@ export default function InspectionDetailPage() {
     }
   };
 
+  console.log(materials);
+
   return (
     <MainLayout screenTitle={`Phiếu giám định ${maPhieu}`}>
       <div className="min-h-full bg-egmf-surface text-[15px] text-egmf-ink">
@@ -435,79 +435,164 @@ export default function InspectionDetailPage() {
 
                         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-egmf-border-subtle pt-3 text-sm sm:grid-cols-3">
                           <div className="min-w-0">
-                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">Mã NPL</dt>
-                            <dd className="m-0 truncate font-semibold text-egmf-ink-secondary" title={item.MaChungLoai}>{item.MaChungLoai || "—"}</dd>
+                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              Mã NPL
+                            </dt>
+                            <dd
+                              className="m-0 truncate font-semibold text-egmf-ink-secondary"
+                              title={item.MaChungLoai}
+                            >
+                              {item.MaChungLoai || "—"}
+                            </dd>
                           </div>
                           <div className="min-w-0">
-                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">Art</dt>
-                            <dd className="m-0 truncate font-semibold text-egmf-ink-secondary" title={item.ArtCode}>{item.ArtCode || "—"}</dd>
+                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              Art
+                            </dt>
+                            <dd
+                              className="m-0 truncate font-semibold text-egmf-ink-secondary"
+                              title={item.ArtCode}
+                            >
+                              {item.ArtCode || "—"}
+                            </dd>
                           </div>
                           <div className="min-w-0">
-                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">Item</dt>
-                            <dd className="m-0 truncate font-semibold text-egmf-ink-secondary" title={item.Item}>{item.Item || "—"}</dd>
+                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              Item
+                            </dt>
+                            <dd
+                              className="m-0 truncate font-semibold text-egmf-ink-secondary"
+                              title={item.Item}
+                            >
+                              {item.Item || "—"}
+                            </dd>
                           </div>
                           <div className="min-w-0">
-                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">Màu</dt>
-                            <dd className="m-0 truncate font-semibold text-egmf-ink-secondary" title={item.ColorName}>{item.ColorName || "—"}</dd>
+                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              Màu
+                            </dt>
+                            <dd
+                              className="m-0 truncate font-semibold text-egmf-ink-secondary"
+                              title={item.ColorName}
+                            >
+                              {item.ColorName || "—"}
+                            </dd>
                           </div>
                           <div className="min-w-0">
-                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">Lot</dt>
-                            <dd className="m-0 truncate font-semibold text-egmf-ink-secondary" title={item.Lot}>{item.Lot || "—"}</dd>
+                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              Lot
+                            </dt>
+                            <dd
+                              className="m-0 truncate font-semibold text-egmf-ink-secondary"
+                              title={item.Lot}
+                            >
+                              {item.Lot || "—"}
+                            </dd>
                           </div>
                           <div className="min-w-0">
-                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">HĐ mua</dt>
-                            <dd className="m-0 truncate font-semibold text-egmf-ink-secondary" title={item.SoPO}>{item.SoPO || "—"}</dd>
+                            <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              HĐ mua
+                            </dt>
+                            <dd
+                              className="m-0 truncate font-semibold text-egmf-ink-secondary"
+                              title={item.SoPO}
+                            >
+                              {item.SoPO || "—"}
+                            </dd>
                           </div>
                         </dl>
 
                         <div className="mt-3 grid grid-cols-3 divide-x divide-egmf-primary-border-soft rounded-lg bg-egmf-primary-tint py-2 text-center">
                           <div className="px-1.5">
-                            <p className="m-0 text-[11px] font-bold text-egmf-muted">SL chứng từ</p>
-                            <p className="m-0 mt-0.5 text-sm font-extrabold text-egmf-ink">{item.SoLuongChungTuThucTe ?? 0}</p>
+                            <p className="m-0 text-[11px] font-bold text-egmf-muted">
+                              SL chứng từ
+                            </p>
+                            <p className="m-0 mt-0.5 text-sm font-extrabold text-egmf-ink">
+                              {item.SoLuongChungTuThucTe ?? 0}
+                            </p>
                           </div>
                           <div className="px-1.5">
-                            <p className="m-0 text-[11px] font-bold text-egmf-muted">SL nhập</p>
-                            <p className="m-0 mt-0.5 text-sm font-extrabold text-egmf-ink">{loai === "pl" ? (item.TongGiamDinhPL ?? 0) : (item.TongGiamDinh ?? 0)}</p>
+                            <p className="m-0 text-[11px] font-bold text-egmf-muted">
+                              SL nhập
+                            </p>
+                            <p className="m-0 mt-0.5 text-sm font-extrabold text-egmf-ink">
+                              {loai === "pl"
+                                ? (item.TongGiamDinhPL ?? 0)
+                                : (item.TongGiamDinh ?? 0)}
+                            </p>
                           </div>
                           <div className="px-1.5">
-                            <p className="m-0 text-[11px] font-bold text-egmf-muted">SL cây</p>
-                            <p className="m-0 mt-0.5 text-sm font-extrabold text-egmf-ink">{item.SoLuongCay ?? 0}</p>
+                            <p className="m-0 text-[11px] font-bold text-egmf-muted">
+                              SL cây
+                            </p>
+                            <p className="m-0 mt-0.5 text-sm font-extrabold text-egmf-ink">
+                              {item.SoLuongCay ?? 0}
+                            </p>
                           </div>
                         </div>
 
                         {/* QUANTITY INPUT */}
                         {isSelected && (
                           <div className="mt-3 space-y-2 border-t border-egmf-border-subtle pt-3">
-                            <p className="m-0 text-xs font-bold text-egmf-primary">Số lượng tem cần mapping</p>
-                            {getTemRows(item.CTPGDId).map((tem, index, rows) => (
-                              <div key={tem.id} className="flex items-center gap-2">
-                                <label className="flex h-10 min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-egmf-border bg-white transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
-                                  <span className="shrink-0 border-r border-egmf-border bg-egmf-surface-subtle px-2.5 text-xs font-bold text-egmf-muted">Tem {index + 1}</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="any"
-                                    inputMode="decimal"
-                                    aria-label={`Số lượng Tem ${index + 1}`}
-                                    placeholder="Nhập SL"
-                                    value={tem.quantity}
-                                    onChange={(e) => handleChangeTemQuantity(item.CTPGDId, tem.id, e.target.value)}
-                                    className="min-w-0 flex-1 bg-transparent px-3 text-sm font-semibold text-egmf-ink outline-none placeholder:font-normal placeholder:text-egmf-placeholder"
-                                  />
-                                </label>
+                            <p className="m-0 text-xs font-bold text-egmf-primary">
+                              Số lượng tem cần mapping
+                            </p>
+                            {getTemRows(item.CTPGDId).map(
+                              (tem, index, rows) => (
+                                <div
+                                  key={tem.id}
+                                  className="flex items-center gap-2"
+                                >
+                                  <label className="flex h-10 min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-egmf-border bg-white transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
+                                    <span className="shrink-0 border-r border-egmf-border bg-egmf-surface-subtle px-2.5 text-xs font-bold text-egmf-muted">
+                                      Tem {index + 1}
+                                    </span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="any"
+                                      inputMode="decimal"
+                                      aria-label={`Số lượng Tem ${index + 1}`}
+                                      placeholder="Nhập SL"
+                                      value={tem.quantity}
+                                      onChange={(e) =>
+                                        handleChangeTemQuantity(
+                                          item.CTPGDId,
+                                          tem.id,
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="min-w-0 flex-1 bg-transparent px-3 text-sm font-semibold text-egmf-ink outline-none placeholder:font-normal placeholder:text-egmf-placeholder"
+                                    />
+                                  </label>
 
-                                {rows.length > 1 && (
-                                  <button type="button" onClick={() => handleRemoveTem(item.CTPGDId, tem.id)} className="flex size-10 shrink-0 items-center justify-center rounded-lg text-egmf-ink-soft transition hover:bg-red-50 hover:text-red-600 active:scale-95" title="Xóa tem" aria-label={`Xóa Tem ${index + 1}`}>
-                                    <Minus size={20} strokeWidth={3} />
-                                  </button>
-                                )}
-                                {index === rows.length - 1 && (
-                                  <button type="button" onClick={() => handleAddTem(item.CTPGDId)} className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-egmf-primary text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-95" title="Thêm tem" aria-label="Thêm tem">
-                                    <Plus size={20} strokeWidth={3} />
-                                  </button>
-                                )}
-                              </div>
-                            ))}
+                                  {rows.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleRemoveTem(item.CTPGDId, tem.id)
+                                      }
+                                      className="flex size-10 shrink-0 items-center justify-center rounded-lg text-egmf-ink-soft transition hover:bg-red-50 hover:text-red-600 active:scale-95"
+                                      title="Xóa tem"
+                                      aria-label={`Xóa Tem ${index + 1}`}
+                                    >
+                                      <Minus size={20} strokeWidth={3} />
+                                    </button>
+                                  )}
+                                  {index === rows.length - 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAddTem(item.CTPGDId)}
+                                      className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-egmf-primary text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-95"
+                                      title="Thêm tem"
+                                      aria-label="Thêm tem"
+                                    >
+                                      <Plus size={20} strokeWidth={3} />
+                                    </button>
+                                  )}
+                                </div>
+                              ),
+                            )}
                           </div>
                         )}
                       </div>
@@ -516,7 +601,11 @@ export default function InspectionDetailPage() {
                       <button
                         type="button"
                         onClick={() => toggleExpanded(item.CTPGDId)}
-                        aria-label={isExpanded ? "Ẩn thông tin thêm" : "Xem thông tin thêm"}
+                        aria-label={
+                          isExpanded
+                            ? "Ẩn thông tin thêm"
+                            : "Xem thông tin thêm"
+                        }
                         className="absolute right-0 top-0 grid size-9 shrink-0 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-primary-tint hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
                       >
                         <ChevronRight
@@ -533,9 +622,30 @@ export default function InspectionDetailPage() {
 
                     {isExpanded && (
                       <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 border-t border-egmf-border-subtle pt-3 text-sm text-egmf-ink-secondary sm:grid-cols-3">
-                        <div><dt className="inline text-egmf-muted">Mã chi tiết: </dt><dd className="inline m-0 font-semibold">{item.CTPGDId}</dd></div>
-                        <div><dt className="inline text-egmf-muted">Tổng giám định PL: </dt><dd className="inline m-0 font-semibold">{item.TongGiamDinhPL ?? 0}</dd></div>
-                        <div><dt className="inline text-egmf-muted">Số lượng kiểm: </dt><dd className="inline m-0 font-semibold">{item.SLKiem ?? 0}</dd></div>
+                        <div>
+                          <dt className="inline text-egmf-muted">
+                            Mã chi tiết:{" "}
+                          </dt>
+                          <dd className="inline m-0 font-semibold">
+                            {item.CTPGDId}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="inline text-egmf-muted">
+                            Tổng giám định PL:{" "}
+                          </dt>
+                          <dd className="inline m-0 font-semibold">
+                            {item.TongGiamDinhPL ?? 0}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="inline text-egmf-muted">
+                            Số lượng kiểm:{" "}
+                          </dt>
+                          <dd className="inline m-0 font-semibold">
+                            {item.SLKiem ?? 0}
+                          </dd>
+                        </div>
                       </dl>
                     )}
                   </div>

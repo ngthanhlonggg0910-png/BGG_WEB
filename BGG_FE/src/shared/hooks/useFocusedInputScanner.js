@@ -60,8 +60,8 @@ export function useFocusedInputScanner() {
   }, []);
 
   const handleScannedValue = (value) => {
-    const code = String(value ?? "").trim();
-    if (!code) return;
+    const code = String(value ?? "");
+    if (!code.trim()) return;
 
     if (location.pathname === "/picking-order-scan") {
       const PhieuSoanHangId = location.state?.PhieuSoanHangId;
@@ -97,7 +97,7 @@ export function useFocusedInputScanner() {
       "value",
     )?.set;
 
-    valueSetter?.call(input, value);
+    valueSetter?.call(input, code);
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.dispatchEvent(new Event("change", { bubbles: true }));
     input.focus();

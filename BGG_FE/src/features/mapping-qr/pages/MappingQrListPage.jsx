@@ -10,6 +10,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button, ConfigProvider, DatePicker } from "antd";
 import { Link } from "react-router-dom";
+import dayjs from "dayjs";
 import { formatDateTime } from "../../../shared/utils/formatDateTime";
 import ReactSelect from "react-select";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
@@ -19,7 +20,6 @@ import {
 } from "../api/mappingQrApi";
 import {
   showErrorToast,
-  showSuccessToast,
 } from "../../../shared/components/ui/CustomToast";
 
 // const statusOptions = [
@@ -28,6 +28,51 @@ import {
 //   { label: "Đang giám định", value: "dang-giam-dinh" },
 //   { label: "Hoàn thành", value: "hoan-thanh" },
 // ];
+
+const FILTER_CACHE_TTL = 30 * 60 * 1000;
+
+function getFilterCacheKey(loai) {
+  return `mapping-qr:list-filter:${String(loai ?? "default")}`;
+}
+
+function readSavedFilter(loai) {
+  try {
+    const rawCache = sessionStorage.getItem(getFilterCacheKey(loai));
+    if (!rawCache) return null;
+
+    const cache = JSON.parse(rawCache);
+    if (
+      !cache?.savedAt ||
+      Date.now() - cache.savedAt > FILTER_CACHE_TTL ||
+      !Array.isArray(cache.list)
+    ) {
+      sessionStorage.removeItem(getFilterCacheKey(loai));
+      return null;
+    }
+
+    return cache;
+  } catch {
+    return null;
+  }
+}
+
+function saveFilter(loai, { dateRange, keyword, list, status }) {
+  try {
+    sessionStorage.setItem(
+      getFilterCacheKey(loai),
+      JSON.stringify({
+        fromDate: dateRange[0]?.format("YYYY-MM-DD") ?? null,
+        keyword,
+        list,
+        savedAt: Date.now(),
+        status,
+        toDate: dateRange[1]?.format("YYYY-MM-DD") ?? null,
+      }),
+    );
+  } catch {
+    // The page continues normally if private mode or quota blocks storage.
+  }
+}
 
 const statusSelectStyles = {
   control: (base, state) => ({
@@ -68,13 +113,17 @@ export default function MappingQrListPage() {
 
   const location = useLocation();
   const loai = location?.state?.loai;
+  const [savedFilter] = useState(() => readSavedFilter(loai));
 
   const [statusOptions, setStatusOptions] = useState([]);
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useState(savedFilter?.keyword ?? "");
   const [loading, setLoading] = useState(false);
-  const [list, setList] = useState([]);
-  const [dateRange, setDateRange] = useState([null, null]);
-  const [status, setStatus] = useState(null);
+  const [list, setList] = useState(savedFilter?.list ?? []);
+  const [dateRange, setDateRange] = useState(() => [
+    savedFilter?.fromDate ? dayjs(savedFilter.fromDate) : null,
+    savedFilter?.toDate ? dayjs(savedFilter.toDate) : null,
+  ]);
+  const [status, setStatus] = useState(savedFilter?.status ?? null);
 
   const fetchStatus = async () => {
     setLoading(true);
@@ -134,6 +183,12 @@ export default function MappingQrListPage() {
       );
 
       setList(filteredData);
+      saveFilter(loai, {
+        dateRange,
+        keyword,
+        list: filteredData,
+        status,
+      });
     } catch (error) {
       console.error("Lỗi lọc dữ liệu:", error);
       showErrorToast("Không thể kết nối đến máy chủ");
@@ -346,12 +401,20 @@ export default function MappingQrListPage() {
                               Loại giám định: {item.loaiGiamDinh ?? ""}
                             </p>
 
-                            <p className="m-0">Lô: {item.Lo ?? ""}</p>
+                            <p className="m-0">
+                              Lô:{" "}
+                              {Array.isArray(item?.Lo) ? item.Lo[0] : item?.Lo}
+                            </p>
 
-                            <p className="m-0">Mã rọ: {item.MaRo ?? ""}</p>
+                            {/* <p className="m-0">Mã rọ: {item.MaRo}</p> */}
 
                             <p className="m-0">
-                              Trạng thái: {item.trangThai ?? ""}
+                              Trạng thái:{" "}
+                              {item.trangThai === "MOITAO"
+                                ? "Mới tạo"
+                                : item.trangThai === "DAXACNHAN"
+                                  ? "Đã xác nhận"
+                                  : "Hủy"}
                             </p>
 
                             <p className="m-0">
@@ -359,7 +422,7 @@ export default function MappingQrListPage() {
                             </p>
 
                             <p className="m-0">
-                              Người giám định: {item.nguoiGiamDinh ?? ""}
+                              Người giám định: {item.TenNguoiGiamDinh ?? ""}
                             </p>
                           </div>
 

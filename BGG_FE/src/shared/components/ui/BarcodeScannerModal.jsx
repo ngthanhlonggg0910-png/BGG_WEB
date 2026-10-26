@@ -18,6 +18,8 @@ function BarcodeScannerModal({
   const isProcessing = scanStatus === "processing";
   const isSuccess = scanStatus === "success";
   const isStarting = scanStatus === "starting";
+  const isConfirming = scanStatus === "confirming";
+  const isPaused = scanStatus === "paused";
   const zoom = cameraFeatures?.zoom;
 
   return (
@@ -68,7 +70,7 @@ function BarcodeScannerModal({
           {!error && (
             <div className="absolute inset-x-3 top-3 flex justify-center">
               <div className="flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
-                {isStarting || isProcessing ? (
+                {isStarting || isConfirming || isProcessing ? (
                   <LoaderCircle size={15} className="animate-spin" />
                 ) : isSuccess ? (
                   <CheckCircle2 size={15} className="text-emerald-300" />
@@ -77,10 +79,14 @@ function BarcodeScannerModal({
                 )}
                 {isStarting
                   ? "Đang mở camera..."
+                  : isConfirming
+                    ? "Đang xác minh mã..."
                   : isProcessing
                     ? "Đang xử lý mã..."
                     : isSuccess
                       ? "Quét thành công"
+                      : isPaused
+                        ? "Đã tạm dừng camera"
                       : "Đang quét mã"}
               </div>
             </div>
