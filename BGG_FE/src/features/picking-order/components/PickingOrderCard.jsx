@@ -77,12 +77,12 @@ export default function PickingOrderCard({ item, onClick }) {
 
           <span
             className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
-              item.tinhTrang === "hoanthanh"
+              (item.TinhTrang || item.tinhTrang) === "hoanthanh"
                 ? "bg-emerald-50 text-emerald-700"
                 : "bg-amber-50 text-amber-700"
             }`}
           >
-            {item.tinhTrang === "hoanthanh"
+            {(item.TinhTrang || item.tinhTrang) === "hoanthanh"
               ? "Đã hoàn thành"
               : "Chưa hoàn thành"}
           </span>
