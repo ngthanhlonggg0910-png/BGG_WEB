@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { IMapingQrRepository } from '../../domain/repositories/mapping-qr.interface.repository.js';
 import { DatabaseService } from '../database/database.service.js';
 import {
+  ScannedRolls,
   WH_ChiTietPhieuGiamDinh_PGDId,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile,
   wh_DanhSachPhieuGiamDinhTheoThoiGian,
@@ -114,5 +115,38 @@ export class MappingQrRepository implements IMapingQrRepository {
     }
 
     return row;
+  }
+
+  async getScannedRolls(CTPGDId: number): Promise<ScannedRolls[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool.request().input('CTPGDId', sql.BigInt, CTPGDId)
+      .query(`
+      SELECT *
+      FROM WH_ChiTietPhieuGiamDinh_Cay
+      WHERE CTPGDId = @CTPGDId;  
+    `);
+
+    return result.recordset;
+  }
+
+  async updateScannedRoll(
+    SL: number,
+    CayId: number,
+    CTPGDId: number,
+  ): Promise<number> {
+    const pool = await this.databaseService.getPool();
+
+    const result = await pool
+      .request()
+      .input('SL', sql.Float, SL)
+      .input('CayId', sql.BigInt, CayId)
+      .input('CTPGDId', sql.BigInt, CTPGDId).query(`
+      UPDATE WH_ChiTietPhieuGiamDinh_Cay
+      SET SL = @SL
+      WHERE CayId = @CayId
+        AND CTPGDId = @CTPGDId
+    `);
+
+    return result.rowsAffected[0] ?? 0;
   }
 }

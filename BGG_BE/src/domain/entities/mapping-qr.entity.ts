@@ -113,3 +113,17 @@ export class wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile {
   Id: number;
   Thieu: number;
 }
+
+export class ScannedRolls {
+  CayId: number;
+  CTPGDId: number;
+  MaCay: string;
+  SL: number;
+  TKId: number;
+  TenNguoiTao: string;
+  NgayTao: Date;
+  NguoiTao: string;
+  SoLuongXuat: number;
+  MaSoKien: string;
+  QrTrangMapping: string;
+}

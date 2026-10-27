@@ -29,7 +29,6 @@ export default function InspectionDetailPage() {
   const loai = location?.state?.loai;
   const maPhieu = location?.state?.maPhieu;
 
-  const [expanded, setExpanded] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [materials, setMaterials] = useState([]);
@@ -40,7 +39,7 @@ export default function InspectionDetailPage() {
   const [saving, setSaving] = useState(false);
   const [keyword, setKeyword] = useState("");
 
-  console.log(materials[0]);
+  // console.log(materials[0]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -100,12 +99,6 @@ export default function InspectionDetailPage() {
 
   const toggleSelected = (id) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  };
-
-  const toggleExpanded = (id) => {
-    setExpanded((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
@@ -429,7 +422,6 @@ export default function InspectionDetailPage() {
           <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
             {listFilter.map((item) => {
               const isSelected = selected.includes(item.CTPGDId);
-              const isExpanded = expanded.includes(item.CTPGDId);
               const enteredQuantity = Number(
                 loai === "pl" ? item.TongGiamDinhPL : item.TongGiamDinh,
               );
@@ -449,18 +441,6 @@ export default function InspectionDetailPage() {
                       ? "border-egmf-primary-border shadow-egmf-card"
                       : "border-egmf-border hover:border-egmf-primary-border"
                   }`}
-                  onClick={() =>
-                    navigate(`/mapping-qr/material-detail/${item.CTPGDId}`, {
-                      state: {
-                        item,
-                        pgdId,
-                        loaiGiamDinh: item.loaiGiamDinh,
-                        danhSachCay: materials.filter(
-                          (cay) => cay.CTPGDId === item.CTPGDId,
-                        ),
-                      },
-                    })
-                  }
                 >
                   <div
                     className={`border-l-4 ${quantityBorderClass} px-3.5 py-3.5 sm:px-5 sm:py-4`}
@@ -470,6 +450,7 @@ export default function InspectionDetailPage() {
                       <input
                         type="checkbox"
                         checked={isSelected}
+                        onClick={(event) => event.stopPropagation()}
                         onChange={() => toggleSelected(item.CTPGDId)}
                         aria-label={`Chọn vật tư ${item.MaHang || item.CTPGDId}`}
                         className="mt-1 size-5 shrink-0 rounded accent-egmf-primary"
@@ -656,54 +637,25 @@ export default function InspectionDetailPage() {
                       {/* DETAILS */}
                       <button
                         type="button"
-                        onClick={() => toggleExpanded(item.CTPGDId)}
-                        aria-label={
-                          isExpanded
-                            ? "Ẩn thông tin thêm"
-                            : "Xem thông tin thêm"
+                        onClick={() =>
+                          navigate(`/mapping-qr/material-detail/${item.CTPGDId}`, {
+                            state: {
+                              item,
+                              pgdId,
+                              loaiGiamDinh: item.loaiGiamDinh,
+                            },
+                          })
                         }
+                        aria-label="Xem chi tiết vật tư"
                         className="absolute right-0 top-0 grid size-9 shrink-0 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-primary-tint hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
                       >
                         <ChevronRight
                           size={30}
                           strokeWidth={3}
-                          className={
-                            isExpanded
-                              ? "rotate-90 transition-transform"
-                              : "transition-transform"
-                          }
+                          className="transition-transform"
                         />
                       </button>
                     </div>
-
-                    {isExpanded && (
-                      <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1.5 border-t border-egmf-border-subtle pt-3 text-sm text-egmf-ink-secondary sm:grid-cols-3">
-                        <div>
-                          <dt className="inline text-egmf-muted">
-                            Mã chi tiết:{" "}
-                          </dt>
-                          <dd className="inline m-0 font-semibold">
-                            {item.CTPGDId}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="inline text-egmf-muted">
-                            Tổng giám định PL:{" "}
-                          </dt>
-                          <dd className="inline m-0 font-semibold">
-                            {item.TongGiamDinhPL ?? 0}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="inline text-egmf-muted">
-                            Số lượng kiểm:{" "}
-                          </dt>
-                          <dd className="inline m-0 font-semibold">
-                            {item.SLKiem ?? 0}
-                          </dd>
-                        </div>
-                      </dl>
-                    )}
                   </div>
                 </div>
               );

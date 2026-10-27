@@ -32,3 +32,17 @@ export async function saveMapping(payload) {
     payload,
   );
 }
+
+export async function getScannedRolls(CTPGDId) {
+  return postJson("/api/mapping-qr/getScannedRolls", {
+    CTPGDId: CTPGDId,
+  });
+}
+
+export async function updateScannedRoll(payload) {
+  return postJson("/api/mapping-qr/updateScannedRoll", {
+    SL: payload.SL,
+    CayId: payload.CayId,
+    CTPGDId: payload.CTPGDId,
+  });
+}

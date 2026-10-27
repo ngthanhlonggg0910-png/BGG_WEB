@@ -1,4 +1,11 @@
-import { Controller, Get, Inject, Body, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Body,
+  Post,
+  ParseIntPipe,
+} from '@nestjs/common';
 import type { IMappingQrService } from '../../application/interfaces/mapping-qr.service.interface.js';
 import {
   WH_PhieuGiamDinh_GetDanhSachTrangThai_ResponseDTO,
@@ -6,8 +13,11 @@ import {
   WH_PhieuGiamDinh_GetData_ByBarcodeKien_ResponseDTO,
   WH_ChiTietPhieuGiamDinh_PGDId_ResponseDTO,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO,
+  getScannedRolls_ResponseDTO,
+  updateScannedRoll_ResponseDTO,
 } from '../../application/dtos/mapping-qr-response.dto.js';
 import {
+  updateScannedRoll_RequestDTO,
   wh_DanhSachPhieuGiamDinhTheoThoiGian_RequestDTO,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
 } from '../../application/dtos/mapping-qr-request.dto.js';
@@ -50,5 +60,23 @@ export class MappingQrController {
     dto: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   ): Promise<wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO> {
     return this.mappingQrService.saveMapping(dto);
+  }
+
+  @Post('getScannedRolls')
+  getScannedRolls(
+    @Body('CTPGDId', ParseIntPipe) CTPGDId: number,
+  ): Promise<getScannedRolls_ResponseDTO> {
+    return this.mappingQrService.getScannedRolls(CTPGDId);
+  }
+
+  @Post('updateScannedRoll')
+  async updateScannedRoll(
+    @Body() dto: updateScannedRoll_RequestDTO,
+  ): Promise<updateScannedRoll_ResponseDTO> {
+    return this.mappingQrService.updateScannedRoll(
+      dto.SL,
+      dto.CayId,
+      dto.CTPGDId,
+    );
   }
 }

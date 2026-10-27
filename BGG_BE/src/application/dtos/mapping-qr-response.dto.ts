@@ -4,6 +4,7 @@ import {
   WH_PhieuGiamDinh_GetData_ByBarcodeKien,
   WH_ChiTietPhieuGiamDinh_PGDId,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile,
+  ScannedRolls,
 } from '../../domain/entities/mapping-qr.entity.js';
 
 export class WH_PhieuGiamDinh_GetDanhSachTrangThai_ResponseDTO {
@@ -34,4 +35,16 @@ export class wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDT
   success: boolean;
   message: string;
   data: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile;
+}
+
+export class getScannedRolls_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: ScannedRolls[];
+}
+
+export class updateScannedRoll_ResponseDTO {
+  success: boolean;
+  message: string;
+  rowsAffected: number;
 }

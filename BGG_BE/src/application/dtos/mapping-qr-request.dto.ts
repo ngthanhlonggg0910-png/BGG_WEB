@@ -24,3 +24,9 @@ export class wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO
   SoGross: number;
   QrTrangMapping: string;
 }
+
+export class updateScannedRoll_RequestDTO {
+  SL: number;
+  CayId: number;
+  CTPGDId: number;
+}

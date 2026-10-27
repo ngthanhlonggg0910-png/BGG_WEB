@@ -9,6 +9,8 @@ import {
   WH_PhieuGiamDinh_GetData_ByBarcodeKien_ResponseDTO,
   WH_ChiTietPhieuGiamDinh_PGDId_ResponseDTO,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO,
+  getScannedRolls_ResponseDTO,
+  updateScannedRoll_ResponseDTO,
 } from '../dtos/mapping-qr-response.dto.js';
 
 export interface IMappingQrService {
@@ -29,4 +31,12 @@ export interface IMappingQrService {
   saveMapping(
     dto: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   ): Promise<wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO>;
+
+  getScannedRolls(CTPGDId: number): Promise<getScannedRolls_ResponseDTO>;
+
+  updateScannedRoll(
+    SL: number,
+    CayId: number,
+    CTPGDId: number,
+  ): Promise<updateScannedRoll_ResponseDTO>;
 }

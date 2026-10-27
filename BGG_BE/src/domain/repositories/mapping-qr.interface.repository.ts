@@ -6,6 +6,7 @@ import {
   WH_PhieuGiamDinh_GetData_ByBarcodeKien,
   WH_ChiTietPhieuGiamDinh_PGDId,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile,
+  ScannedRolls,
 } from '../entities/mapping-qr.entity.js';
 
 export interface IMapingQrRepository {
@@ -47,4 +48,12 @@ export interface IMapingQrRepository {
     SoGross: number,
     QrTrangMapping: string,
   ): Promise<wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile>;
+
+  getScannedRolls(CTPGDId: number): Promise<ScannedRolls[]>;
+
+  updateScannedRoll(
+    SL: number,
+    CayId: number,
+    CTPGDId: number,
+  ): Promise<number>;
 }
