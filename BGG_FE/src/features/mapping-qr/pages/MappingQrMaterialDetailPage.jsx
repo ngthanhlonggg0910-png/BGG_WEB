@@ -32,6 +32,15 @@ export default function MappingQrMaterialDetailPage({ data, onScan }) {
       0,
   );
 
+  const totalRollQuantity = Number(
+    list
+      .reduce((total, cay) => {
+        const quantity = Number(cay.SL);
+        return total + (Number.isFinite(quantity) ? quantity : 0);
+      }, 0)
+      .toFixed(4),
+  );
+
   const fetchScannedRolls = useCallback(async () => {
     if (!ctpgdId) return;
 
@@ -153,19 +162,34 @@ export default function MappingQrMaterialDetailPage({ data, onScan }) {
         CTPGDId: rollCtpgdId,
       });
 
-      if (response?.success === false) {
-        throw new Error(response.message || "Cập nhật số lượng thất bại");
+      const refreshedRolls = await fetchScannedRolls();
+      const updatedRoll = Array.isArray(refreshedRolls)
+        ? refreshedRolls.find(
+            (cay) =>
+              Number(cay.CayId) === cayId &&
+              Number(cay.CTPGDId) === rollCtpgdId,
+          )
+        : null;
+
+      if (Number(updatedRoll?.SL) !== enteredQuantity) {
+        throw new Error(
+          response?.message || "Cập nhật số lượng thất bại. Vui lòng thử lại.",
+        );
       }
 
-      setList((previousList) =>
-        previousList.map((cay) =>
-          Number(cay.CayId) === cayId && Number(cay.CTPGDId) === rollCtpgdId
-            ? { ...cay, SL: enteredQuantity }
-            : cay,
-        ),
-      );
+      if (response?.success === false) {
+        console.warn(
+          "API cập nhật trả về thất bại nhưng dữ liệu đã được cập nhật:",
+          response.message,
+        );
+      }
+
       onScan?.(rollToUpdate, enteredQuantity);
-      showSuccessToast(response?.message || "Cập nhật số lượng thành công");
+      showSuccessToast(
+        response?.success === false
+          ? "Cập nhật số lượng thành công"
+          : (response.message || "Cập nhật số lượng thành công"),
+      );
       closeUpdateModal();
     } catch (error) {
       console.error("Lỗi cập nhật số lượng cây:", error);
@@ -214,7 +238,7 @@ export default function MappingQrMaterialDetailPage({ data, onScan }) {
                 },
                 {
                   label: "Tổng SL",
-                  value: location?.state?.item.TongGiamDinh,
+                  value: totalRollQuantity,
                   icon: Package,
                 },
               ].map(({ label, value, icon: Icon }) => (
