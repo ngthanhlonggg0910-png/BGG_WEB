@@ -229,6 +229,8 @@ export default function PickingOrderMaterialList() {
                           key={`${item.MaCay}-${item.TenNPL}-${index}`}
                           item={item}
                           index={index}
+                          PhieuSoanHangId={PhieuSoanHangId}
+                          onReload={fetchMaterials}
                         />
                       ))}
                     </div>

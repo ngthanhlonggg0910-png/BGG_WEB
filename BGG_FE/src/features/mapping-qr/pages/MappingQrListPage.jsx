@@ -18,9 +18,7 @@ import {
   getDanhSachTrangThaiPhieuGiamDinh,
   getDanhSachPhieuGiamDinhTheoThoiGian,
 } from "../api/mappingQrApi";
-import {
-  showErrorToast,
-} from "../../../shared/components/ui/CustomToast";
+import { showErrorToast } from "../../../shared/components/ui/CustomToast";
 
 // const statusOptions = [
 //   { label: "Tất cả", value: "all" },
@@ -124,6 +122,22 @@ export default function MappingQrListPage() {
     savedFilter?.toDate ? dayjs(savedFilter.toDate) : null,
   ]);
   const [status, setStatus] = useState(savedFilter?.status ?? null);
+
+  const listFilter = list.filter((item) => {
+    const search = keyword?.trim().toLowerCase() || "";
+
+    return (
+      String(item.maPhieu ?? "")
+        .toLowerCase()
+        .includes(search) ||
+      String(item.Lo ?? "")
+        .toLowerCase()
+        .includes(search) ||
+      String(item.maHang ?? "")
+        .toLowerCase()
+        .includes(search)
+    );
+  });
 
   const fetchStatus = async () => {
     setLoading(true);
@@ -330,7 +344,7 @@ export default function MappingQrListPage() {
                       Kết quả tìm kiếm
                     </h3>
                     <p className="m-0 text-xs text-egmf-muted">
-                      {list.length} phiếu được tìm thấy
+                      {listFilter.length} phiếu được tìm thấy
                     </p>
                   </div>
                 </div>
@@ -357,7 +371,7 @@ export default function MappingQrListPage() {
               </div>
 
               <div className="p-4 sm:p-5">
-                {list.length === 0 ? (
+                {listFilter.length === 0 ? (
                   <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-egmf-primary-border-soft bg-egmf-surface-subtle px-4 py-8 text-center">
                     <span className="grid size-14 place-items-center rounded-2xl bg-egmf-primary-soft text-egmf-primary">
                       <FileSearch size={27} strokeWidth={1.9} />
@@ -371,7 +385,7 @@ export default function MappingQrListPage() {
                   </div>
                 ) : (
                   <div className="grid gap-3 lg:grid-cols-2 xl:gap-4">
-                    {list.map((item, index) => {
+                    {listFilter.map((item, index) => {
                       return (
                         <article
                           onClick={() =>
@@ -396,9 +410,11 @@ export default function MappingQrListPage() {
                             </p>
 
                             <p className="m-0">Mã hàng: {item.maHang ?? ""}</p>
-
                             <p className="m-0">
-                              Loại giám định: {item.loaiGiamDinh ?? ""}
+                              Loại giám định:{" "}
+                              {item.loaiGiamDinh?.trim().toLowerCase() === "pl"
+                                ? "Phụ liệu"
+                                : "Nguyên liệu"}
                             </p>
 
                             <p className="m-0">

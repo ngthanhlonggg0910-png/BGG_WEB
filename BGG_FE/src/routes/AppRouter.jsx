@@ -1,5 +1,11 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 
 import { getCurrentUser } from "../shared/auth/session";
 
@@ -20,6 +26,7 @@ import MappingOptionPage from "../features/mapping-qr/pages/MappingOptionPage";
 import MappingQrListPage from "../features/mapping-qr/pages/MappingQrListPage";
 import MappingQrBarcodePage from "../features/mapping-qr/pages/MappingQrBarcodePage";
 import InspectionDetailPage from "../features/mapping-qr/pages/InspectionDetailPage";
+import MappingQrMaterialDetailPage from "../features/mapping-qr/pages/MappingQrMaterialDetailPage";
 
 // Kiểm tra user đã đăng nhập chưa
 function PrivateRoute({ children }) {
@@ -27,7 +34,13 @@ function PrivateRoute({ children }) {
   const user = getCurrentUser();
 
   if (!user) {
-    return <Navigate to="/login" replace state={{ returnTo: location.pathname + location.search }} />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ returnTo: location.pathname + location.search }}
+      />
+    );
   }
 
   return children;
@@ -205,6 +218,15 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <InspectionDetailPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/mapping-qr/material-detail/:ctpgdId"
+          element={
+            <PrivateRoute>
+              <MappingQrMaterialDetailPage />
             </PrivateRoute>
           }
         />

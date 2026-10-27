@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight, Plus, Minus } from "lucide-react";
+import { use, useEffect, useState } from "react";
+import { ChevronRight, Plus, Minus, Search, X } from "lucide-react";
 import { useLocation, useParams } from "react-router-dom";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { getChiTietPhieuGiamDinh, saveMapping } from "../api/mappingQrApi";
@@ -8,8 +8,10 @@ import {
   showSuccessToast,
 } from "../../../shared/components/ui/CustomToast";
 import { getCurrentUser } from "../../../shared/auth/session";
+import { useNavigate } from "react-router-dom";
 
 export default function InspectionDetailPage() {
+  const navigate = useNavigate();
   const user = getCurrentUser();
 
   const tenNguoiTao = `${user.data.HoVaTenLot} ${user.data.Ten}`;
@@ -28,7 +30,6 @@ export default function InspectionDetailPage() {
   const maPhieu = location?.state?.maPhieu;
 
   const [expanded, setExpanded] = useState([]);
-  const [showFilters, setShowFilters] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const [materials, setMaterials] = useState([]);
@@ -37,8 +38,9 @@ export default function InspectionDetailPage() {
   const [qrTemTrang, setQrTemTrang] = useState("");
   const [maSoKien, setMaSoKien] = useState("");
   const [saving, setSaving] = useState(false);
+  const [keyword, setKeyword] = useState("");
 
-  //console.log(materials);
+  console.log(materials[0]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -65,6 +67,34 @@ export default function InspectionDetailPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const listFilter = materials.filter((item) => {
+    const search = String(keyword ?? "")
+      .trim()
+      .toLowerCase();
+
+    if (!search) return true;
+
+    // Nếu nhập số và có Size khớp, ưu tiên lọc theo Size
+    if (/^\d+$/.test(search)) {
+      return Number(item.Size) === Number(search);
+    }
+
+    return [
+      item.TenChungLoai,
+      item.MaChungLoai,
+      item.ArtCode,
+      item.MaMau,
+      item.Item,
+      item.Lot,
+      item.SoPO,
+    ].some((value) =>
+      String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .includes(search),
+    );
+  });
 
   //   console.log(materials);
 
@@ -301,8 +331,6 @@ export default function InspectionDetailPage() {
     }
   };
 
-  console.log(materials);
-
   return (
     <MainLayout screenTitle={`Phiếu giám định ${maPhieu}`}>
       <div className="min-h-full bg-egmf-surface text-[15px] text-egmf-ink">
@@ -317,56 +345,72 @@ export default function InspectionDetailPage() {
                 <h2 className="m-0 text-base font-extrabold text-egmf-ink">
                   Tra cứu &amp; xác nhận
                 </h2>
-                <p className="m-0 mt-0.5 text-xs text-egmf-muted">
-                  Nhập nội dung hoặc mã kiện để thao tác.
-                </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowFilters((v) => !v)}
-                className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-egmf-primary text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20"
-              >
-                <ChevronDown
-                  size={23}
-                  className={showFilters ? "" : "rotate-180"}
-                />
-              </button>
             </div>
 
-            {showFilters && (
-              <div className="space-y-3 border-t border-egmf-border-subtle p-3.5 sm:p-5">
-                <div>
+            <div className="space-y-3 border-t border-egmf-border-subtle p-3.5 sm:p-5">
+              <div>
+                <input
+                  type="text"
+                  value={qrTemTrang}
+                  onChange={(e) => setQrTemTrang(e.target.value)}
+                  placeholder="Quét hoặc nhập mã QR trắng"
+                  className="h-12 w-full rounded-xl border border-egmf-border bg-white px-3 text-base outline-none focus:border-egmf-primary"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="relative min-w-0 flex-1">
                   <input
                     type="text"
-                    value={qrTemTrang}
-                    onChange={(e) => setQrTemTrang(e.target.value)}
-                    placeholder="Quét hoặc nhập mã QR trắng"
+                    value={maSoKien}
+                    onChange={(e) => setMaSoKien(e.target.value)}
+                    placeholder="Nhập mã số kiện"
                     className="h-12 w-full rounded-xl border border-egmf-border bg-white px-3 text-base outline-none focus:border-egmf-primary"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <div className="relative min-w-0 flex-1">
-                    <input
-                      type="text"
-                      value={maSoKien}
-                      onChange={(e) => setMaSoKien(e.target.value)}
-                      placeholder="Nhập mã số kiện"
-                      className="h-12 w-full rounded-xl border border-egmf-border bg-white px-3 text-base outline-none focus:border-egmf-primary"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleConfirmMapping}
-                    disabled={saving}
-                    className="h-12 w-full rounded-xl bg-egmf-primary px-4 text-sm font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20"
-                  >
-                    {saving ? "Đang lưu..." : "XÁC NHẬN"}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleConfirmMapping}
+                  disabled={saving}
+                  className="h-12 w-full rounded-xl bg-egmf-primary px-4 text-sm font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20"
+                >
+                  {saving ? "Đang lưu..." : "XÁC NHẬN"}
+                </button>
               </div>
-            )}
+            </div>
+          </div>
+
+          <div className="mt-4 sm:mt-5">
+            <label className="mb-2 flex items-center gap-1.5 px-1 text-xs font-bold text-egmf-ink-secondary">
+              <Search size={14} className="text-egmf-primary" />
+              Tìm nhanh vật tư
+            </label>
+            <div className="flex h-12 items-center gap-3 rounded-xl border border-egmf-border bg-white px-3.5 shadow-xs transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-egmf-primary-soft text-egmf-primary">
+                <Search size={18} strokeWidth={2.4} />
+              </span>
+              <input
+                aria-label="Tìm nhanh vật tư"
+                type="search"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Mã hàng, NPL, lô, màu, size..."
+                className="h-full min-w-0 flex-1 bg-transparent text-sm font-medium text-egmf-ink outline-none placeholder:font-normal placeholder:text-egmf-placeholder sm:text-[15px]"
+              />
+
+              {keyword && (
+                <button
+                  type="button"
+                  onClick={() => setKeyword("")}
+                  aria-label="Xóa từ khóa tìm kiếm"
+                  className="grid size-8 shrink-0 place-items-center rounded-full bg-egmf-surface-tint text-egmf-muted transition hover:bg-egmf-primary-soft hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
+                >
+                  <X size={17} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* LIST TITLE */}
@@ -376,14 +420,14 @@ export default function InspectionDetailPage() {
             </h2>
             <span className="text-xs font-semibold text-egmf-muted">
               {selected.length > 0
-                ? `Đã chọn ${selected.length}/${materials.length}`
-                : `${materials.length} vật tư`}
+                ? `Đã chọn ${selected.length}/${listFilter.length}`
+                : `${listFilter.length} vật tư`}
             </span>
           </div>
 
           {/* MATERIAL CARDS */}
           <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
-            {materials.map((item) => {
+            {listFilter.map((item) => {
               const isSelected = selected.includes(item.CTPGDId);
               const isExpanded = expanded.includes(item.CTPGDId);
               const enteredQuantity = Number(
@@ -405,6 +449,18 @@ export default function InspectionDetailPage() {
                       ? "border-egmf-primary-border shadow-egmf-card"
                       : "border-egmf-border hover:border-egmf-primary-border"
                   }`}
+                  onClick={() =>
+                    navigate(`/mapping-qr/material-detail/${item.CTPGDId}`, {
+                      state: {
+                        item,
+                        pgdId,
+                        loaiGiamDinh: item.loaiGiamDinh,
+                        danhSachCay: materials.filter(
+                          (cay) => cay.CTPGDId === item.CTPGDId,
+                        ),
+                      },
+                    })
+                  }
                 >
                   <div
                     className={`border-l-4 ${quantityBorderClass} px-3.5 py-3.5 sm:px-5 sm:py-4`}

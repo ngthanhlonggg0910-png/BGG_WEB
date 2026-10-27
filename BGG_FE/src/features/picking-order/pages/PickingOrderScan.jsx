@@ -60,7 +60,7 @@ export default function PickingOrderScan() {
 
         // 2. Cây đã tồn tại trong phiếu khác
         if (response.data.SoPhieuKiem == null) {
-          toast.warning(response.message);
+          showErrorToast(response.message);
           return;
         }
 
