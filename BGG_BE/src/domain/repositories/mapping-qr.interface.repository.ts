@@ -56,4 +56,6 @@ export interface IMapingQrRepository {
     CayId: number,
     CTPGDId: number,
   ): Promise<number>;
+
+  deleteScannedRoll(MaCay: string): Promise<number>;
 }

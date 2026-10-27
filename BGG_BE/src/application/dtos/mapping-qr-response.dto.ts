@@ -48,3 +48,9 @@ export class updateScannedRoll_ResponseDTO {
   message: string;
   rowsAffected: number;
 }
+
+export class deleteScannedRoll_ResponseDTO {
+  success: boolean;
+  message: string;
+  rowsAffected: number;
+}

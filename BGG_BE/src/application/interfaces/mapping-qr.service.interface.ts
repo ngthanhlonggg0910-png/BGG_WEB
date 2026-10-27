@@ -1,6 +1,7 @@
 import {
   wh_DanhSachPhieuGiamDinhTheoThoiGian_RequestDTO,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
+  deleteScannedRoll_RequestDTO,
 } from '../dtos/mapping-qr-request.dto.js';
 
 import {
@@ -11,6 +12,7 @@ import {
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO,
   getScannedRolls_ResponseDTO,
   updateScannedRoll_ResponseDTO,
+  deleteScannedRoll_ResponseDTO,
 } from '../dtos/mapping-qr-response.dto.js';
 
 export interface IMappingQrService {
@@ -39,4 +41,8 @@ export interface IMappingQrService {
     CayId: number,
     CTPGDId: number,
   ): Promise<updateScannedRoll_ResponseDTO>;
+
+  deleteScannedRoll(
+    dto: deleteScannedRoll_RequestDTO,
+  ): Promise<deleteScannedRoll_ResponseDTO>;
 }

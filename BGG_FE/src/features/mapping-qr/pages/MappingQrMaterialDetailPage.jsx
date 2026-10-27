@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from "react";
-import {
-  Package,
-  Layers3,
-  ScanQrCode,
-  Boxes,
-  ChevronRight,
-} from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Package, Layers3, Boxes, PencilLine, Trash2 } from "lucide-react";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { useLocation, useParams } from "react-router-dom";
-import { getScannedRolls, updateScannedRoll } from "../api/mappingQrApi";
+import {
+  deleteScannedRoll,
+  getScannedRolls,
+  updateScannedRoll,
+} from "../api/mappingQrApi";
 import {
   showErrorToast,
   showSuccessToast,
@@ -24,6 +22,8 @@ export default function MappingQrMaterialDetailPage({ data, onScan }) {
   const [quantity, setQuantity] = useState("");
   const [quantityError, setQuantityError] = useState("");
   const [savingQuantity, setSavingQuantity] = useState(false);
+  const [rollToDelete, setRollToDelete] = useState(null);
+  const [deletingRoll, setDeletingRoll] = useState(false);
 
   const documentQuantity = Number(
     location?.state?.item?.SoLuongChungTuThucTe ??
@@ -31,6 +31,32 @@ export default function MappingQrMaterialDetailPage({ data, onScan }) {
       rollToUpdate?.SL ??
       0,
   );
+
+  const fetchScannedRolls = useCallback(async () => {
+    if (!ctpgdId) return;
+
+    try {
+      setLoading(true);
+      const response = await getScannedRolls(Number(ctpgdId));
+
+      if (response?.success) {
+        const rolls = response.data || [];
+        setList(rolls);
+        return rolls;
+      } else {
+        setList([]);
+        showErrorToast(response?.message || "Lấy dữ liệu thất bại");
+        return null;
+      }
+    } catch (error) {
+      console.error("Lỗi lấy danh sách cây:", error);
+      setList([]);
+      showErrorToast("Không thể tải lại danh sách cây");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [ctpgdId]);
 
   const openUpdateModal = (cay) => {
     setRollToUpdate(cay);
@@ -42,6 +68,53 @@ export default function MappingQrMaterialDetailPage({ data, onScan }) {
     setRollToUpdate(null);
     setQuantity("");
     setQuantityError("");
+  };
+
+  const closeDeleteModal = () => {
+    if (deletingRoll) return;
+    setRollToDelete(null);
+  };
+
+  const handleDeleteRoll = async () => {
+    if (deletingRoll) return;
+
+    const maCay = String(rollToDelete?.MaCay ?? "").trim();
+
+    if (!maCay) {
+      showErrorToast("Không tìm thấy mã cây để xóa");
+      return;
+    }
+
+    try {
+      setDeletingRoll(true);
+      const response = await deleteScannedRoll(maCay);
+
+      if (response?.success === false) {
+        const refreshedRolls = await fetchScannedRolls();
+        const wasDeleted =
+          Array.isArray(refreshedRolls) &&
+          !refreshedRolls.some(
+            (cay) => String(cay.MaCay ?? "").trim() === maCay,
+          );
+
+        if (wasDeleted) {
+          setRollToDelete(null);
+          showSuccessToast("Đã xóa cây thành công");
+          return;
+        }
+
+        throw new Error(response.message || "Xóa cây thất bại");
+      }
+
+      await fetchScannedRolls();
+      showSuccessToast(response?.message || "Đã xóa cây thành công");
+      setRollToDelete(null);
+    } catch (error) {
+      console.error("Lỗi xóa cây:", error);
+      showErrorToast(error.message || "Xóa cây thất bại");
+    } finally {
+      setDeletingRoll(false);
+    }
   };
 
   const handleConfirmQuantity = async () => {
@@ -103,34 +176,8 @@ export default function MappingQrMaterialDetailPage({ data, onScan }) {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!ctpgdId) return;
-
-      try {
-        setLoading(true);
-        const response = await getScannedRolls(Number(ctpgdId));
-
-        console.log("Response đầy đủ:", response);
-        console.log("Response.data:", response?.data);
-
-        if (response?.success) {
-          setList(response.data || []);
-        } else {
-          setList([]);
-          showErrorToast(response?.message || "Lấy dữ liệu thất bại");
-        }
-      } catch (error) {
-        console.error("Lỗi lấy danh sách cây:", error);
-        setList([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [ctpgdId]);
-
-  console.log(list);
+    fetchScannedRolls();
+  }, [fetchScannedRolls]);
 
   return (
     <MainLayout screenTitle="Chi tiết vật tư">
@@ -264,16 +311,28 @@ export default function MappingQrMaterialDetailPage({ data, onScan }) {
 
                   {/* Nút thao tác */}
                   <div className="flex items-center justify-between gap-3 border-t border-egmf-border-subtle bg-egmf-surface-subtle px-4 py-2.5 sm:px-5">
-                    <span className="text-xs font-medium text-egmf-muted"></span>
-                    <button
-                      type="button"
-                      onClick={() => openUpdateModal(cay)}
-                      className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-egmf-primary px-3 text-xs font-bold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20"
-                    >
-                      <ScanQrCode size={16} />
-                      Cập nhật
-                      <ChevronRight size={15} strokeWidth={2.75} />
-                    </button>
+                    <span className="hidden items-center gap-1.5 text-xs font-semibold text-egmf-muted sm:flex">
+                      <span className="size-1.5 rounded-full bg-egmf-primary" />
+                      Quản lý cây
+                    </span>
+                    <div className="ml-auto flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRollToDelete(cay)}
+                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-100 bg-red-50 px-3 text-xs font-bold text-red-600 transition hover:border-red-200 hover:bg-red-100 active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-100"
+                      >
+                        <Trash2 size={15} strokeWidth={2.5} />
+                        Xóa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openUpdateModal(cay)}
+                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-egmf-primary px-3 text-xs font-bold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20"
+                      >
+                        <PencilLine size={15} strokeWidth={2.5} />
+                        Cập nhật
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -394,6 +453,72 @@ export default function MappingQrMaterialDetailPage({ data, onScan }) {
                 className="h-10 rounded-lg bg-egmf-primary px-4 text-sm font-bold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {savingQuantity ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rollToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-egmf-ink/50 p-4 backdrop-blur-[1px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-roll-title"
+          onMouseDown={(event) => {
+            if (!deletingRoll && event.target === event.currentTarget) {
+              closeDeleteModal();
+            }
+          }}
+        >
+          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-2xl">
+            <div className="flex items-start gap-3 border-b border-egmf-border-subtle bg-egmf-surface-subtle px-5 py-4">
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-red-100 text-red-600">
+                <Trash2 size={21} strokeWidth={2.25} />
+              </span>
+              <div className="min-w-0 pt-0.5">
+                <h2
+                  id="delete-roll-title"
+                  className="m-0 text-lg font-extrabold text-egmf-ink"
+                >
+                  Xóa cây
+                </h2>
+                <p className="m-0 mt-0.5 text-xs font-medium text-egmf-muted">
+                  Thao tác này không thể hoàn tác.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 px-5 py-5">
+              <p className="m-0 text-sm font-medium text-egmf-ink-secondary">
+                Bạn có chắc muốn xóa cây sau?
+              </p>
+              <div className="rounded-xl border border-red-100 bg-red-50 px-3.5 py-3">
+                <p className="m-0 text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
+                  Mã cây
+                </p>
+                <p className="m-0 mt-1 break-all text-sm font-extrabold text-red-700">
+                  {rollToDelete.MaCay || "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-2 border-t border-egmf-border-subtle bg-egmf-surface-subtle px-5 py-3.5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={deletingRoll}
+                className="h-10 rounded-lg px-4 text-sm font-bold text-egmf-ink-secondary transition hover:bg-white hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteRoll}
+                disabled={deletingRoll}
+                className="h-10 rounded-lg bg-red-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {deletingRoll ? "Đang xóa..." : "Xóa cây"}
               </button>
             </div>
           </div>

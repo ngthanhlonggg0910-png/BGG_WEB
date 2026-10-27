@@ -1,3 +1,39 @@
+function normalizeMojibake(value) {
+  if (typeof value !== "string" || !(/[ÃÂ]|á[º»]/u.test(value))) {
+    return value;
+  }
+
+  try {
+    const bytes = Uint8Array.from(value, (character) =>
+      character.charCodeAt(0),
+    );
+    const normalized = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+
+    return normalized.includes("�") ? value : normalized;
+  } catch {
+    return value;
+  }
+}
+
+function normalizeApiMessage(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return data;
+  }
+
+  if (typeof data.message === "string") {
+    return { ...data, message: normalizeMojibake(data.message) };
+  }
+
+  if (Array.isArray(data.message)) {
+    return {
+      ...data,
+      message: data.message.map(normalizeMojibake),
+    };
+  }
+
+  return data;
+}
+
 export async function postJson(url, payload) {
   const response = await fetch(url, {
     method: "POST",
@@ -7,7 +43,7 @@ export async function postJson(url, payload) {
     body: JSON.stringify(payload),
   });
 
-  const data = await response.json();
+  const data = normalizeApiMessage(await response.json());
 
   if (!response.ok) {
     const message = Array.isArray(data?.message)

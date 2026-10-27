@@ -15,11 +15,13 @@ import {
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO,
   getScannedRolls_ResponseDTO,
   updateScannedRoll_ResponseDTO,
+  deleteScannedRoll_ResponseDTO,
 } from '../../application/dtos/mapping-qr-response.dto.js';
 import {
   updateScannedRoll_RequestDTO,
   wh_DanhSachPhieuGiamDinhTheoThoiGian_RequestDTO,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
+  deleteScannedRoll_RequestDTO,
 } from '../../application/dtos/mapping-qr-request.dto.js';
 @Controller('mapping-qr')
 export class MappingQrController {
@@ -78,5 +80,12 @@ export class MappingQrController {
       dto.CayId,
       dto.CTPGDId,
     );
+  }
+
+  @Post('deleteScannedRoll')
+  deleteScannedRoll(
+    @Body() dto: deleteScannedRoll_RequestDTO,
+  ): Promise<deleteScannedRoll_ResponseDTO> {
+    return this.mappingQrService.deleteScannedRoll(dto);
   }
 }

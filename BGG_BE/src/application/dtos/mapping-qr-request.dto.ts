@@ -30,3 +30,7 @@ export class updateScannedRoll_RequestDTO {
   CayId: number;
   CTPGDId: number;
 }
+
+export class deleteScannedRoll_RequestDTO {
+  MaCay: string;
+}

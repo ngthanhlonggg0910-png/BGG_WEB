@@ -149,4 +149,17 @@ export class MappingQrRepository implements IMapingQrRepository {
 
     return result.rowsAffected[0] ?? 0;
   }
+
+  async deleteScannedRoll(MaCay: string): Promise<number> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('MaCay', sql.NVarChar(200), MaCay)
+      .query(`
+        DELETE FROM WH_ChiTietPhieuGiamDinh_Cay
+        WHERE MaCay = @MaCay
+      `);
+
+    return result.rowsAffected[0] ?? 0;
+  }
 }

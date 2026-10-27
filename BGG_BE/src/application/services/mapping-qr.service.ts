@@ -15,10 +15,12 @@ import {
   WH_PhieuGiamDinh_GetDanhSachTrangThai_ResponseDTO,
   WH_PhieuGiamDinh_GetData_ByBarcodeKien_ResponseDTO,
   updateScannedRoll_ResponseDTO,
+  deleteScannedRoll_ResponseDTO,
 } from '../dtos/mapping-qr-response.dto.js';
 import {
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   wh_DanhSachPhieuGiamDinhTheoThoiGian_RequestDTO,
+  deleteScannedRoll_RequestDTO,
 } from '../dtos/mapping-qr-request.dto.js';
 import { DatabaseService } from '../../infrastructure/database/database.service.js';
 
@@ -230,6 +232,37 @@ export class MappingQrService implements IMappingQrService {
         message: 'Cập nhật số lượng cây thất bại',
         rowsAffected: 0,
       };
+    }
+  }
+
+  async deleteScannedRoll(
+    dto: deleteScannedRoll_RequestDTO,
+  ): Promise<deleteScannedRoll_ResponseDTO> {
+    try {
+      const rowsAffected = await this.mappingQrRepository.deleteScannedRoll(
+        dto.MaCay,
+      );
+
+      if (rowsAffected === 0) {
+        return {
+          success: false,
+          message: 'KhÃ´ng tÃ¬m tháº¥y cÃ¢y cáº§n xÃ³a',
+          rowsAffected: 0,
+        };
+      }
+
+      return {
+        success: true,
+        message: 'XÃ³a cÃ¢y thÃ nh cÃ´ng',
+        rowsAffected,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Lá»—i khi xÃ³a cÃ¢y',
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw new InternalServerErrorException('CÃ³ lá»—i khi xÃ³a cÃ¢y');
     }
   }
 }

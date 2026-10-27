@@ -38,6 +38,7 @@ export default function InspectionDetailPage() {
   const [maSoKien, setMaSoKien] = useState("");
   const [saving, setSaving] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(true);
 
   // console.log(materials[0]);
 
@@ -94,6 +95,8 @@ export default function InspectionDetailPage() {
         .includes(search),
     );
   });
+
+  console.log(listFilter);
 
   //   console.log(materials);
 
@@ -331,51 +334,7 @@ export default function InspectionDetailPage() {
         <header className="sr-only">Thông tin chi tiết phiếu giám định</header>
 
         <main className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-          {/* SEARCH AREA */}
-          <div className="overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-egmf-card">
-            <div className="flex items-center justify-between gap-3 bg-egmf-surface-subtle px-4 py-3 sm:px-5">
-              <div>
-                <h2 className="m-0 text-base font-extrabold text-egmf-ink">
-                  Tra cứu &amp; xác nhận
-                </h2>
-              </div>
-            </div>
-
-            <div className="space-y-3 border-t border-egmf-border-subtle p-3.5 sm:p-5">
-              <div>
-                <input
-                  type="text"
-                  value={qrTemTrang}
-                  onChange={(e) => setQrTemTrang(e.target.value)}
-                  placeholder="Quét hoặc nhập mã QR trắng"
-                  className="h-12 w-full rounded-xl border border-egmf-border bg-white px-3 text-base outline-none focus:border-egmf-primary"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="relative min-w-0 flex-1">
-                  <input
-                    type="text"
-                    value={maSoKien}
-                    onChange={(e) => setMaSoKien(e.target.value)}
-                    placeholder="Nhập mã số kiện"
-                    className="h-12 w-full rounded-xl border border-egmf-border bg-white px-3 text-base outline-none focus:border-egmf-primary"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleConfirmMapping}
-                  disabled={saving}
-                  className="h-12 w-full rounded-xl bg-egmf-primary px-4 text-sm font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20"
-                >
-                  {saving ? "Đang lưu..." : "XÁC NHẬN"}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 sm:mt-5">
+          <div className="mb-4 sm:mb-5">
             <label className="mb-2 flex items-center gap-1.5 px-1 text-xs font-bold text-egmf-ink-secondary">
               <Search size={14} className="text-egmf-primary" />
               Tìm nhanh vật tư
@@ -404,6 +363,78 @@ export default function InspectionDetailPage() {
                 </button>
               )}
             </div>
+          </div>
+
+          {/* SEARCH AREA */}
+          <div className="sticky top-[calc(80px+env(safe-area-inset-top))] z-10 -mx-1 mb-4 overflow-hidden rounded-xl border border-egmf-border bg-egmf-surface-raised/95 shadow-egmf-card backdrop-blur-md sm:top-[88px] sm:mx-0 sm:mb-5">
+            <div className="flex items-center justify-between gap-3 bg-egmf-surface-subtle/95 px-3.5 py-2.5 sm:px-4">
+              <div className="min-w-0 flex-1">
+                <h2 className="m-0 text-sm font-extrabold text-egmf-ink">
+                  Tra cứu &amp; xác nhận
+                </h2>
+                {/* {isSearchPanelOpen && (
+                  <p className="m-0 mt-0.5 text-xs font-medium text-egmf-muted">
+                    Quét QR trắng, nhập mã kiện rồi xác nhận mapping
+                  </p>
+                )} */}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSearchPanelOpen((previous) => !previous)}
+                aria-label={
+                  isSearchPanelOpen
+                    ? "Thu gọn khu tra cứu và xác nhận"
+                    : "Mở khu tra cứu và xác nhận"
+                }
+                aria-expanded={isSearchPanelOpen}
+                className="grid size-8 shrink-0 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-primary-soft hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
+              >
+                <ChevronRight
+                  size={20}
+                  strokeWidth={2.75}
+                  className={
+                    isSearchPanelOpen
+                      ? "rotate-90 transition-transform"
+                      : "-rotate-90 transition-transform"
+                  }
+                />
+              </button>
+            </div>
+
+            {isSearchPanelOpen && (
+              <div className="grid grid-cols-2 gap-2 border-t border-egmf-border-subtle p-2.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_132px] sm:items-center sm:gap-3 sm:p-3">
+                <div className="min-w-0">
+                  <input
+                    aria-label="Mã QR trắng"
+                    type="text"
+                    value={qrTemTrang}
+                    onChange={(e) => setQrTemTrang(e.target.value)}
+                    placeholder="Mã QR trắng"
+                    className="h-10 w-full rounded-lg border border-egmf-border bg-white px-3 text-sm font-medium text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <input
+                    aria-label="Mã số kiện"
+                    type="text"
+                    value={maSoKien}
+                    onChange={(e) => setMaSoKien(e.target.value)}
+                    placeholder="Mã kiện"
+                    className="h-10 w-full rounded-lg border border-egmf-border bg-white px-3 text-sm font-medium text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmMapping}
+                  disabled={saving}
+                  className="col-span-2 h-10 w-full rounded-lg bg-egmf-primary px-4 text-sm font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-1"
+                >
+                  {saving ? "Đang lưu..." : "XÁC NHẬN"}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* LIST TITLE */}
@@ -510,9 +541,9 @@ export default function InspectionDetailPage() {
                             </dt>
                             <dd
                               className="m-0 truncate font-semibold text-egmf-ink-secondary"
-                              title={item.ColorName}
+                              title={item.ColorCode}
                             >
-                              {item.ColorName || "—"}
+                              {item.ColorCode || "—"}
                             </dd>
                           </div>
                           <div className="min-w-0">
@@ -638,13 +669,16 @@ export default function InspectionDetailPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          navigate(`/mapping-qr/material-detail/${item.CTPGDId}`, {
-                            state: {
-                              item,
-                              pgdId,
-                              loaiGiamDinh: item.loaiGiamDinh,
+                          navigate(
+                            `/mapping-qr/material-detail/${item.CTPGDId}`,
+                            {
+                              state: {
+                                item,
+                                pgdId,
+                                loaiGiamDinh: item.loaiGiamDinh,
+                              },
                             },
-                          })
+                          )
                         }
                         aria-label="Xem chi tiết vật tư"
                         className="absolute right-0 top-0 grid size-9 shrink-0 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-primary-tint hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"

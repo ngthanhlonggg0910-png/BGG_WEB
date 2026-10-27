@@ -46,3 +46,9 @@ export async function updateScannedRoll(payload) {
     CTPGDId: payload.CTPGDId,
   });
 }
+
+export async function deleteScannedRoll(MaCay) {
+  return postJson("/api/mapping-qr/deleteScannedRoll", {
+    MaCay,
+  });
+}
