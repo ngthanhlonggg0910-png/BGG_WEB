@@ -964,18 +964,17 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
       const insertPshRes = await new sql.Request(tx)
         .input('MaSoPhieuSoan', sql.NVarChar(50), maPSH)
         .input('NgaySoan', sql.DateTime, ngaySoan)
-        .input('NguoiTao', sql.NVarChar(200), nguoiTao || '')
-        .input('TenNguoiTao', sql.NVarChar(200), nguoiTao || '')
-        .input('TKId', sql.BigInt, tkId || null)
+        .input('NguoiTao', sql.BigInt, tkId ? Number(tkId) : null)
+        .input('TenNguoiTao', sql.NVarChar(500), nguoiTao || '')
+        .input('TKId', sql.BigInt, tkId ? Number(tkId) : null)
         .input('LenhId', sql.BigInt, Number(donDatHangId))
-        .input('GhiChu', sql.NVarChar(500), pshGhiChu)
         .query(`
           INSERT INTO dbo.WH_PhieuSoanHang (
             MaSoPhieuSoan, NgayTao, NgaySoan, TinhTrang, NguoiTao, TenNguoiTao, TKId,
-            LoaiLenh, LenhId, GhiChu, DaXacNhan
+            LoaiLenh, LenhId
           ) VALUES (
             @MaSoPhieuSoan, GETDATE(), @NgaySoan, 'moitao', @NguoiTao, @TenNguoiTao, @TKId,
-            'DonDatHang', @LenhId, @GhiChu, 0
+            'DonDatHang', @LenhId
           );
           SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS PhieuSoanHangId;
         `);
@@ -987,12 +986,12 @@ export class ProductionOrderRepository implements IProductionOrderRepository {
         .input('DonDatHangId', sql.BigInt, Number(donDatHangId))
         .query(`
           INSERT INTO dbo.WH_ChiTietPhieuSoanHang (
-            PhieuSoanHangId, ChiTietLenhId, VTId, MaChungLoai, Item, MaMau, DVT,
-            QuyCach, LoaiNPL, DienGiai, LOT, SoLuongYeuCau, SoLuongThucSoan, TieuHao1, isXacNhan
+            PhieuSoanHangId, ChiTietLenhId, ChiTietDonDatHangId, VTId, MaChungLoai, Item, MaMau, DVT,
+            QuyCach, LoaiNPL, DienGiai, LOT, SoLuongYeuCau, SoLuongThucSoan, TieuHao1
           )
           SELECT 
-            @PSHId, ct.CTDonDatHangId, ISNULL(ct.VTId, 0), '', LEFT(ISNULL(ct.MaVatTu, ''), 50), '', ct.DVT,
-            ct.GhiChu, ct.LoaiNPL, ct.TenVatTu, d.GhiChuLot, ct.SoLuongYeuCau, 0, ct.SoLuongYeuCau, 0
+            @PSHId, ct.CTDonDatHangId, ct.CTDonDatHangId, ISNULL(ct.VTId, 0), '', LEFT(ISNULL(ct.MaVatTu, ''), 50), '', ct.DVT,
+            ct.GhiChu, ct.LoaiNPL, ct.TenVatTu, d.GhiChuLot, ct.SoLuongYeuCau, 0, ct.SoLuongYeuCau
           FROM dbo.OMM_DonDatHang_LSX_ChiTiet ct
           JOIN dbo.OMM_DonDatHang_LSX d ON d.DonDatHangId = ct.DonDatHangId
           WHERE ct.DonDatHangId = @DonDatHangId;
