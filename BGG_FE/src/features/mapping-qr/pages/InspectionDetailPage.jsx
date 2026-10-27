@@ -68,6 +68,18 @@ export default function InspectionDetailPage() {
     fetchData();
   }, []);
 
+  const getQuantityPriority = (item) => {
+    const enteredQuantity = Number(
+      loai === "pl" ? item.TongGiamDinhPL : item.TongGiamDinh,
+    );
+    const documentQuantity = Number(item.SoLuongChungTuThucTe ?? 0);
+
+    // Xám (chưa nhập) và cam (chưa đủ/vượt) được ưu tiên lên đầu.
+    if (!Number.isFinite(enteredQuantity) || enteredQuantity <= 0) return 0;
+    if (enteredQuantity === documentQuantity) return 2;
+    return 1;
+  };
+
   const listFilter = materials.filter((item) => {
     const search = String(keyword ?? "")
       .trim()
@@ -94,9 +106,10 @@ export default function InspectionDetailPage() {
         .toLowerCase()
         .includes(search),
     );
-  });
-
-  console.log(listFilter);
+  }).sort(
+    (firstItem, secondItem) =>
+      getQuantityPriority(firstItem) - getQuantityPriority(secondItem),
+  );
 
   //   console.log(materials);
 
