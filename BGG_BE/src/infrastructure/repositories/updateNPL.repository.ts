@@ -44,7 +44,7 @@ export class MaterialLocationRepository implements IMaterialLocationRepository {
             ) AS SLTrongRo,
             CONVERT(VARCHAR(8), GETDATE(), 108) AS Time
       FROM Lib_RO R
-      WHERE R.MaRo = 'NAR00001'
+      WHERE R.MaRo = @MaRo
     `);
 
     return {

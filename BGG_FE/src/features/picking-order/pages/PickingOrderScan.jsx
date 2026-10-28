@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Keyboard, ScanBarcode, ScanQrCode } from "lucide-react";
+import { Keyboard, ScanBarcode, ScanQrCode } from "lucide-react";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../../../shared/auth/session";
@@ -23,11 +23,12 @@ export default function PickingOrderScan() {
 
   const user = getCurrentUser();
   const TKId = user?.data?.TKId;
+  const inputRef = useRef(null);
 
   const handleScan = async (e) => {
     e.preventDefault();
 
-    const code = basketCode.trim();
+    const code = inputRef.current?.value.trim() ?? basketCode.trim();
 
     if (!code) {
       toast.warning("Vui lòng nhập hoặc quét mã");
@@ -85,8 +86,6 @@ export default function PickingOrderScan() {
     return;
   };
 
-  const inputRef = useRef(null);
-
   useEffect(() => {
     inputRef.current?.focus({ preventScroll: true });
   }, []);
@@ -116,8 +115,9 @@ export default function PickingOrderScan() {
           </div>
 
           <form
+            data-submit-on-scan="true"
             onSubmit={handleScan}
-            className="relative z-10 grid gap-3 sm:grid-cols-[minmax(0,1fr)_152px] sm:items-stretch"
+            className="relative z-10"
           >
             <div className="flex h-14 items-center gap-3 rounded-xl border border-egmf-border bg-egmf-surface px-3.5 transition-colors focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
               <ScanBarcode
@@ -128,6 +128,7 @@ export default function PickingOrderScan() {
 
               <input
                 ref={inputRef}
+                name="basketCode"
                 type="text"
                 value={basketCode}
                 onChange={(e) => setBasketCode(e.target.value)}
@@ -139,19 +140,12 @@ export default function PickingOrderScan() {
               />
             </div>
 
-            <button
-              type="submit"
-              className="flex h-14 w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-egmf-primary px-5 text-base font-bold text-white shadow-egmf-primary transition-colors hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/25 sm:h-auto"
-            >
-              Tiếp tục
-              <ArrowRight size={20} strokeWidth={2.5} />
-            </button>
           </form>
 
           <div className="relative z-10 mt-4 flex items-center justify-center gap-2 border-t border-egmf-border pt-4 text-center sm:mt-5 sm:pt-5">
             <Keyboard size={16} className="shrink-0 text-egmf-muted" />
             <p className="text-xs font-medium text-egmf-ink-soft sm:text-sm">
-              Nhấn Enter sau khi quét để tiếp tục
+              Mã quét từ camera sẽ được xử lý tự động.
             </p>
           </div>
         </section>

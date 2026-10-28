@@ -70,46 +70,13 @@ export default function WarehouseDetail({ warehouse, onBack }) {
   // Xử lý tìm kiếm
   const handleSearch = (event) => {
     event.preventDefault();
-    void search(searchType, keyword);
+    const value = String(new FormData(event.currentTarget).get("keyword") ?? "");
+
+    void search(searchType, value);
   };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
-      {/* Nút quay lại */}
-      <button
-        type="button"
-        onClick={onBack}
-        aria-label="Quay lại danh sách kho"
-        className="
-            group mb-4 inline-flex min-h-12 items-center gap-3
-            rounded-xl py-1.5 pr-4
-            text-[16px] font-bold text-slate-800
-            transition-all duration-200 ease-out
-            hover:bg-egmf-primary-hover-soft hover:text-egmf-primary-strong
-            active:scale-[0.97]
-            focus-visible:outline-none
-            focus-visible:ring-2 focus-visible:ring-egmf-primary
-          "
-      >
-        {/* Icon */}
-        <span
-          className="
-              flex h-11 w-11 shrink-0 items-center justify-center
-              rounded-xl bg-egmf-primary-soft text-egmf-primary
-              transition-all duration-200 ease-out
-              group-hover:bg-egmf-primary group-hover:text-white
-              group-active:scale-95
-            "
-        >
-          <Icon name="arrowLeft" size={22} />
-        </span>
-
-        {/* Text */}
-        <span className="transition-transform duration-200 group-hover:translate-x-0.5">
-          Danh sách kho
-        </span>
-      </button>
-
       {/* Nội dung chính */}
       <section className="overflow-hidden rounded-[20px] border border-egmf-border bg-white shadow-[0_8px_24px_rgba(47,45,105,0.055)]">
         {/* Thanh màu */}
@@ -210,10 +177,11 @@ export default function WarehouseDetail({ warehouse, onBack }) {
             {/* Form tìm kiếm */}
           </div>
 
-          <form onSubmit={handleSearch} className="mt-4">
+          <form data-submit-on-scan="true" onSubmit={handleSearch} className="mt-4">
             <div className="relative">
               <div className="flex h-[56px] min-w-0 items-center gap-2 rounded-2xl border border-egmf-border bg-white py-1.5 pl-3.5 pr-[76px] transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
                 <input
+                  name="keyword"
                   type="search"
                   value={keyword}
                   onChange={(e) => handleKeywordChange(e.target.value)}

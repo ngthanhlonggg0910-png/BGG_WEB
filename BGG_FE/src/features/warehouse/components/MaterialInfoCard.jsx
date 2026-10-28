@@ -12,6 +12,8 @@ function MaterialInfoCard({ item }) {
 
   if (!item) return null;
 
+  console.log(item);
+
   return (
     <Card
       className="!overflow-hidden !rounded-2xl !border-egmf-border-blue !shadow-none"
@@ -40,7 +42,7 @@ function MaterialInfoCard({ item }) {
         {/* MÃ RỌ */}
         <span className="min-w-0 flex-1">
           <span className="block text-[11px] font-bold uppercase tracking-wide text-slate-500">
-            Mã rọ / Palet
+            Mã vật tư
           </span>
 
           <span className="mt-1 block break-all text-[18px] font-extrabold leading-snug text-slate-900 sm:text-[20px]">

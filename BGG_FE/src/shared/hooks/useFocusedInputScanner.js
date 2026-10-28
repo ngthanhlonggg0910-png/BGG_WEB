@@ -71,6 +71,13 @@ function resolvePickingOrderId(location) {
   return id;
 }
 
+function resolveScanType(location) {
+  return (
+    location.state?.scanType ??
+    new URLSearchParams(location.search).get("scanType")
+  );
+}
+
 export function useFocusedInputScanner() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,7 +101,12 @@ export function useFocusedInputScanner() {
     const code = String(value ?? "");
     if (!code.trim()) return;
 
-    if (location.pathname === "/picking-order-scan") {
+    // Only the picking flow needs a picking-order ID. Fabric inspection uses
+    // the same scan page, but processes the scanned code in that page's form.
+    if (
+      location.pathname === "/picking-order-scan" &&
+      resolveScanType(location) !== "fabric-inspection"
+    ) {
       const PhieuSoanHangId = resolvePickingOrderId(location);
 
       if (!PhieuSoanHangId) {
@@ -131,6 +143,17 @@ export function useFocusedInputScanner() {
     valueSetter?.call(input, code);
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.dispatchEvent(new Event("change", { bubbles: true }));
+
+    // Either an input or its form can opt in to processing a camera scan
+    // immediately, as if the user pressed Enter.
+    if (
+      input.dataset.submitOnScan === "true" ||
+      input.form?.dataset.submitOnScan === "true"
+    ) {
+      input.form?.requestSubmit();
+      return;
+    }
+
     input.focus();
     toast.success("Quét mã thành công.");
   };
@@ -161,6 +184,7 @@ export function useFocusedInputScanner() {
     // Trang chi tiết phiếu soạn hàng → chuyển đến trang quét rổ
     if (location.pathname === "/picking-order-detail") {
       const PhieuSoanHangId = resolvePickingOrderId(location);
+      console.log(location);
 
       if (!PhieuSoanHangId) {
         toast.warning("Không tìm thấy ID phiếu soạn hàng");

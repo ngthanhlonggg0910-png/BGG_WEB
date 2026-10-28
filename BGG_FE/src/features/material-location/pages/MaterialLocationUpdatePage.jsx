@@ -23,11 +23,13 @@ export default function MaterialLocationUpdate() {
   const submittingRef = useRef(false);
   const maNPLRef = useRef(null);
 
-  const confirmUpdate = async () => {
+  console.log(scannedLabels);
+
+  const confirmUpdate = async ({ ro: submittedRo, npl: submittedNpl } = {}) => {
     if (submittingRef.current) return;
 
-    const ro = maRo.trim();
-    const npl = maNPL.trim();
+    const ro = (submittedRo ?? maRo).trim();
+    const npl = (submittedNpl ?? maNPL).trim();
 
     if (!ro || !npl) {
       toast.warning("Vui lòng nhập đầy đủ mã rọ và mã NPL.");
@@ -57,13 +59,15 @@ export default function MaterialLocationUpdate() {
 
       const result = await updateMaterialLocation(ro, npl, creator);
 
+      console.log("Kết quả API:", result);
+
       if (!result?.success) {
         toast.error(result?.message || "Cập nhật thất bại.");
         return;
       }
 
       const data = result.data || {};
-
+      console.log(data);
       setScannedLabels((prev) => [
         {
           id: `${Date.now()}-${npl}`,
@@ -81,12 +85,23 @@ export default function MaterialLocationUpdate() {
 
       toast.success(result.message || "Cập nhật thành công.");
     } catch (err) {
-      console.error(err);
-      toast.error("Có lỗi khi cập nhật vị trí.");
+      console.error("Lỗi updateMaterialLocation:", err);
+
+      toast.error(err?.message || "Có lỗi khi cập nhật vị trí.");
     } finally {
       submittingRef.current = false;
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    void confirmUpdate({
+      ro: String(formData.get("maRo") ?? ""),
+      npl: String(formData.get("maNPL") ?? ""),
+    });
   };
 
   return (
@@ -102,63 +117,67 @@ export default function MaterialLocationUpdate() {
             </h2>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label
-                className="mb-2 block text-[15px] font-bold text-slate-800"
-                htmlFor="maRo"
-              >
-                Mã rọ
-              </label>
-              <input
-                autoComplete="off"
-                className="h-14 w-full rounded-xl border border-slate-200 px-3 text-base font-semibold outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
-                id="maRo"
-                onChange={(e) => setMaRo(e.target.value)}
-                placeholder="Nhập mã rọ..."
-                type="text"
-                value={maRo}
-              />
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label
+                  className="mb-2 block text-[15px] font-bold text-slate-800"
+                  htmlFor="maRo"
+                >
+                  Mã rọ
+                </label>
+                <input
+                  autoComplete="off"
+                  className="h-14 w-full rounded-xl border border-slate-200 px-3 text-base font-semibold outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
+                  id="maRo"
+                  name="maRo"
+                  onChange={(e) => setMaRo(e.target.value)}
+                  placeholder="Nhập mã rọ..."
+                  type="text"
+                  value={maRo}
+                />
+              </div>
+
+              <div>
+                <label
+                  className="mb-2 block text-[15px] font-bold text-slate-800"
+                  htmlFor="maNPL"
+                >
+                  Mã nguyên phụ liệu
+                </label>
+                <input
+                  autoComplete="off"
+                  className="h-14 w-full rounded-xl border border-slate-200 px-3 text-base font-semibold outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
+                  id="maNPL"
+                  name="maNPL"
+                  data-submit-on-scan="true"
+                  onChange={(e) => setMaNPL(e.target.value)}
+                  placeholder="Nhập mã NPL..."
+                  type="text"
+                  value={maNPL}
+                  ref={maNPLRef}
+                />
+              </div>
             </div>
 
-            <div>
-              <label
-                className="mb-2 block text-[15px] font-bold text-slate-800"
-                htmlFor="maNPL"
-              >
-                Mã nguyên phụ liệu
-              </label>
-              <input
-                autoComplete="off"
-                className="h-14 w-full rounded-xl border border-slate-200 px-3 text-base font-semibold outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
-                id="maNPL"
-                onChange={(e) => setMaNPL(e.target.value)}
-                placeholder="Nhập mã NPL..."
-                type="text"
-                value={maNPL}
-                ref={maNPLRef}
-              />
-            </div>
-          </div>
-
-          <button
-            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-egmf-primary text-[16px] font-bold text-white transition-colors hover:bg-egmf-primary-strong active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300"
-            disabled={loading || !maRo.trim() || !maNPL.trim()}
-            onClick={confirmUpdate}
-            type="button"
-          >
-            {loading ? (
-              <>
-                <LoaderCircle className="animate-spin" size={21} />
-                Đang cập nhật...
-              </>
-            ) : (
-              <>
-                <Check size={22} />
-                Xác nhận cập nhật
-              </>
-            )}
-          </button>
+            <button
+              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-egmf-primary text-[16px] font-bold text-white transition-colors hover:bg-egmf-primary-strong active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300"
+              disabled={loading || !maRo.trim() || !maNPL.trim()}
+              type="submit"
+            >
+              {loading ? (
+                <>
+                  <LoaderCircle className="animate-spin" size={21} />
+                  Đang cập nhật...
+                </>
+              ) : (
+                <>
+                  <Check size={22} />
+                  Xác nhận cập nhật
+                </>
+              )}
+            </button>
+          </form>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
