@@ -14,7 +14,12 @@ export default function PickingOrderScan() {
   const navigate = useNavigate();
 
   const [basketCode, setBasketCode] = useState("");
-  const PhieuSoanHangId = location.state?.PhieuSoanHangId;
+  const scanType =
+    location.state?.scanType ??
+    new URLSearchParams(location.search).get("scanType");
+  const PhieuSoanHangId =
+    location.state?.PhieuSoanHangId ??
+    new URLSearchParams(location.search).get("phieuSoanHangId");
 
   const user = getCurrentUser();
   const TKId = user?.data?.TKId;
@@ -30,7 +35,7 @@ export default function PickingOrderScan() {
     }
 
     // TRƯỜNG HỢP 1: SOẠN HÀNG - QUÉT MÃ RỔ
-    if (location.state?.scanType === "picking") {
+    if (scanType === "picking") {
       if (!PhieuSoanHangId || !code) {
         toast.warning("Thiếu mã phiếu soạn hàng hoặc mã rổ");
         return;
@@ -47,7 +52,7 @@ export default function PickingOrderScan() {
     }
 
     //TRƯỜNG HỢP 2: TẠO PHIẾU KIỂM VẢI
-    if (location.state?.scanType === "fabric-inspection") {
+    if (scanType === "fabric-inspection") {
       try {
         const response = await taoPhieuKiemVaiAuto(TKId, code);
         console.log(response);

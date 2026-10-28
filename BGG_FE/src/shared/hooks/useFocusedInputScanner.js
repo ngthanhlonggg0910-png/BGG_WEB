@@ -40,6 +40,37 @@ function getInputLabel(input) {
   );
 }
 
+const PICKING_ORDER_ID_STORAGE_KEY = "egmf.activePickingOrderId";
+
+function getStoredPickingOrderId() {
+  try {
+    return window.sessionStorage.getItem(PICKING_ORDER_ID_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function rememberPickingOrderId(id) {
+  if (!id) return;
+
+  try {
+    window.sessionStorage.setItem(PICKING_ORDER_ID_STORAGE_KEY, String(id));
+  } catch {
+    // Storage can be unavailable in private browser modes; URL/state still work.
+  }
+}
+
+function resolvePickingOrderId(location) {
+  const id =
+    location.state?.PhieuSoanHangId ??
+    location.state?.order?.PhieuSoanHangId ??
+    new URLSearchParams(location.search).get("phieuSoanHangId") ??
+    getStoredPickingOrderId();
+
+  if (id) rememberPickingOrderId(id);
+  return id;
+}
+
 export function useFocusedInputScanner() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -64,7 +95,7 @@ export function useFocusedInputScanner() {
     if (!code.trim()) return;
 
     if (location.pathname === "/picking-order-scan") {
-      const PhieuSoanHangId = location.state?.PhieuSoanHangId;
+      const PhieuSoanHangId = resolvePickingOrderId(location);
 
       if (!PhieuSoanHangId) {
         toast.warning("Không tìm thấy ID phiếu soạn hàng");
@@ -120,29 +151,31 @@ export function useFocusedInputScanner() {
   const startScan = () => {
     //Trang tạo phiếu kiểm vải -> chuyển đến trang quét
     if (location.pathname === "/fabric-inspection") {
-      navigate("/picking-order-scan", {
+      navigate("/picking-order-scan?scanType=fabric-inspection", {
         state: {
           scanType: "fabric-inspection",
         },
       });
+      return;
     }
     // Trang chi tiết phiếu soạn hàng → chuyển đến trang quét rổ
     if (location.pathname === "/picking-order-detail") {
-      const PhieuSoanHangId =
-        location.state?.PhieuSoanHangId ??
-        location.state?.order?.PhieuSoanHangId;
+      const PhieuSoanHangId = resolvePickingOrderId(location);
 
       if (!PhieuSoanHangId) {
         toast.warning("Không tìm thấy ID phiếu soạn hàng");
         return;
       }
 
-      navigate("/picking-order-scan", {
-        state: {
-          scanType: "picking",
-          PhieuSoanHangId: PhieuSoanHangId,
+      navigate(
+        `/picking-order-scan?scanType=picking&phieuSoanHangId=${encodeURIComponent(PhieuSoanHangId)}`,
+        {
+          state: {
+            scanType: "picking",
+            PhieuSoanHangId: PhieuSoanHangId,
+          },
         },
-      });
+      );
 
       return;
     }

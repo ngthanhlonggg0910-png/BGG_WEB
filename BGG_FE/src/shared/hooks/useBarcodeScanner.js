@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 
 const DEFAULT_CAMERA_FEATURES = { torch: false, zoom: null };
-const REQUIRED_STABLE_READS = 2;
+const REQUIRED_STABLE_READS = 1;
 const STABLE_READ_WINDOW_MS = 900;
 
 const HIGH_QUALITY_REAR_CAMERA = {
@@ -11,9 +11,9 @@ const HIGH_QUALITY_REAR_CAMERA = {
     facingMode: { ideal: "environment" },
     // Ideal values let older and iOS devices select their best available
     // rear-camera resolution instead of rejecting the camera request.
-    width: { ideal: 1920 },
-    height: { ideal: 1080 },
-    frameRate: { ideal: 30, max: 30 },
+    width: { ideal: 2560 },
+    height: { ideal: 1440 },
+    frameRate: { ideal: 30, max: 60 },
   },
 };
 
@@ -66,7 +66,9 @@ export function useBarcodeScanner(onDetected) {
   const resultCandidateRef = useRef(null);
   const scanTargetRef = useRef(null);
 
-  useEffect(() => {
+  // Sync before the browser paints after a route change, so scanning cannot
+  // use the previous page's location/state.
+  useLayoutEffect(() => {
     onDetectedRef.current = onDetected;
   }, [onDetected]);
 
@@ -231,9 +233,13 @@ export function useBarcodeScanner(onDetected) {
 
     const startScanner = async () => {
       try {
-        // QR-only reader avoids spending CPU on Code128/EAN/Code39 and makes
-        // it impossible for a 1D barcode to be accepted by this scan flow.
-        const { BrowserQRCodeReader } = await import("@zxing/browser");
+        // This flow uses QR labels. A QR-only reader is faster and more
+        // reliable than trying every barcode format on each camera frame.
+        const [{ BrowserQRCodeReader }, { BarcodeFormat, DecodeHintType }] =
+          await Promise.all([
+            import("@zxing/browser"),
+            import("@zxing/library"),
+          ]);
 
         if (!active || !videoRef.current) return;
 
@@ -252,7 +258,11 @@ export function useBarcodeScanner(onDetected) {
         videoTrackRef.current = track;
         await configureTrack(track);
 
-        const reader = new BrowserQRCodeReader(undefined, {
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]);
+        hints.set(DecodeHintType.TRY_HARDER, true);
+
+        const reader = new BrowserQRCodeReader(hints, {
           // ~8 attempts/second is responsive at Full HD without making
           // warehouse phones run a continuously hot decode loop.
           delayBetweenScanAttempts: 120,
@@ -270,9 +280,8 @@ export function useBarcodeScanner(onDetected) {
             const value = result.getText();
             if (typeof value !== "string" || value.trim().length === 0) return;
 
-            // ZXing may produce a transient false positive on an unfocused or
-            // reflective label. Confirm the same normalized value twice in a
-            // short window before any business callback/API can run.
+            // Track the result before continuing so this threshold can be
+            // increased later for scans that need extra confirmation.
             const now = performance.now();
             const previous = resultCandidateRef.current;
             const isSameRecentValue =

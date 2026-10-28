@@ -396,9 +396,12 @@ export default function PickingOrderList() {
                           key={index}
                           item={item}
                           onClick={() => {
-                            navigate("/picking-order-detail", {
+                            navigate(
+                              `/picking-order-detail?phieuSoanHangId=${encodeURIComponent(item.PhieuSoanHangId)}`,
+                              {
                               state: { order: item },
-                            });
+                              },
+                            );
                           }}
                         />
                       ))}

@@ -347,7 +347,9 @@ export default function ProductionOrderListPage({ initialTab }) {
     if (e) e.stopPropagation();
     if (!ddh?.PhieuSoanHangId) return;
 
-    navigate("/picking-order-detail", {
+    navigate(
+      `/picking-order-detail?phieuSoanHangId=${encodeURIComponent(ddh.PhieuSoanHangId)}`,
+      {
       state: {
         order: {
           PhieuSoanHangId: ddh.PhieuSoanHangId,
@@ -362,7 +364,8 @@ export default function ProductionOrderListPage({ initialTab }) {
           TinhTrang: ddh.TinhTrangPSH || "moitao",
         },
       },
-    });
+      },
+    );
   };
 
   // Thủ kho duyệt đơn và TẠO PHIẾU SOẠN HÀNG TRỰC TIẾP TỪ ĐƠN
@@ -408,7 +411,9 @@ export default function ProductionOrderListPage({ initialTab }) {
             },
             cancelText: "Ở lại danh sách đơn",
             onOk: () => {
-              navigate("/picking-order-detail", {
+              navigate(
+                `/picking-order-detail?phieuSoanHangId=${encodeURIComponent(pshId)}`,
+                {
                 state: {
                   order: {
                     PhieuSoanHangId: pshId,
@@ -423,7 +428,8 @@ export default function ProductionOrderListPage({ initialTab }) {
                     TinhTrang: "moitao",
                   },
                 },
-              });
+                },
+              );
             },
           });
         }
