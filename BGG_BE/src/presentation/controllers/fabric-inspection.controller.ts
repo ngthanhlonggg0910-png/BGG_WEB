@@ -11,6 +11,7 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
+  layMaMau_RequestDTO,
 } from '../../application/dtos/fabric-inspection-request.dto.js';
 import {
   QM_PhieuKiemVai_TheoTKId_ResponseDTO,
@@ -24,6 +25,12 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO,
+  QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO,
+  layDanhSachChungLoaiCoItem_ResponseDTO,
+  layDanhSachChungLoaiKoItem_ResponseDTO,
+  layDanhSachItem_ResponseDTO,
+  layMaMau_ResponseDTO,
+  layArt_ResponseDTO,
 } from '../../application/dtos/fabric-inspection-response.dto.js';
 
 @Controller('fabric-inspection')
@@ -52,6 +59,14 @@ export class FabricInspectionController {
     @Body() dto: QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi_RequestDTO,
   ): Promise<QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi_ResponseDTO> {
     return this.fabricInspectionService.loadDanhSachLoi(dto);
+  }
+
+  //Lấy chi tiết lỗi cây vải
+  @Post('QM_PhieuKiemVai_Cay_ChiTiet')
+  layChiTietCayVai(
+    @Body('CTId', ParseIntPipe) CTId: number,
+  ): Promise<QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi_ResponseDTO> {
+    return this.fabricInspectionService.layChiTietCayVai(CTId);
   }
 
   @Post('QM_PhieuKiemVai_Cay_ChiTiet_ThemMoi')
@@ -108,5 +123,45 @@ export class FabricInspectionController {
     @Body() dto: QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   ): Promise<QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO> {
     return this.fabricInspectionService.taoPhieuKiemThuCong(dto);
+  }
+
+  @Post('DanhSachMaHang')
+  layDanhSachMaHang(): Promise<QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO> {
+    return this.fabricInspectionService.layDanhSachMaHang();
+  }
+
+  @Post('layDanhSachChungLoaiCoItem')
+  layDanhSachChungLoaiCoItem(
+    @Body('MaHang, Item') MaHang: string,
+    Item: string,
+  ): Promise<layDanhSachChungLoaiCoItem_ResponseDTO> {
+    return this.fabricInspectionService.layDanhSachChungLoaiCoItem(
+      MaHang,
+      Item,
+    );
+  }
+
+  @Post('layDanhSachChungLoaiKoItem')
+  layDanhSachChungLoaiKoItem(
+    @Body('MaHang') MaHang: string,
+  ): Promise<layDanhSachChungLoaiKoItem_ResponseDTO> {
+    return this.fabricInspectionService.layDanhSachChungLoaiKoItem(MaHang);
+  }
+
+  @Post('layDanhSachItem')
+  layDanhSachItem(
+    @Body('MaHang') MaHang: string,
+  ): Promise<layDanhSachItem_ResponseDTO> {
+    return this.fabricInspectionService.layDanhSachItem(MaHang);
+  }
+
+  @Post('layMaMau')
+  layMaMau(@Body() dto: layMaMau_RequestDTO): Promise<layMaMau_ResponseDTO> {
+    return this.fabricInspectionService.layMaMau(dto);
+  }
+
+  @Post('layArt')
+  layArt(MaHang: string): Promise<layArt_ResponseDTO> {
+    return this.fabricInspectionService.layArt(MaHang);
   }
 }

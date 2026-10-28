@@ -9,6 +9,7 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
+  layMaMau_RequestDTO,
 } from '../dtos/fabric-inspection-request.dto.js';
 import {
   QM_PhieuKiemVai_TheoTKId_ResponseDTO,
@@ -22,6 +23,12 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO,
+  QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO,
+  layDanhSachChungLoaiCoItem_ResponseDTO,
+  layDanhSachChungLoaiKoItem_ResponseDTO,
+  layDanhSachItem_ResponseDTO,
+  layMaMau_ResponseDTO,
+  layArt_ResponseDTO,
 } from '../dtos/fabric-inspection-response.dto.js';
 import { IFabricInspectionService } from '../interfaces/fabric-inspection.service.interface.js';
 import type { IFabricInspectionRepository } from '../../domain/repositories/fbabric-inspection.repository.interface.js';
@@ -117,6 +124,32 @@ export class FabricInspectionService implements IFabricInspectionService {
         error instanceof Error ? error.stack : String(error),
       );
       throw new InternalServerErrorException('Có lỗi khi lấy danh sách lỗi');
+    }
+  }
+
+  async layChiTietCayVai(
+    CTId: number,
+  ): Promise<QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi_ResponseDTO> {
+    try {
+      if (!CTId) throw new NotFoundException('CTId not found');
+
+      const result =
+        await this.fabricInspectionRepository.layChiTietCayVai(CTId);
+
+      return {
+        success: true,
+        message: 'Fabric roll defect details retrieved successfully',
+        data: result,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      this.logger.error(
+        'Error retrieving fabric roll defect details',
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException(
+        'Unable to retrieve fabric roll defect details',
+      );
     }
   }
 
@@ -330,6 +363,126 @@ export class FabricInspectionService implements IFabricInspectionService {
         error instanceof Error ? error.stack : String(error),
       );
       throw new InternalServerErrorException('Có lỗi khi tạo phiếu kiểm');
+    }
+  }
+
+  async layDanhSachMaHang(): Promise<QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO> {
+    try {
+      const result = await this.fabricInspectionRepository.layDanhSachMaHang();
+      return {
+        success: true,
+        message: 'Lấy danh sách mã hàng thành công',
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Lấy danh sách mã hàng thất bại',
+        data: [],
+      };
+    }
+  }
+
+  async layDanhSachChungLoaiCoItem(
+    MaHang: string,
+    Item: string,
+  ): Promise<layDanhSachChungLoaiCoItem_ResponseDTO> {
+    try {
+      const result =
+        await this.fabricInspectionRepository.layDanhSachChungLoaiCoItem(
+          MaHang,
+          Item,
+        );
+      return {
+        success: true,
+        message: 'Lấy danh sách chủng loại thành công',
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Lấy danh sách chủng loại thất bại',
+        data: [],
+      };
+    }
+  }
+
+  async layDanhSachChungLoaiKoItem(
+    MaHang: string,
+  ): Promise<layDanhSachChungLoaiKoItem_ResponseDTO> {
+    try {
+      const result =
+        await this.fabricInspectionRepository.layDanhSachChungLoaiKoItem(
+          MaHang,
+        );
+      return {
+        success: true,
+        message: 'Lấy danh sách chủng loại thành công',
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Lấy danh sách chủng loại thất bại',
+        data: [],
+      };
+    }
+  }
+
+  async layDanhSachItem(MaHang: string): Promise<layDanhSachItem_ResponseDTO> {
+    try {
+      const result =
+        await this.fabricInspectionRepository.layDanhSachItem(MaHang);
+      return {
+        success: true,
+        message: 'Lấy danh sách item thành công',
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Lấy danh sách item thất bại',
+        data: [],
+      };
+    }
+  }
+
+  async layMaMau(dto: layMaMau_RequestDTO): Promise<layMaMau_ResponseDTO> {
+    try {
+      const result = await this.fabricInspectionRepository.layMaMau(
+        dto.MaHang,
+        dto.Item,
+        dto.ChungLoai,
+      );
+
+      return {
+        success: true,
+        message: 'Lấy mã màu thành công',
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Lấy mã màu thất bại',
+        data: [],
+      };
+    }
+  }
+
+  async layArt(MaHang: string): Promise<layArt_ResponseDTO> {
+    try {
+      const result = await this.fabricInspectionRepository.layArt(MaHang);
+      return {
+        success: true,
+        message: 'Lấy ds Art thành công',
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Lấy danh sách Art thất bại',
+        data: [],
+      };
     }
   }
 }

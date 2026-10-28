@@ -21,6 +21,7 @@ import {
   doKho,
   loadKetQuaDoKho,
   capNhatGhiChuHuongXuLyCayVai,
+  getChiTietLoiCay,
   xoaCayVai,
   xongCayVai,
 } from "../api/fabric-inspections.api";
@@ -44,6 +45,7 @@ import { getCurrentUser } from "../../../shared/auth/session";
 
 export function FabricRollCard({ item, index, onReload }) {
   const user = getCurrentUser();
+  console.log(item);
 
   const initialFormData = {
     "add-defect": {
@@ -99,6 +101,9 @@ export function FabricRollCard({ item, index, onReload }) {
   const [selectedAction, setSelectedAction] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
   const [isDefectListOpen, setIsDefectListOpen] = useState(false);
+  const [defects, setDefects] = useState([]);
+  const [defectsLoading, setDefectsLoading] = useState(false);
+  const [defectsError, setDefectsError] = useState("");
 
   if (!item) return null;
 
@@ -130,6 +135,39 @@ export function FabricRollCard({ item, index, onReload }) {
       console.error(error);
       showErrorToast(error.message || "Có lỗi xảy ra");
     }
+  };
+
+  const loadDefects = async () => {
+    try {
+      if (!item?.CTId) throw new Error("Không tồn tại CTId");
+
+      setDefectsLoading(true);
+      setDefectsError("");
+
+      const response = await getChiTietLoiCay(Number(item.CTId));
+
+      if (!response?.success) {
+        throw new Error(response?.message || "Không thể tải danh sách lỗi");
+      }
+
+      setDefects(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      setDefects([]);
+      setDefectsError(
+        error.response?.data?.message ||
+          error.message ||
+          "Không thể tải danh sách lỗi",
+      );
+    } finally {
+      setDefectsLoading(false);
+    }
+  };
+
+  const handleDefectListToggle = () => {
+    const willOpen = !isDefectListOpen;
+    setIsDefectListOpen(willOpen);
+
+    if (willOpen) void loadDefects();
   };
 
   const handleActionClick = async (action) => {
@@ -223,6 +261,9 @@ export function FabricRollCard({ item, index, onReload }) {
       if (response?.success) {
         showSuccessToast(response.message || "Thêm lỗi thành công");
         setOpen(false);
+        if (selectedAction?.key === "add-defect" && isDefectListOpen) {
+          void loadDefects();
+        }
         onReload?.();
       } else {
         showErrorToast(response.message || "Thêm lỗi thất bại");
@@ -469,7 +510,7 @@ export function FabricRollCard({ item, index, onReload }) {
           <section className="mt-4 border-t border-egmf-border-subtle pt-4">
             <button
               type="button"
-              onClick={() => setIsDefectListOpen((previous) => !previous)}
+              onClick={handleDefectListToggle}
               aria-expanded={isDefectListOpen}
               aria-controls={`fabric-defect-list-${item.CTId}`}
               className="flex w-full items-center gap-3 rounded-xl border border-egmf-border bg-egmf-surface-subtle px-3.5 py-3 text-left transition hover:border-egmf-primary-border hover:bg-egmf-primary-tint focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
@@ -499,42 +540,56 @@ export function FabricRollCard({ item, index, onReload }) {
                 id={`fabric-defect-list-${item.CTId}`}
                 className="mt-3 overflow-hidden rounded-xl border border-egmf-border-subtle"
               >
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[500px] border-collapse text-left text-sm">
-                    <thead className="bg-egmf-primary-tint text-[11px] font-bold uppercase tracking-wide text-egmf-ink-secondary">
+                {defectsLoading ? (
+                  <DefectListMessage>Đang tải danh sách lỗi...</DefectListMessage>
+                ) : defectsError ? (
+                  <DefectListMessage tone="error">{defectsError}</DefectListMessage>
+                ) : defects.length === 0 ? (
+                  <DefectListMessage>Chưa có dữ liệu lỗi</DefectListMessage>
+                ) : (
+                  <table className="w-full table-fixed border-collapse text-left text-xs text-egmf-ink-secondary sm:text-sm">
+                    <colgroup>
+                      <col className="w-8 sm:w-12" />
+                      <col className="w-11 sm:w-20" />
+                      <col className="w-12 sm:w-24" />
+                      <col />
+                      <col className="w-12 sm:w-20" />
+                    </colgroup>
+                    <thead className="bg-egmf-primary-tint text-[10px] font-bold uppercase tracking-wide text-egmf-ink-secondary sm:text-[11px]">
                       <tr>
-                        <th className="w-12 px-3 py-2.5 text-center">STT</th>
-                        <th className="w-20 border-l border-egmf-primary-border-soft px-3 py-2.5">
-                          V.trí
-                        </th>
-                        <th className="w-24 border-l border-egmf-primary-border-soft px-3 py-2.5">
-                          Mã
-                        </th>
-                        <th className="border-l border-egmf-primary-border-soft px-3 py-2.5">
-                          Tên lỗi
-                        </th>
-                        <th className="w-20 border-l border-egmf-primary-border-soft px-3 py-2.5 text-center">
-                          T.điểm
-                        </th>
+                        <th className="px-1.5 py-2 text-center sm:px-3 sm:py-2.5">#</th>
+                        <th className="border-l border-egmf-primary-border-soft px-1.5 py-2 sm:px-3 sm:py-2.5">VT</th>
+                        <th className="border-l border-egmf-primary-border-soft px-1.5 py-2 sm:px-3 sm:py-2.5">Mã</th>
+                        <th className="border-l border-egmf-primary-border-soft px-1.5 py-2 sm:px-3 sm:py-2.5">Tên lỗi</th>
+                        <th className="border-l border-egmf-primary-border-soft px-1 py-2 text-center sm:px-3 sm:py-2.5">Điểm</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td colSpan={5} className="px-4 py-8 text-center">
-                          <span className="mx-auto grid size-10 place-items-center rounded-xl bg-egmf-surface-subtle text-egmf-muted">
-                            <ListChecks size={20} />
-                          </span>
-                          <p className="m-0 mt-2 text-sm font-semibold text-egmf-ink-secondary">
-                            Chưa có dữ liệu lỗi
-                          </p>
-                          <p className="m-0 mt-1 text-xs text-egmf-muted">
-                            Danh sách lỗi sẽ hiển thị tại đây khi có dữ liệu.
-                          </p>
-                        </td>
-                      </tr>
+                      {defects.map((defect, defectIndex) => (
+                        <tr
+                          key={defect.CTLId ?? `${defect.MaLoi}-${defectIndex}`}
+                          className="border-t border-egmf-border-subtle align-top"
+                        >
+                          <td className="px-1.5 py-2 text-center font-semibold sm:px-3 sm:py-3">
+                            {defectIndex + 1}
+                          </td>
+                          <td className="break-words border-l border-egmf-border-subtle px-1.5 py-2 sm:px-3 sm:py-3">
+                            {defect.ViTri ?? "—"}
+                          </td>
+                          <td className="break-all border-l border-egmf-border-subtle px-1.5 py-2 font-semibold sm:px-3 sm:py-3">
+                            {defect.MaLoi ?? "—"}
+                          </td>
+                          <td className="break-words border-l border-egmf-border-subtle px-1.5 py-2 leading-4 sm:px-3 sm:py-3 sm:leading-5">
+                            {defect.TenLoi ?? "—"}
+                          </td>
+                          <td className="border-l border-egmf-border-subtle px-1 py-2 text-center font-bold text-egmf-primary-strong sm:px-3 sm:py-3">
+                            {defect.TongDIem ?? defect.TongDiem ?? "—"}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
-                </div>
+                )}
               </div>
             )}
           </section>
@@ -729,5 +784,15 @@ export function FabricRollCard({ item, index, onReload }) {
         )}
       </Modal>
     </>
+  );
+}
+
+function DefectListMessage({ children, tone = "default" }) {
+  const textColor = tone === "error" ? "text-red-600" : "text-egmf-muted";
+
+  return (
+    <div className={`px-4 py-8 text-center text-sm font-medium ${textColor}`}>
+      {children}
+    </div>
   );
 }

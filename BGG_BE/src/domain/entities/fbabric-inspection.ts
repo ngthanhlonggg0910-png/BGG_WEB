@@ -61,6 +61,14 @@ export class QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi {
   MaLoi: string;
 }
 
+export class QM_PhieuKiemVai_Cay_ChiTiet {
+  CTLId: number;
+  MaLoi: string;
+  TenLoi: string;
+  ViTri: string;
+  TongDIem: number;
+}
+
 export class QM_DoKhoVai {
   KhoId: number;
   ViTri: string;

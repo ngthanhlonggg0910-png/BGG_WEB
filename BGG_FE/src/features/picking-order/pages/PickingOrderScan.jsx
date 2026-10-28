@@ -106,7 +106,7 @@ export default function PickingOrderScan() {
             </div>
 
             <h1 className="text-lg font-extrabold tracking-tight text-egmf-ink sm:text-2xl">
-              Quét mã rổ
+              {scanType === "fabric-inspection" ? "Quét mã cây" : "Quét mã rổ"}
             </h1>
 
             <p className="mx-auto mt-1.5 max-w-md text-sm font-medium leading-5 text-egmf-ink-soft sm:mt-2 sm:leading-6 sm:text-[15px]">
@@ -139,7 +139,6 @@ export default function PickingOrderScan() {
                 className="min-w-0 flex-1 bg-transparent text-base font-semibold text-egmf-ink outline-none placeholder:font-medium placeholder:text-egmf-muted sm:text-[17px]"
               />
             </div>
-
           </form>
 
           <div className="relative z-10 mt-4 flex items-center justify-center gap-2 border-t border-egmf-border pt-4 text-center sm:mt-5 sm:pt-5">

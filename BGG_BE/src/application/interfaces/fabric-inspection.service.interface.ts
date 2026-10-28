@@ -9,6 +9,7 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
+  layMaMau_RequestDTO,
 } from '../dtos/fabric-inspection-request.dto.js';
 import {
   QM_PhieuKiemVai_TheoTKId_ResponseDTO,
@@ -22,6 +23,12 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO,
+  QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO,
+  layDanhSachChungLoaiCoItem_ResponseDTO,
+  layDanhSachChungLoaiKoItem_ResponseDTO,
+  layDanhSachItem_ResponseDTO,
+  layMaMau_ResponseDTO,
+  layArt_ResponseDTO,
 } from '../dtos/fabric-inspection-response.dto.js';
 
 export interface IFabricInspectionService {
@@ -35,6 +42,10 @@ export interface IFabricInspectionService {
 
   loadDanhSachLoi(
     dto: QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi_RequestDTO,
+  ): Promise<QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi_ResponseDTO>;
+
+  layChiTietCayVai(
+    CTId: number,
   ): Promise<QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi_ResponseDTO>;
 
   themLoiCayVai(
@@ -66,4 +77,21 @@ export interface IFabricInspectionService {
   taoPhieuKiemThuCong(
     dto: QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   ): Promise<QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO>;
+
+  layDanhSachMaHang(): Promise<QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO>;
+
+  layDanhSachChungLoaiCoItem(
+    MaHang: string,
+    Item: string,
+  ): Promise<layDanhSachChungLoaiCoItem_ResponseDTO>;
+
+  layDanhSachChungLoaiKoItem(
+    MaHang: string,
+  ): Promise<layDanhSachChungLoaiKoItem_ResponseDTO>;
+
+  layDanhSachItem(MaHang: string): Promise<layDanhSachItem_ResponseDTO>;
+
+  layMaMau(dto: layMaMau_RequestDTO): Promise<layMaMau_ResponseDTO>;
+
+  layArt(MaHang: string): Promise<layArt_ResponseDTO>;
 }

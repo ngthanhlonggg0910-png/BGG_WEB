@@ -67,3 +67,39 @@ export class QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO {
   message: string;
   data: { SoPhieuKiem: string };
 }
+
+export class QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: { MaHang: string }[];
+}
+
+export class layDanhSachChungLoaiCoItem_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: { TenChungLoai: string }[];
+}
+
+export class layDanhSachChungLoaiKoItem_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: { TenChungLoai: string }[];
+}
+
+export class layDanhSachItem_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: { Item: string }[];
+}
+
+export class layMaMau_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: { MaMau: string }[];
+}
+
+export class layArt_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: { QuyCach: string }[];
+}

@@ -81,7 +81,7 @@ export default function MobileNavigation({
   return (
     <nav
       aria-label="Điều hướng nhanh"
-      className={`fixed inset-x-0 z-30 border-t border-egmf-border bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-[bottom] duration-200 ease-out ${tabletLayout ? "lg:hidden" : "md:hidden"}`}
+      className={`fixed inset-x-0 z-30 border-t border-egmf-border bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-[bottom] duration-200 ease-out ${keyboardOffset > 0 ? "pb-0" : "pb-[env(safe-area-inset-bottom)]"} ${tabletLayout ? "lg:hidden" : "md:hidden"}`}
       style={{ bottom: keyboardOffset }}
     >
       <div className="mx-auto grid h-[68px] max-w-[560px] grid-cols-[minmax(0,1fr)_minmax(0,1fr)_88px_minmax(0,1fr)_minmax(0,1fr)] items-stretch px-2">

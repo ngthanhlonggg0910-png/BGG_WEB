@@ -150,13 +150,22 @@ export default function AppSelect({
   className,
   disabled = false,
   loading = false,
+  menuMaxHeight = 280,
   minHeight = 56,
   onChange,
   options = [],
+  searchable = false,
   value,
   ...props
 }) {
   const selectedOption = options.find((option) => option.value === value) || null;
+  const styles = {
+    ...selectStyles,
+    menuList: (base) => ({
+      ...selectStyles.menuList(base),
+      maxHeight: menuMaxHeight,
+    }),
+  };
 
   return (
     <div
@@ -170,7 +179,7 @@ export default function AppSelect({
         isClearable={allowClear}
         isDisabled={disabled || loading}
         isLoading={loading}
-        isSearchable={false}
+        isSearchable={searchable}
         closeMenuOnScroll={false}
         captureMenuScroll
         menuPlacement="bottom"
@@ -180,7 +189,7 @@ export default function AppSelect({
         menuShouldScrollIntoView={false}
         noOptionsMessage={() => "Không có dữ liệu"}
         options={options}
-        styles={selectStyles}
+        styles={styles}
         value={selectedOption}
         components={{ DropdownIndicator, ClearIndicator }}
         onChange={(option, actionMeta) => onChange?.(option?.value, option, actionMeta)}

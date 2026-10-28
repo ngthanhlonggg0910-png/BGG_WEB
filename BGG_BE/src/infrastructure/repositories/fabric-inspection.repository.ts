@@ -4,6 +4,7 @@ import { IFabricInspectionRepository } from '../../domain/repositories/fbabric-i
 import { DatabaseService } from '../database/database.service.js';
 import {
   QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi,
+  QM_PhieuKiemVai_Cay_ChiTiet,
   QM_PhieuKiemVai_CayVai_TheoPKVId,
   QM_PhieuKiemVai_TheoTKId,
   QM_DoKhoVai,
@@ -49,6 +50,16 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
       .request()
       .input('ViTri', sql.NVarChar(50), ViTri)
       .execute('QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi');
+    return result.recordset;
+  }
+
+  async layChiTietCayVai(CTId: number): Promise<QM_PhieuKiemVai_Cay_ChiTiet[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool.request().input('CTId', sql.BigInt, CTId).query(`
+        SELECT CTLId, MaLoi, TenLoi, ViTri, TongDiem AS TongDIem
+        FROM QM_PhieuKiemVai_Cay_ChiTiet
+        WHERE CTId = @CTId
+      `);
     return result.recordset;
   }
 
@@ -207,5 +218,108 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
       .input('LOT', sql.NVarChar(200), LOT)
       .execute('QM_PhieuKiemVai_TaoPhieuKiem');
     return result.recordset[0];
+  }
+
+  async layDanhSachMaHang(): Promise<{ MaHang: string }[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool.request().query(`
+          select 
+              OMM_DonHang.MaHang
+          from OMM_DonHang
+          inner join WH_PhieuGiamDinh 
+              on OMM_DonHang.DHId = WH_PhieuGiamDinh.DHId
+          GROUP BY OMM_DonHang.MaHang
+          ORDER BY MAX(NgayGiamDinh) DESC,OMM_DonHang.MaHang   
+      `);
+    return result.recordset;
+  }
+
+  async layDanhSachChungLoaiCoItem(
+    MaHang: string,
+    Item: string,
+  ): Promise<{ TenChungLoai: string }[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('MaHang', sql.NVarChar(200), MaHang)
+      .input('Item', sql.NVarChar(200), Item).query(`
+      SELECT 
+      distinct Lib_NguyenPhuLieu.TenChungLoai
+      FROM Lib_NguyenPhuLieu inner join OMM_DonHang on Lib_NguyenPhuLieu.DHId=OMM_DonHang.DHId
+      where MaHang='NVS001' and Item=@Item and LoaiNPL = N'NGUYÊN LIỆU'
+      order by Lib_NguyenPhuLieu.TenChungLoai 
+    `);
+
+    return result.recordset;
+  }
+
+  async layDanhSachChungLoaiKoItem(
+    MaHang: string,
+  ): Promise<{ TenChungLoai: string }[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('MaHang', sql.NVarChar(200), MaHang).query(`
+      SELECT distinct Lib_NguyenPhuLieu.TenChungLoai
+      FROM Lib_NguyenPhuLieu inner join OMM_DonHang on Lib_NguyenPhuLieu.DHId=OMM_DonHang.DHId 
+      where MaHang=@MaHang and LoaiNPL = N'NGUYÊN LIỆU'
+      order by Lib_NguyenPhuLieu.TenChungLoai
+    `);
+    return result.recordset;
+  }
+
+  async layDanhSachItem(MaHang: string): Promise<{ Item: string }[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('MaHang', sql.NVarChar(200), MaHang).query(`
+        SELECT Lib_NguyenPhuLieu.Item
+        FROM Lib_NguyenPhuLieu inner join OMM_DonHang on Lib_NguyenPhuLieu.DHId=OMM_DonHang.DHId 
+        where MaHang='NVS001' and LoaiNPL = N'NGUYÊN LIỆU' and isnull(Item,'') != '' 
+        group by Lib_NguyenPhuLieu.Item 
+        order by Lib_NguyenPhuLieu.Item
+      `);
+
+    return result.recordset;
+  }
+
+  async layMaMau(
+    MaHang: string,
+    Item: string,
+    ChungLoai: string,
+  ): Promise<{ MaMau: string }[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('MaHang', sql.NVarChar(200), MaHang)
+      .input('Item', sql.NVarChar(200), Item)
+      .input('ChungLoai', sql.NVarChar(200), ChungLoai).query(`
+        SELECT c.MaMau
+        FROM WH_ChiTietPhieuGiamDinh AS A 
+        INNER JOIN WH_PhieuGiamDinh AS B ON A.PGDId = B.PGDId 
+        INNER JOIN Lib_NguyenPhuLieu AS C ON A.VTId = C.VTId
+        WHERE  (B.MaHang = @MaHang) AND (C.Item = @Item) AND (C.TenChungLoai = @TenChungLoai)
+        GROUP BY  c.MaMau  
+    `);
+
+    return result.recordset;
+  }
+
+  async layArt(MaHang: string): Promise<{ QuyCach: string }[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('MaHang', sql.NVarChar(200), MaHang).query(`
+      SELECT Lib_NguyenPhuLieu.QuyCach
+      FROM Lib_NguyenPhuLieu
+      INNER JOIN OMM_DonHang ON Lib_NguyenPhuLieu.DHId = OMM_DonHang.DHId
+      WHERE OMM_DonHang.MaHang = @MaHang
+      AND Lib_NguyenPhuLieu.LoaiNPL = N'NGUYÊN LIỆU'
+      AND ISNULL(Lib_NguyenPhuLieu.QuyCach, '') <> ''
+      GROUP BY Lib_NguyenPhuLieu.QuyCach
+      ORDER BY Lib_NguyenPhuLieu.QuyCach;  
+    `);
+
+    return result.recordset;
   }
 }

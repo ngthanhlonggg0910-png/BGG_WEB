@@ -1,6 +1,6 @@
 import { ArrowLeft, Menu, Layers3 } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import BarcodeScannerModal from "../../shared/components/ui/BarcodeScannerModal";
@@ -23,6 +23,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const viewportHeightRef = useRef(0);
   const {
     cameraFeatures,
     closeScanner,
@@ -43,9 +44,37 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
     if (!viewport) return undefined;
 
     const updateKeyboardOffset = () => {
+      const visibleViewportBottom = viewport.height + viewport.offsetTop;
+      const layoutViewportHeight = Math.max(
+        window.innerHeight,
+        document.documentElement.clientHeight,
+      );
+      const activeElement = document.activeElement;
+      const isEditableElement =
+        activeElement instanceof HTMLInputElement ||
+        activeElement instanceof HTMLTextAreaElement ||
+        activeElement?.isContentEditable;
+
+      // Some Android browsers shrink both window.innerHeight and
+      // visualViewport.height when the keyboard opens. Preserve the last
+      // non-keyboard viewport height so the difference still gives the
+      // keyboard height in either browser behavior.
+      if (!isEditableElement) {
+        viewportHeightRef.current = Math.max(
+          visibleViewportBottom,
+          layoutViewportHeight,
+        );
+      } else if (!viewportHeightRef.current) {
+        viewportHeightRef.current = Math.max(
+          visibleViewportBottom,
+          layoutViewportHeight,
+        );
+      }
+
       const offset = Math.max(
         0,
-        window.innerHeight - viewport.height - viewport.offsetTop,
+        Math.max(viewportHeightRef.current, layoutViewportHeight) -
+          visibleViewportBottom,
       );
 
       // Ignore the small viewport changes caused by browser chrome; a soft

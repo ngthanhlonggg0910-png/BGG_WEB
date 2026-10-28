@@ -23,6 +23,12 @@ export async function getDanhSachLoi(ViTri = "") {
   );
 }
 
+export async function getChiTietLoiCay(CTId) {
+  return postJson("/api/fabric-inspection/QM_PhieuKiemVai_Cay_ChiTiet", {
+    CTId,
+  });
+}
+
 //THÊM LỖI
 export async function themLoiCay(
   CTId,
@@ -136,5 +142,48 @@ export async function taoPhieuKiemVaiThuCong(payload) {
     NgayKiemVai: payload.NgayKiemVai,
     NhaCungCap: payload.NhaCungCap,
     LOT: payload.LOT,
+  });
+}
+
+//LẤY SANH SÁCH MÃ HÀNG
+export async function layDanhSachMaHang() {
+  return postJson("/api/fabric-inspection/DanhSachMaHang");
+}
+
+//LẤY DANH SÁCH CHỦNG LOẠI CÓ ITEM
+export async function layDanhSachChungLoaiCoItem(MaHang, Item) {
+  return postJson("/api/fabric-inspection/layDanhSachChungLoaiCoItem", {
+    MaHang: MaHang,
+    Item: Item,
+  });
+}
+
+//LẤY DANH SÁCH CHỦNG LOẠI KO ITEM
+export async function layDanhSachChungLoaiKoItem(MaHang) {
+  return postJson("/api/fabric-inspection/layDanhSachChungLoaiKoItem", {
+    MaHang: MaHang,
+  });
+}
+
+//Lấy danh sách ITEM
+export async function layDanhSachItem(MaHang) {
+  return postJson("/api/fabric-inspection/layDanhSachItem", {
+    MaHang: MaHang,
+  });
+}
+
+//Lấy danh sách MaMau
+export async function layDanhSachMaMau(MaHang, Item, ChungLoai) {
+  return postJson("/api/fabric-inspection/layMaMau", {
+    MaHang: MaHang,
+    Item: Item,
+    ChungLoai: ChungLoai,
+  });
+}
+
+//Lấy danh sách Art
+export async function layDanhSachArt(MaHang) {
+  return postJson("/api/fabric-inspection/layArt", {
+    MaHang: MaHang,
   });
 }

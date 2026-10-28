@@ -73,3 +73,9 @@ export class QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO {
   NhaCungCap: string;
   LOT: string;
 }
+
+export class layMaMau_RequestDTO {
+  MaHang: string;
+  Item: string;
+  ChungLoai: string;
+}

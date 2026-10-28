@@ -2,6 +2,7 @@ import type {
   QM_PhieuKiemVai_TheoTKId,
   QM_PhieuKiemVai_CayVai_TheoPKVId,
   QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi,
+  QM_PhieuKiemVai_Cay_ChiTiet,
   QM_DoKhoVai,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile,
 } from '../entities/fbabric-inspection.js';
@@ -20,6 +21,8 @@ export interface IFabricInspectionRepository {
   loadDanhSachLoi(
     ViTri: string,
   ): Promise<QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi[]>;
+
+  layChiTietCayVai(CTId: number): Promise<QM_PhieuKiemVai_Cay_ChiTiet[]>;
 
   themLoiCayVai(
     CTId: number,
@@ -85,4 +88,25 @@ export interface IFabricInspectionRepository {
     NhaCungCap: string,
     LOT: string,
   ): Promise<{ SoPhieuKiem: string }>;
+
+  layDanhSachMaHang(): Promise<{ MaHang: string }[]>;
+
+  layDanhSachChungLoaiCoItem(
+    MaHang: string,
+    Item: string,
+  ): Promise<{ TenChungLoai: string }[]>;
+
+  layDanhSachChungLoaiKoItem(
+    MaHang: string,
+  ): Promise<{ TenChungLoai: string }[]>;
+
+  layDanhSachItem(MaHang: string): Promise<{ Item: string }[]>;
+
+  layMaMau(
+    MaHang: string,
+    Item: string,
+    ChungLoai: string,
+  ): Promise<{ MaMau: string }[]>;
+
+  layArt(MaHang: string): Promise<{ QuyCach: string }[]>;
 }
