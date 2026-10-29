@@ -10,6 +10,8 @@ import {
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   layMaMau_RequestDTO,
+  layArt_RequestDTO,
+  layLot_RequestDTO,
 } from '../dtos/fabric-inspection-request.dto.js';
 import {
   QM_PhieuKiemVai_TheoTKId_ResponseDTO,
@@ -29,6 +31,8 @@ import {
   layDanhSachItem_ResponseDTO,
   layMaMau_ResponseDTO,
   layArt_ResponseDTO,
+  layLot_ResponseDTO,
+  layNCC_ResponseDTO,
 } from '../dtos/fabric-inspection-response.dto.js';
 import { IFabricInspectionService } from '../interfaces/fabric-inspection.service.interface.js';
 import type { IFabricInspectionRepository } from '../../domain/repositories/fbabric-inspection.repository.interface.js';
@@ -451,8 +455,8 @@ export class FabricInspectionService implements IFabricInspectionService {
     try {
       const result = await this.fabricInspectionRepository.layMaMau(
         dto.MaHang,
-        dto.Item,
-        dto.ChungLoai,
+        dto.Item ?? '',
+        dto.ChungLoai ?? '',
       );
 
       return {
@@ -469,9 +473,14 @@ export class FabricInspectionService implements IFabricInspectionService {
     }
   }
 
-  async layArt(MaHang: string): Promise<layArt_ResponseDTO> {
+  async layArt(dto: layArt_RequestDTO): Promise<layArt_ResponseDTO> {
     try {
-      const result = await this.fabricInspectionRepository.layArt(MaHang);
+      const result = await this.fabricInspectionRepository.layArt(
+        dto.MaHang,
+        dto.Item ?? '',
+        dto.ChungLoai ?? '',
+        dto.MaMau ?? '',
+      );
       return {
         success: true,
         message: 'Lấy ds Art thành công',
@@ -481,6 +490,56 @@ export class FabricInspectionService implements IFabricInspectionService {
       return {
         success: false,
         message: 'Lấy danh sách Art thất bại',
+        data: [],
+      };
+    }
+  }
+
+  async layLot(dto: layLot_RequestDTO): Promise<layLot_ResponseDTO> {
+    try {
+      console.log('DTO:', dto);
+
+      const result = await this.fabricInspectionRepository.layLot(
+        dto.MaHang,
+        dto.Item ?? '',
+        dto.ChungLoai ?? '',
+        dto.MaMau ?? '',
+        dto.Art ?? '',
+      );
+
+      return {
+        success: true,
+        message: 'Lấy ds Lot thành công',
+        data: result,
+      };
+    } catch (error) {
+      console.error('LỖI LAY LOT:', error);
+
+      return {
+        success: false,
+        message: 'Lấy ds Lot thất bại',
+        data: [],
+      };
+    }
+  }
+
+  async layNCC(): Promise<layNCC_ResponseDTO> {
+    try {
+      const result = await this.fabricInspectionRepository.layNCC();
+
+      return {
+        success: true,
+        message: 'Lấy danh sách nhà cung cấp thành công',
+        data: result,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Lỗi lấy danh sách nhà cung cấp',
+        error instanceof Error ? error.stack : String(error),
+      );
+      return {
+        success: false,
+        message: 'Lấy danh sách nhà cung cấp thất bại',
         data: [],
       };
     }

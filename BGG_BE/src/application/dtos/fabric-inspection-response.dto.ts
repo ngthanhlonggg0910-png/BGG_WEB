@@ -103,3 +103,15 @@ export class layArt_ResponseDTO {
   message: string;
   data: { QuyCach: string }[];
 }
+
+export class layLot_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: { Lot: string }[];
+}
+
+export class layNCC_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: { TenNgan: string; NCCId: number }[];
+}

@@ -9,6 +9,8 @@ import {
   layDanhSachItem,
   layDanhSachMaMau,
   layDanhSachArt,
+  layLot,
+  layDanhSachNhaCungCap,
 } from "../api/fabric-inspections.api";
 import {
   showErrorToast,
@@ -25,7 +27,7 @@ export default function CreateFabricInspectionForm({ onClose }) {
     Item: "",
     ChungLoai: "",
     Art: "",
-    MaMau: "",
+    TenMau: "",
     LOT: "",
     NhaCungCap: "",
     NgayKiemVai: "yyyy-MM-dd",
@@ -37,13 +39,6 @@ export default function CreateFabricInspectionForm({ onClose }) {
       [field]: value,
     }));
   };
-
-  const fields = [
-    // { label: "Item", name: "Item" },
-    { label: "Art", name: "Art" },
-    { label: "Lot", name: "LOT" },
-    { label: "Nhà cung cấp", name: "NhaCungCap" },
-  ];
 
   const [maHang, setMaHang] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -60,6 +55,12 @@ export default function CreateFabricInspectionForm({ onClose }) {
   const [loadingArt, setLoadingArt] = useState(false);
   const [art, setArt] = useState([]);
 
+  const [loadingLot, setLoadingLot] = useState(false);
+  const [dsLot, setDsLot] = useState([]);
+
+  const [nhaCungCap, setNhaCungCap] = useState([]);
+  const [loadingNhaCungCap, setLoadingNhaCungCap] = useState(false);
+
   const maHangOptions = useMemo(
     () => createOptions(maHang, ["MaHang", "maHang"], ["TenHang", "tenHang"]),
     [maHang],
@@ -75,9 +76,22 @@ export default function CreateFabricInspectionForm({ onClose }) {
     [maMau],
   );
 
-  const artOptions = useMemo(() => createOptions(art, ["Art"], ["Art"]), [art]);
+  const artOptions = useMemo(
+    () => createOptions(art, ["QuyCach"], ["QuyCach"]),
+    [art],
+  );
 
   const itemOptions = useMemo(() => createOptions(item, ["Item"], ["Item"]));
+
+  const lotOptions = useMemo(
+    () => createOptions(dsLot, ["Lot", "LOT"], ["Lot", "LOT"]),
+    [dsLot],
+  );
+
+  const nhaCungCapOptions = useMemo(
+    () => createOptions(nhaCungCap, ["TenNgan"], ["TenNgan"]),
+    [nhaCungCap],
+  );
 
   // Lấy mã hàng
   useEffect(() => {
@@ -112,6 +126,42 @@ export default function CreateFabricInspectionForm({ onClose }) {
     };
 
     fetchMaHang();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Lấy danh sách nhà cung cấp
+  useEffect(() => {
+    let active = true;
+
+    const fetchNhaCungCap = async () => {
+      setLoadingNhaCungCap(true);
+
+      try {
+        const response = await layDanhSachNhaCungCap();
+
+        if (!response?.success) {
+          throw new Error(response?.message || "Không thể tải nhà cung cấp");
+        }
+
+        if (active) setNhaCungCap(response.data || []);
+      } catch (error) {
+        if (!active) return;
+
+        setNhaCungCap([]);
+        showErrorToast(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Không thể tải nhà cung cấp",
+        );
+      } finally {
+        if (active) setLoadingNhaCungCap(false);
+      }
+    };
+
+    fetchNhaCungCap();
 
     return () => {
       active = false;
@@ -187,47 +237,36 @@ export default function CreateFabricInspectionForm({ onClose }) {
     let active = true;
 
     const fetchMaMau = async () => {
-      // ĐÃ SỬA 3: Chưa có mã hàng thì chỉ xóa danh sách
-      if (!formData.MaHang?.trim()) {
-        setMaMau([]);
-        setLoadingMaMau(false);
-        return;
-      }
+      const { MaHang, Item, ChungLoai } = formData;
 
-      // ĐÃ SỬA 4: Đợi Item và Chủng loại tải xong
-      if (loadingItem || chungLoaiLoading) {
+      if (!MaHang?.trim()) {
+        setMaMau([]);
         setLoadingMaMau(false);
         return;
       }
 
       setLoadingMaMau(true);
+      setMaMau([]);
 
       try {
         const response = await layDanhSachMaMau(
-          formData.MaHang,
-          formData.Item,
-          formData.ChungLoai,
+          MaHang,
+          Item || "",
+          ChungLoai || "",
         );
-
-        if (!response?.success) {
-          throw new Error(response?.message || "Không thể tải mã màu");
-        }
 
         if (active) {
-          setMaMau(response.data || []);
+          setMaMau(response.success ? response.data || [] : []);
         }
       } catch (error) {
-        if (!active) return;
-
-        setMaMau([]);
-
-        showErrorToast(
-          error?.response?.data?.message ||
-            error?.message ||
-            "Không thể tải mã màu",
-        );
+        if (active) {
+          console.error("Lỗi lấy danh sách mã màu:", error);
+          setMaMau([]);
+        }
       } finally {
-        if (active) setLoadingMaMau(false);
+        if (active) {
+          setLoadingMaMau(false);
+        }
       }
     };
 
@@ -236,13 +275,7 @@ export default function CreateFabricInspectionForm({ onClose }) {
     return () => {
       active = false;
     };
-  }, [
-    formData.MaHang,
-    formData.Item,
-    formData.ChungLoai,
-    loadingItem,
-    chungLoaiLoading,
-  ]);
+  }, [formData.MaHang, formData.Item, formData.ChungLoai]);
 
   // Lấy Item
   useEffect(() => {
@@ -291,13 +324,14 @@ export default function CreateFabricInspectionForm({ onClose }) {
     };
   }, [formData.MaHang]);
 
-  // Lấy Art
+  //Lấy Art
   useEffect(() => {
     let active = true;
 
     const fetchArt = async () => {
-      // ĐÃ SỬA 6: Không cảnh báo khi chưa chọn mã hàng
-      if (!formData.MaHang?.trim()) {
+      const { MaHang, Item, ChungLoai, TenMau } = formData;
+
+      if (!MaHang?.trim()) {
         setArt([]);
         setLoadingArt(false);
         return;
@@ -307,7 +341,14 @@ export default function CreateFabricInspectionForm({ onClose }) {
       setArt([]);
 
       try {
-        const response = await layDanhSachArt(formData.MaHang);
+        const response = await layDanhSachArt(
+          MaHang,
+          Item || "",
+          ChungLoai || "",
+          TenMau || "",
+        );
+
+        console.log("Response Art:", response);
 
         if (!response?.success) {
           throw new Error(response?.message || "Không thể tải Art");
@@ -317,17 +358,14 @@ export default function CreateFabricInspectionForm({ onClose }) {
           setArt(response.data || []);
         }
       } catch (error) {
-        if (!active) return;
-
-        setArt([]);
-
-        showErrorToast(
-          error?.response?.data?.message ||
-            error?.message ||
-            "Không thể tải Art",
-        );
+        if (active) {
+          console.error("Lỗi lấy Art:", error);
+          setArt([]);
+        }
       } finally {
-        if (active) setLoadingArt(false);
+        if (active) {
+          setLoadingArt(false);
+        }
       }
     };
 
@@ -336,7 +374,64 @@ export default function CreateFabricInspectionForm({ onClose }) {
     return () => {
       active = false;
     };
-  }, [formData.MaHang]);
+  }, [formData.MaHang, formData.Item, formData.ChungLoai, formData.TenMau]);
+
+  //Lấy Lot
+  useEffect(() => {
+    let active = true;
+
+    const fetchLot = async () => {
+      const { MaHang, Item, ChungLoai, TenMau, Art } = formData;
+
+      setFormData((previous) => ({ ...previous, LOT: "" }));
+
+      if (!MaHang?.trim()) {
+        setDsLot([]);
+        setLoadingLot(false);
+        return;
+      }
+
+      setLoadingLot(true);
+      setDsLot([]);
+
+      try {
+        const res = await layLot(
+          MaHang,
+          Item || "",
+          ChungLoai || "",
+          TenMau || "",
+          Art || "",
+        );
+
+        if (!res?.success) {
+          throw new Error(res?.message || "Không thể tải danh sách Lot");
+        }
+
+        if (active) {
+          setDsLot(res.data);
+        }
+      } catch (error) {
+        if (!active) return;
+
+        setDsLot([]);
+        console.error("Lỗi lấy danh sách Lot:", error);
+      } finally {
+        if (active) setLoadingLot(false);
+      }
+    };
+
+    fetchLot();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    formData.MaHang,
+    formData.Item,
+    formData.ChungLoai,
+    formData.TenMau,
+    formData.Art,
+  ]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -393,7 +488,11 @@ export default function CreateFabricInspectionForm({ onClose }) {
             setFormData((previous) => ({
               ...previous,
               MaHang: value,
+              Item: "",
               ChungLoai: "",
+              TenMau: "",
+              Art: "",
+              LOT: "",
             }))
           }
         />
@@ -419,30 +518,44 @@ export default function CreateFabricInspectionForm({ onClose }) {
         />
 
         <SelectField
-          label="Mã màu"
-          name="MaMau"
-          value={formData.MaMau}
+          label="Tên màu"
+          name="TenMau"
+          value={formData.TenMau}
           options={maMauOptions}
           loading={loadingMaMau}
           searchable
-          onChange={(value) => handleChange("MaMau", value)}
+          onChange={(value) => handleChange("TenMau", value)}
         />
 
-        {fields.map((field) => (
-          <div key={field.name} className="min-w-0 space-y-1.5">
-            <label className="block text-[13px] font-bold text-egmf-ink-secondary">
-              {field.label}
-            </label>
+        <SelectField
+          label="Art"
+          name="Art"
+          value={formData.Art}
+          options={artOptions}
+          loading={loadingArt}
+          searchable
+          onChange={(value) => handleChange("Art", value)}
+        />
 
-            <input
-              type="text"
-              value={formData[field.name]}
-              onChange={(e) => handleChange(field.name, e.target.value)}
-              placeholder={`Nhập ${field.label.toLowerCase()}`}
-              className="h-12 w-full rounded-xl border border-egmf-border bg-white px-3.5 text-[15px] font-semibold text-egmf-ink outline-none transition placeholder:font-normal placeholder:text-egmf-placeholder focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
-            />
-          </div>
-        ))}
+        <SelectField
+          label="Lot"
+          name="LOT"
+          value={formData.LOT}
+          options={lotOptions}
+          loading={loadingLot}
+          searchable
+          onChange={(value) => handleChange("LOT", value)}
+        />
+
+        <SelectField
+          label="Nhà cung cấp"
+          name="NhaCungCap"
+          value={formData.NhaCungCap}
+          options={nhaCungCapOptions}
+          loading={loadingNhaCungCap}
+          searchable
+          onChange={(value) => handleChange("NhaCungCap", value)}
+        />
       </div>
 
       <div className="space-y-1.5">
@@ -498,7 +611,7 @@ function SelectField({
   value,
   options,
   loading,
-  searchable = false,
+  searchable = true,
   onChange,
 }) {
   return (
@@ -514,10 +627,11 @@ function SelectField({
         value={value}
         options={options}
         loading={loading}
+        allowClear
         minHeight={48}
         menuMaxHeight={224}
         searchable={searchable}
-        placeholder={`Chọn ${label.toLowerCase()}`}
+        placeholder={`Tìm và chọn ${label.toLowerCase()}`}
         aria-label={label}
         onChange={(selectedValue) => onChange(selectedValue || "")}
       />

@@ -10,6 +10,8 @@ import {
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   layMaMau_RequestDTO,
+  layArt_RequestDTO,
+  layLot_RequestDTO,
 } from '../dtos/fabric-inspection-request.dto.js';
 import {
   QM_PhieuKiemVai_TheoTKId_ResponseDTO,
@@ -29,6 +31,8 @@ import {
   layDanhSachItem_ResponseDTO,
   layMaMau_ResponseDTO,
   layArt_ResponseDTO,
+  layLot_ResponseDTO,
+  layNCC_ResponseDTO,
 } from '../dtos/fabric-inspection-response.dto.js';
 
 export interface IFabricInspectionService {
@@ -93,5 +97,9 @@ export interface IFabricInspectionService {
 
   layMaMau(dto: layMaMau_RequestDTO): Promise<layMaMau_ResponseDTO>;
 
-  layArt(MaHang: string): Promise<layArt_ResponseDTO>;
+  layArt(dto: layArt_RequestDTO): Promise<layArt_ResponseDTO>;
+
+  layLot(dto: layLot_RequestDTO): Promise<layLot_ResponseDTO>;
+
+  layNCC(): Promise<layNCC_ResponseDTO>;
 }

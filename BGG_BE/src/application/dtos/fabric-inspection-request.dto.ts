@@ -76,6 +76,21 @@ export class QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO {
 
 export class layMaMau_RequestDTO {
   MaHang: string;
-  Item: string;
-  ChungLoai: string;
+  Item?: string;
+  ChungLoai?: string;
+}
+
+export class layArt_RequestDTO {
+  MaHang: string;
+  Item?: string;
+  ChungLoai?: string;
+  MaMau?: string;
+}
+
+export class layLot_RequestDTO {
+  MaHang: string;
+  Item?: string;
+  ChungLoai?: string;
+  MaMau?: string;
+  Art?: string;
 }

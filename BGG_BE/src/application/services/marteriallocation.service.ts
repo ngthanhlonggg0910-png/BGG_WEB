@@ -31,8 +31,10 @@ export class MaterialLocationService implements IMaterialLocationService {
           result.KetQua === 1
             ? 'Cập nhật thành công'
             : result.KetQua === 3
-              ? 'Vị trí không tồn tại'
-              : 'Cập nhật thất bại',
+              ? 'Không tìm thấy cây hoặc QR trang thuộc kho'
+              : result.KetQua === 4
+                ? 'Phiếu giám định của cây chưa được xác nhận'
+                : 'Cập nhật thất bại',
         data: result,
       };
     } catch (error) {

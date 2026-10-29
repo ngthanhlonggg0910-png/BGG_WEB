@@ -172,18 +172,49 @@ export async function layDanhSachItem(MaHang) {
   });
 }
 
-//Lấy danh sách MaMau
-export async function layDanhSachMaMau(MaHang, Item, ChungLoai) {
+// Lấy danh sách Mã màu
+export async function layDanhSachMaMau(MaHang, Item = "", ChungLoai = "") {
   return postJson("/api/fabric-inspection/layMaMau", {
-    MaHang: MaHang,
-    Item: Item,
-    ChungLoai: ChungLoai,
+    MaHang,
+    Item,
+    ChungLoai,
   });
 }
 
 //Lấy danh sách Art
-export async function layDanhSachArt(MaHang) {
+// Lấy danh sách Art
+export async function layDanhSachArt(
+  MaHang,
+  Item = "",
+  ChungLoai = "",
+  MaMau = "",
+) {
   return postJson("/api/fabric-inspection/layArt", {
-    MaHang: MaHang,
+    MaHang,
+    Item,
+    ChungLoai,
+    MaMau,
+  });
+}
+
+// Lấy danh sách nhà cung cấp
+export async function layDanhSachNhaCungCap() {
+  return postJson("/api/fabric-inspection/layNCC");
+}
+
+// Lấy danh sách Lot// Lấy danh sách Lot
+export async function layLot(
+  MaHang,
+  Item = "",
+  ChungLoai = "",
+  MaMau = "",
+  Art = "",
+) {
+  return postJson("/api/fabric-inspection/layLot", {
+    MaHang,
+    Item,
+    ChungLoai,
+    MaMau,
+    Art,
   });
 }

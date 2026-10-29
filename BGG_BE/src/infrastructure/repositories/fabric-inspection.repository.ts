@@ -207,13 +207,9 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
       .input('MaHang', sql.NVarChar(200), MaHang)
       .input('ChungLoai', sql.NVarChar(200), ChungLoai)
       .input('Item', sql.NVarChar(200), Item)
-      .input('Art', sql.BigInt, Art)
+      .input('Art', sql.NVarChar(200), Art)
       .input('TenMau', sql.NVarChar(200), TenMau)
-      .input(
-        'NgayKiemVai',
-        sql.NVarChar(200),
-        NgayKiemVai.toISOString().split('T')[0],
-      )
+      .input('NgayKiemVai', sql.NVarChar(500), NgayKiemVai)
       .input('NhaCungCap', sql.NVarChar(200), NhaCungCap)
       .input('LOT', sql.NVarChar(200), LOT)
       .execute('QM_PhieuKiemVai_TaoPhieuKiem');
@@ -239,16 +235,19 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
     Item: string,
   ): Promise<{ TenChungLoai: string }[]> {
     const pool = await this.databaseService.getPool();
+
     const result = await pool
       .request()
       .input('MaHang', sql.NVarChar(200), MaHang)
       .input('Item', sql.NVarChar(200), Item).query(`
-      SELECT 
-      distinct Lib_NguyenPhuLieu.TenChungLoai
-      FROM Lib_NguyenPhuLieu inner join OMM_DonHang on Lib_NguyenPhuLieu.DHId=OMM_DonHang.DHId
-      where MaHang='NVS001' and Item=@Item and LoaiNPL = N'NGUYÊN LIỆU'
-      order by Lib_NguyenPhuLieu.TenChungLoai 
+      SELECT DISTINCT a.TenChungLoai
+      FROM Lib_NguyenPhuLieu a
+      INNER JOIN OMM_DonHang b ON a.DHId = b.DHId
+      WHERE b.MaHang = @MaHang
+        AND a.Item = @Item
     `);
+
+    console.log('Repository result:', result.recordset);
 
     return result.recordset;
   }
@@ -260,11 +259,11 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
     const result = await pool
       .request()
       .input('MaHang', sql.NVarChar(200), MaHang).query(`
-      SELECT distinct Lib_NguyenPhuLieu.TenChungLoai
-      FROM Lib_NguyenPhuLieu inner join OMM_DonHang on Lib_NguyenPhuLieu.DHId=OMM_DonHang.DHId 
-      where MaHang=@MaHang and LoaiNPL = N'NGUYÊN LIỆU'
-      order by Lib_NguyenPhuLieu.TenChungLoai
-    `);
+        select distinct a.TenChungLoai
+        from Lib_NguyenPhuLieu a
+        join OMM_DonHang b on a.DHId = b.DHId
+        where b.MaHang = @MaHang 
+      `);
     return result.recordset;
   }
 
@@ -273,11 +272,10 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
     const result = await pool
       .request()
       .input('MaHang', sql.NVarChar(200), MaHang).query(`
-        SELECT Lib_NguyenPhuLieu.Item
-        FROM Lib_NguyenPhuLieu inner join OMM_DonHang on Lib_NguyenPhuLieu.DHId=OMM_DonHang.DHId 
-        where MaHang='NVS001' and LoaiNPL = N'NGUYÊN LIỆU' and isnull(Item,'') != '' 
-        group by Lib_NguyenPhuLieu.Item 
-        order by Lib_NguyenPhuLieu.Item
+        select distinct a.Item
+        from Lib_NguyenPhuLieu a
+        join OMM_DonHang b on a.DHId = b.DHId
+        where MaHang = @MaHang
       `);
 
     return result.recordset;
@@ -285,39 +283,132 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
 
   async layMaMau(
     MaHang: string,
-    Item: string,
-    ChungLoai: string,
+    Item: string = '',
+    ChungLoai: string = '',
   ): Promise<{ MaMau: string }[]> {
     const pool = await this.databaseService.getPool();
+
     const result = await pool
       .request()
       .input('MaHang', sql.NVarChar(200), MaHang)
-      .input('Item', sql.NVarChar(200), Item)
-      .input('ChungLoai', sql.NVarChar(200), ChungLoai).query(`
-        SELECT c.MaMau
-        FROM WH_ChiTietPhieuGiamDinh AS A 
-        INNER JOIN WH_PhieuGiamDinh AS B ON A.PGDId = B.PGDId 
-        INNER JOIN Lib_NguyenPhuLieu AS C ON A.VTId = C.VTId
-        WHERE  (B.MaHang = @MaHang) AND (C.Item = @Item) AND (C.TenChungLoai = @TenChungLoai)
-        GROUP BY  c.MaMau  
+      .input('Item', sql.NVarChar(200), Item ?? '')
+      .input('ChungLoai', sql.NVarChar(200), ChungLoai ?? '').query(`
+      SELECT DISTINCT a.MaMau
+      FROM Lib_NguyenPhuLieu a
+      JOIN OMM_DonHang b ON a.DHId = b.DHId
+      WHERE b.MaHang = @MaHang
+
+        AND (
+          NULLIF(TRIM(@ChungLoai), N'') IS NULL
+          OR a.TenChungLoai LIKE N'%' + TRIM(@ChungLoai) + N'%'
+        )
+
+        AND (
+          NULLIF(TRIM(@Item), N'') IS NULL
+          OR a.Item = @Item
+        )
+
+        AND a.MaMau IS NOT NULL
+        AND LTRIM(RTRIM(a.MaMau)) <> '';
     `);
 
     return result.recordset;
   }
 
-  async layArt(MaHang: string): Promise<{ QuyCach: string }[]> {
+  async layArt(
+    MaHang: string,
+    Item: string = '',
+    ChungLoai: string = '',
+    MaMau: string = '',
+  ): Promise<{ QuyCach: string }[]> {
+    try {
+      const pool = await this.databaseService.getPool();
+
+      const result = await pool
+        .request()
+        .input('MaHang', sql.NVarChar(200), MaHang)
+        .input('Item', sql.NVarChar(200), Item ?? '')
+        .input('ChungLoai', sql.NVarChar(200), ChungLoai ?? '')
+        .input('MaMau', sql.NVarChar(200), MaMau ?? '').query(`
+        SELECT DISTINCT a.QuyCach
+        FROM Lib_NguyenPhuLieu a
+        INNER JOIN OMM_DonHang b ON a.DHId = b.DHId
+        WHERE b.MaHang = @MaHang
+
+          AND (
+            NULLIF(TRIM(@ChungLoai), N'') IS NULL
+            OR a.TenChungLoai LIKE N'%' + TRIM(@ChungLoai) + N'%'
+          )
+
+          AND (
+            NULLIF(TRIM(@Item), N'') IS NULL
+            OR a.Item = @Item
+          )
+
+          AND (
+            NULLIF(TRIM(@MaMau), N'') IS NULL
+            OR a.MaMau = @MaMau
+          )
+
+          AND a.QuyCach IS NOT NULL
+          AND LTRIM(RTRIM(a.QuyCach)) <> '';
+      `);
+
+      return result.recordset;
+    } catch (error) {
+      console.error('SQL ERROR layArt:', error);
+      throw error;
+    }
+  }
+  async layLot(
+    MaHang: string,
+    Item: string = '',
+    ChungLoai: string = '',
+    MaMau: string = '',
+    QuyCach: string = '',
+  ): Promise<{ Lot: string }[]> {
     const pool = await this.databaseService.getPool();
+
     const result = await pool
       .request()
-      .input('MaHang', sql.NVarChar(200), MaHang).query(`
-      SELECT Lib_NguyenPhuLieu.QuyCach
-      FROM Lib_NguyenPhuLieu
-      INNER JOIN OMM_DonHang ON Lib_NguyenPhuLieu.DHId = OMM_DonHang.DHId
-      WHERE OMM_DonHang.MaHang = @MaHang
-      AND Lib_NguyenPhuLieu.LoaiNPL = N'NGUYÊN LIỆU'
-      AND ISNULL(Lib_NguyenPhuLieu.QuyCach, '') <> ''
-      GROUP BY Lib_NguyenPhuLieu.QuyCach
-      ORDER BY Lib_NguyenPhuLieu.QuyCach;  
+      .input('MaHang', sql.NVarChar(200), MaHang)
+      .input('Item', sql.NVarChar(200), Item ?? '')
+      .input('ChungLoai', sql.NVarChar(200), ChungLoai ?? '')
+      .input('MaMau', sql.NVarChar(200), MaMau ?? '')
+      .input('Art', sql.NVarChar(200), QuyCach ?? '').query(`
+      SELECT DISTINCT c.Lot
+      FROM Lib_NguyenPhuLieu a
+      JOIN OMM_DonHang b ON a.DHId = b.DHId
+      JOIN WH_ChiTietPhieuGiamDinh c ON c.VTId = a.VTId
+      WHERE b.MaHang = @MaHang
+        AND (
+          NULLIF(TRIM(@ChungLoai), N'') IS NULL
+          OR a.TenChungLoai LIKE N'%' + TRIM(@ChungLoai) + N'%'
+        )
+        AND (
+          NULLIF(TRIM(@Item), N'') IS NULL
+          OR a.Item = @Item
+        )
+        AND (
+          NULLIF(TRIM(@MaMau), N'') IS NULL
+          OR a.MaMau = @MaMau
+        )
+        AND (
+          NULLIF(TRIM(@Art), N'') IS NULL
+          OR a.QuyCach = @Art
+        )
+        AND c.Lot IS NOT NULL
+        AND LTRIM(RTRIM(c.Lot)) <> '';
+    `);
+
+    return result.recordset;
+  }
+
+  async layNCC(): Promise<{ TenNgan: string; NCCId: number }[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool.request().query(`
+      SELECT TenNgan, NCCId
+      FROM Lib_NhaCungCap
     `);
 
     return result.recordset;

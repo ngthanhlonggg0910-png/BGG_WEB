@@ -45,7 +45,6 @@ import { getCurrentUser } from "../../../shared/auth/session";
 
 export function FabricRollCard({ item, index, onReload }) {
   const user = getCurrentUser();
-  console.log(item);
 
   const initialFormData = {
     "add-defect": {
@@ -94,8 +93,6 @@ export function FabricRollCard({ item, index, onReload }) {
       TrongLuongVai: null,
     },
   };
-
-  //console.log(item);
 
   const [open, setOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState(null);
@@ -541,9 +538,13 @@ export function FabricRollCard({ item, index, onReload }) {
                 className="mt-3 overflow-hidden rounded-xl border border-egmf-border-subtle"
               >
                 {defectsLoading ? (
-                  <DefectListMessage>Đang tải danh sách lỗi...</DefectListMessage>
+                  <DefectListMessage>
+                    Đang tải danh sách lỗi...
+                  </DefectListMessage>
                 ) : defectsError ? (
-                  <DefectListMessage tone="error">{defectsError}</DefectListMessage>
+                  <DefectListMessage tone="error">
+                    {defectsError}
+                  </DefectListMessage>
                 ) : defects.length === 0 ? (
                   <DefectListMessage>Chưa có dữ liệu lỗi</DefectListMessage>
                 ) : (
@@ -557,11 +558,21 @@ export function FabricRollCard({ item, index, onReload }) {
                     </colgroup>
                     <thead className="bg-egmf-primary-tint text-[10px] font-bold uppercase tracking-wide text-egmf-ink-secondary sm:text-[11px]">
                       <tr>
-                        <th className="px-1.5 py-2 text-center sm:px-3 sm:py-2.5">#</th>
-                        <th className="border-l border-egmf-primary-border-soft px-1.5 py-2 sm:px-3 sm:py-2.5">VT</th>
-                        <th className="border-l border-egmf-primary-border-soft px-1.5 py-2 sm:px-3 sm:py-2.5">Mã</th>
-                        <th className="border-l border-egmf-primary-border-soft px-1.5 py-2 sm:px-3 sm:py-2.5">Tên lỗi</th>
-                        <th className="border-l border-egmf-primary-border-soft px-1 py-2 text-center sm:px-3 sm:py-2.5">Điểm</th>
+                        <th className="px-1.5 py-2 text-center sm:px-3 sm:py-2.5">
+                          #
+                        </th>
+                        <th className="border-l border-egmf-primary-border-soft px-1.5 py-2 sm:px-3 sm:py-2.5">
+                          VT
+                        </th>
+                        <th className="border-l border-egmf-primary-border-soft px-1.5 py-2 sm:px-3 sm:py-2.5">
+                          Mã
+                        </th>
+                        <th className="border-l border-egmf-primary-border-soft px-1.5 py-2 sm:px-3 sm:py-2.5">
+                          Tên lỗi
+                        </th>
+                        <th className="border-l border-egmf-primary-border-soft px-1 py-2 text-center sm:px-3 sm:py-2.5">
+                          Điểm
+                        </th>
                       </tr>
                     </thead>
                     <tbody>

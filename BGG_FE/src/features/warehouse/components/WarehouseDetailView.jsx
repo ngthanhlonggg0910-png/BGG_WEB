@@ -37,6 +37,8 @@ export default function WarehouseDetail({ warehouse, onBack }) {
     ? resultSearch.data
     : EMPTY_DATA;
 
+  console.log(data);
+
   // Tính tổng
   const { tongSoCay, tongSoLuong } = useMemo(() => {
     return data.reduce(
@@ -70,7 +72,9 @@ export default function WarehouseDetail({ warehouse, onBack }) {
   // Xử lý tìm kiếm
   const handleSearch = (event) => {
     event.preventDefault();
-    const value = String(new FormData(event.currentTarget).get("keyword") ?? "");
+    const value = String(
+      new FormData(event.currentTarget).get("keyword") ?? "",
+    );
 
     void search(searchType, value);
   };
@@ -177,7 +181,11 @@ export default function WarehouseDetail({ warehouse, onBack }) {
             {/* Form tìm kiếm */}
           </div>
 
-          <form data-submit-on-scan="true" onSubmit={handleSearch} className="mt-4">
+          <form
+            data-submit-on-scan="true"
+            onSubmit={handleSearch}
+            className="mt-4"
+          >
             <div className="relative">
               <div className="flex h-[56px] min-w-0 items-center gap-2 rounded-2xl border border-egmf-border bg-white py-1.5 pl-3.5 pr-[76px] transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
                 <input

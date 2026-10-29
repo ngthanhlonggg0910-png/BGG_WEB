@@ -108,5 +108,20 @@ export interface IFabricInspectionRepository {
     ChungLoai: string,
   ): Promise<{ MaMau: string }[]>;
 
-  layArt(MaHang: string): Promise<{ QuyCach: string }[]>;
+  layArt(
+    MaHang: string,
+    Item: string,
+    ChungLoai: string,
+    MaMau: string,
+  ): Promise<{ QuyCach: string }[]>;
+
+  layLot(
+    MaHang: string,
+    Item: string,
+    ChungLoai: string,
+    MaMau: string,
+    QuyCach: string,
+  ): Promise<{ Lot: string }[]>;
+
+  layNCC(): Promise<{ TenNgan: string; NCCId: number }[]>;
 }

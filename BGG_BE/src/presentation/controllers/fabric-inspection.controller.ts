@@ -12,6 +12,8 @@ import {
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   layMaMau_RequestDTO,
+  layArt_RequestDTO,
+  layLot_RequestDTO,
 } from '../../application/dtos/fabric-inspection-request.dto.js';
 import {
   QM_PhieuKiemVai_TheoTKId_ResponseDTO,
@@ -31,6 +33,8 @@ import {
   layDanhSachItem_ResponseDTO,
   layMaMau_ResponseDTO,
   layArt_ResponseDTO,
+  layLot_ResponseDTO,
+  layNCC_ResponseDTO,
 } from '../../application/dtos/fabric-inspection-response.dto.js';
 
 @Controller('fabric-inspection')
@@ -132,8 +136,8 @@ export class FabricInspectionController {
 
   @Post('layDanhSachChungLoaiCoItem')
   layDanhSachChungLoaiCoItem(
-    @Body('MaHang, Item') MaHang: string,
-    Item: string,
+    @Body('MaHang') MaHang: string,
+    @Body('Item') Item: string,
   ): Promise<layDanhSachChungLoaiCoItem_ResponseDTO> {
     return this.fabricInspectionService.layDanhSachChungLoaiCoItem(
       MaHang,
@@ -161,7 +165,17 @@ export class FabricInspectionController {
   }
 
   @Post('layArt')
-  layArt(MaHang: string): Promise<layArt_ResponseDTO> {
-    return this.fabricInspectionService.layArt(MaHang);
+  layArt(@Body() dto: layArt_RequestDTO): Promise<layArt_ResponseDTO> {
+    return this.fabricInspectionService.layArt(dto);
+  }
+
+  @Post('layLot')
+  layLot(@Body() dto: layLot_RequestDTO): Promise<layLot_ResponseDTO> {
+    return this.fabricInspectionService.layLot(dto);
+  }
+
+  @Post('layNCC')
+  layNCC(): Promise<layNCC_ResponseDTO> {
+    return this.fabricInspectionService.layNCC();
   }
 }
