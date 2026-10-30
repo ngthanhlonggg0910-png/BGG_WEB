@@ -75,7 +75,7 @@ export default function Sidebar({ selectedKey, onSelect, onInstallApp }) {
 
         <div className="mt-3 flex items-center justify-center gap-1.5 text-xs font-medium text-slate-400">
           <ShieldCheck size={14} />
-          <span>Kết nối HiGarment · v1.0</span>
+          <span>BGG Kho · v1.0</span>
         </div>
       </div>
     </div>
@@ -162,18 +162,18 @@ function Brand() {
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-egmf-primary-soft p-1.5">
         <img
           src="/ic_launcher_512.png"
-          alt="eGMF"
+          alt="BGG Kho"
           className="h-full w-full object-contain"
         />
       </div>
 
       <div className="min-w-0">
         <h2 className="m-0 text-[22px] font-extrabold tracking-tight text-slate-900">
-          eGMF
+          BGG Kho
         </h2>
 
         <p className="m-0 mt-0.5 text-xs font-medium text-slate-500">
-          Production System
+          Quản lý Kho & Sản xuất
         </p>
       </div>
     </div>

@@ -72,7 +72,7 @@ function AccountInfo() {
                   {initial}
                 </div>
                 <h2 className="mt-4 text-xl font-bold tracking-[-0.025em] text-egmf-ink">
-                  {accountName || "Tài khoản eGMF"}
+                  {accountName || "Tài khoản BGG Kho"}
                 </h2>
                 <p className="mt-1 text-[15px] text-egmf-muted">
                   Tài khoản hệ thống

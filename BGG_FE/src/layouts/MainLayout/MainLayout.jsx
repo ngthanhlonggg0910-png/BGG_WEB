@@ -250,7 +250,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
           <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-egmf-primary-tint p-1.5 ${isOrderPage ? "lg:hidden" : "md:hidden"}`}>
             <img
               src="/ic_launcher_512.png"
-              alt="eGMF"
+              alt="BGG Kho"
               className="h-full w-full object-contain"
             />
           </div>
@@ -260,7 +260,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
             <Layers3 size={17} className="text-egmf-primary" />
 
             <span className="text-sm font-bold text-egmf-primary-strong">
-              eGMF
+              BGG Kho
             </span>
           </div>
         </header>
