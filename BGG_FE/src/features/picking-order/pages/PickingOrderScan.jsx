@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, ScanBarcode, ScanQrCode } from "lucide-react";
+import { toast } from "react-toastify";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../../../shared/auth/session";
@@ -8,10 +9,11 @@ import {
   showSuccessToast,
 } from "../../../shared/components/ui/CustomToast";
 import { taoPhieuKiemVaiAuto } from "../../fabric-inspection/api/fabric-inspections.api";
-
+import { themCayTaiPhieu } from "../../fabric-inspection/api/fabric-inspections.api";
 export default function PickingOrderScan() {
   const location = useLocation();
   const navigate = useNavigate();
+  console.log(location);
 
   const [basketCode, setBasketCode] = useState("");
   const scanType =
@@ -20,6 +22,8 @@ export default function PickingOrderScan() {
   const PhieuSoanHangId =
     location.state?.PhieuSoanHangId ??
     new URLSearchParams(location.search).get("phieuSoanHangId");
+
+  const PKVId = location.state?.PKVId;
 
   const user = getCurrentUser();
   const TKId = user?.data?.TKId;
@@ -44,7 +48,9 @@ export default function PickingOrderScan() {
 
       const payload = {
         PhieuSoanHangId: PhieuSoanHangId,
-        MaRo: basketCode,
+        // Read from the DOM-derived code. Camera scans submit immediately,
+        // before React state is guaranteed to finish updating.
+        MaRo: code,
       };
 
       navigate("/picking-order-materials", {
@@ -83,6 +89,30 @@ export default function PickingOrderScan() {
       }
     }
 
+    //TH3: THÊM CÂY VẢI VÀO PHIẾU HIỆN TẠI
+    if (scanType === "ADD_ROLL_TO_INSPECTION") {
+      try {
+        console.log("Đã vào");
+        const payload = {
+          TKId: TKId,
+          MaCay: code,
+          PKVId: PKVId,
+        };
+        const response = await themCayTaiPhieu(payload);
+        const result = response.data;
+        console.log(response);
+        if (result.success && result.data?.ThanhCong === 1) {
+          showSuccessToast(result.data.ThongBao);
+          navigate(`/fabric-inspection/${PKVId}/rolls`);
+        } else {
+          showErrorToast(response.message);
+        }
+      } catch (error) {
+        console.error("Lỗi thêm cây:", error);
+        showErrorToast("Có lỗi xảy ra khi thêm cây vải!");
+      }
+    }
+
     return;
   };
 
@@ -106,7 +136,11 @@ export default function PickingOrderScan() {
             </div>
 
             <h1 className="text-lg font-extrabold tracking-tight text-egmf-ink sm:text-2xl">
-              {scanType === "fabric-inspection" ? "Quét mã cây" : "Quét mã rổ"}
+              {scanType === "fabric-inspection"
+                ? "Quét mã cây"
+                : scanType === "ADD_ROLL_TO_INSPECTION"
+                  ? "Quét mã cây"
+                  : "Quét mã rọ"}
             </h1>
 
             <p className="mx-auto mt-1.5 max-w-md text-sm font-medium leading-5 text-egmf-ink-soft sm:mt-2 sm:leading-6 sm:text-[15px]">

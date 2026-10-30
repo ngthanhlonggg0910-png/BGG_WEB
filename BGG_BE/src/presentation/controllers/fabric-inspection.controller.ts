@@ -10,6 +10,7 @@ import {
   QM_PhieuKiemVai_CayVai_Delete_RequestDTO,
   QM_PhieuKiemVai_CayVai_XongCay_Android_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
+  QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   layMaMau_RequestDTO,
   layArt_RequestDTO,
@@ -26,6 +27,7 @@ import {
   QM_PhieuKiemVai_CayVai_Delete_ResponseDTO,
   QM_PhieuKiemVai_CayVai_XongCay_Android_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO,
+  QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO,
   QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO,
   layDanhSachChungLoaiCoItem_ResponseDTO,
@@ -120,6 +122,13 @@ export class FabricInspectionController {
     @Body() dto: QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   ): Promise<QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO> {
     return this.fabricInspectionService.taoPhieuKiemVaiAuto(dto);
+  }
+
+  @Post('QM_PhieuKiemVai_ThemCayVaoPhieu')
+  themCayVaoPhieu(
+    @Body() dto: QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO,
+  ): Promise<QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO> {
+    return this.fabricInspectionService.themCayVaoPhieu(dto);
   }
 
   @Post('QM_PhieuKiemVai_TaoPhieuKiem')

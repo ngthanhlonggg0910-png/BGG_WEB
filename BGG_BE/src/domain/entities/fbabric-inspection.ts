@@ -86,3 +86,8 @@ export class QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile {
   PKVID: number;
   SoPhieuKiem: string;
 }
+
+export class QM_PhieuKiemVai_ThemCayVaoPhieu {
+  ThanhCong: number;
+  ThongBao: string;
+}

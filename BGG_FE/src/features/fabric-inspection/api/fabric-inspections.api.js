@@ -218,3 +218,12 @@ export async function layLot(
     Art,
   });
 }
+
+//Thêm cây vải tại phiếu đó
+export async function themCayTaiPhieu(payload) {
+  return postJson("/api/fabric-inspection/QM_PhieuKiemVai_ThemCayVaoPhieu", {
+    TKId: payload.TKId,
+    MaCay: payload.MaCay,
+    PKVId: payload.PKVId,
+  });
+}

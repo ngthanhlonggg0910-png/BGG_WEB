@@ -9,6 +9,7 @@ import {
   QM_PhieuKiemVai_TheoTKId,
   QM_DoKhoVai,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile,
+  QM_PhieuKiemVai_ThemCayVaoPhieu,
 } from '../../domain/entities/fbabric-inspection.js';
 
 @Injectable()
@@ -189,6 +190,21 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
     return result.recordset[0];
   }
 
+  async themCayVaoPhieu(
+    TKId: number,
+    MaCay: string,
+    PKVId: number,
+  ): Promise<QM_PhieuKiemVai_ThemCayVaoPhieu> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('TKId', sql.BigInt, TKId)
+      .input('MaCay', sql.NVarChar(200), MaCay)
+      .input('PKVId', sql.BigInt, PKVId)
+      .execute('QM_PhieuKiemVai_ThemCayVaoPhieu');
+    return result.recordset[0];
+  }
+
   async taoPhieuKiemThuCong(
     TKId: number,
     MaHang: string,
@@ -297,17 +313,14 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
       FROM Lib_NguyenPhuLieu a
       JOIN OMM_DonHang b ON a.DHId = b.DHId
       WHERE b.MaHang = @MaHang
-
         AND (
           NULLIF(TRIM(@ChungLoai), N'') IS NULL
           OR a.TenChungLoai LIKE N'%' + TRIM(@ChungLoai) + N'%'
         )
-
         AND (
           NULLIF(TRIM(@Item), N'') IS NULL
           OR a.Item = @Item
         )
-
         AND a.MaMau IS NOT NULL
         AND LTRIM(RTRIM(a.MaMau)) <> '';
     `);
@@ -334,22 +347,18 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
         FROM Lib_NguyenPhuLieu a
         INNER JOIN OMM_DonHang b ON a.DHId = b.DHId
         WHERE b.MaHang = @MaHang
-
           AND (
             NULLIF(TRIM(@ChungLoai), N'') IS NULL
             OR a.TenChungLoai LIKE N'%' + TRIM(@ChungLoai) + N'%'
           )
-
           AND (
             NULLIF(TRIM(@Item), N'') IS NULL
             OR a.Item = @Item
           )
-
           AND (
             NULLIF(TRIM(@MaMau), N'') IS NULL
             OR a.MaMau = @MaMau
           )
-
           AND a.QuyCach IS NOT NULL
           AND LTRIM(RTRIM(a.QuyCach)) <> '';
       `);
