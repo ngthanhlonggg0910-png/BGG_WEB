@@ -6,6 +6,9 @@ import {
   Check,
   CheckCircle2,
   CheckSquare,
+  Filter,
+  Search,
+  X,
   ChevronDown,
   ChevronUp,
   Layers,
@@ -33,6 +36,15 @@ import {
   createMaterialOrderFromLsx,
   getProductionOrderDetail,
 } from "../api/productionOrderAPI";
+
+function normalizeSearchText(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
+    .toLowerCase()
+    .trim();
+}
 
 function isNguyenLieuItem(loaiNPL) {
   const s = String(loaiNPL || "")
@@ -158,6 +170,13 @@ export default function ProductionOrderBookingPage() {
 
   // Danh sách vật tư BOM (có thuộc tính checked giống cột Chon trên Desktop)
   const [bomItems, setBomItems] = useState([]);
+
+  // Tìm kiếm và bộ lọc nhanh NPL (Nguyên Phụ Liệu) ở Bước 2
+  const [bomSearchKeyword, setBomSearchKeyword] = useState("");
+  const [bomCategoryFilter, setBomCategoryFilter] = useState("ALL"); // "ALL" | "NGUYEN_LIEU" | "PHU_LIEU"
+  const [bomStatusFilter, setBomStatusFilter] = useState("ALL"); // "ALL" | "CHECKED" | "UNCHECKED"
+  // Tìm kiếm nhanh cỡ/màu ở Bước 1
+  const [sizeKeyword, setSizeKeyword] = useState("");
 
   // Hàm tính BOM
   const runCalculateBom = async (rowsToCalc, targetLoai, currentLot) => {
@@ -329,9 +348,25 @@ export default function ProductionOrderBookingPage() {
   }, [sizeRows]);
 
   const visibleSizeRows = useMemo(() => {
-    if (colorFilter === "ALL") return sizeRows;
-    return sizeRows.filter((r) => r.TenMau === colorFilter);
-  }, [sizeRows, colorFilter]);
+    let rows = sizeRows;
+    if (colorFilter !== "ALL") {
+      rows = rows.filter((r) => r.TenMau === colorFilter);
+    }
+    const q = normalizeSearchText(sizeKeyword);
+    if (!q) return rows;
+    return rows.filter((r) => {
+      const po = normalizeSearchText(r.PONo);
+      const mau = normalizeSearchText(r.TenMau);
+      const codeMau = normalizeSearchText(r.CodeMau);
+      const size = normalizeSearchText(r.TenSize);
+      return (
+        po.includes(q) ||
+        mau.includes(q) ||
+        codeMau.includes(q) ||
+        size.includes(q)
+      );
+    });
+  }, [sizeRows, colorFilter, sizeKeyword]);
 
   // Gom nhóm PO + Màu để hiển thị dạng thẻ (Card) thân thiện với Tablet & Mobile
   const groupedPoColors = useMemo(() => {
@@ -376,6 +411,66 @@ export default function ProductionOrderBookingPage() {
   const checkedPlCount = useMemo(() => {
     return checkedBomItems.filter((it) => !isNguyenLieuItem(it.LoaiNPL)).length;
   }, [checkedBomItems]);
+
+  const countNlTotal = useMemo(() => {
+    return bomItems.filter((it) => isNguyenLieuItem(it.LoaiNPL)).length;
+  }, [bomItems]);
+
+  const countPlTotal = useMemo(() => {
+    return bomItems.filter((it) => !isNguyenLieuItem(it.LoaiNPL)).length;
+  }, [bomItems]);
+
+  const visibleBomItems = useMemo(() => {
+    const q = normalizeSearchText(bomSearchKeyword);
+    return bomItems.filter((item) => {
+      // 1. Lọc theo nhóm NPL (Nguyên liệu / Phụ liệu)
+      if (bomCategoryFilter === "NGUYEN_LIEU" && !isNguyenLieuItem(item.LoaiNPL)) {
+        return false;
+      }
+      if (bomCategoryFilter === "PHU_LIEU" && isNguyenLieuItem(item.LoaiNPL)) {
+        return false;
+      }
+
+      // 2. Lọc theo trạng thái đã tích chọn hay chưa
+      if (bomStatusFilter === "CHECKED" && !item.checked) {
+        return false;
+      }
+      if (bomStatusFilter === "UNCHECKED" && item.checked) {
+        return false;
+      }
+
+      // 3. Tìm kiếm theo từ khóa (Mã NPL, Tên NPL, Loại NPL, Màu SP, Cỡ, ĐVT, Ghi chú)
+      if (!q) return true;
+
+      const ma = normalizeSearchText(item.MaVatTu);
+      const ten = normalizeSearchText(item.TenVatTu);
+      const loai = normalizeSearchText(item.LoaiNPL);
+      const mau = normalizeSearchText(item.CodeMauSP);
+      const size = normalizeSearchText(item.Size);
+      const dvt = normalizeSearchText(item.DVT);
+      const ghiChu = normalizeSearchText(item.GhiChu);
+
+      return (
+        ma.includes(q) ||
+        ten.includes(q) ||
+        loai.includes(q) ||
+        mau.includes(q) ||
+        size.includes(q) ||
+        dvt.includes(q) ||
+        ghiChu.includes(q)
+      );
+    });
+  }, [bomItems, bomSearchKeyword, bomCategoryFilter, bomStatusFilter]);
+
+  // Chọn hoặc bỏ chọn toàn bộ các mục NPL đang hiển thị trong bộ lọc tìm kiếm
+  const handleToggleAllVisibleBom = (checked) => {
+    const visibleRowKeys = new Set(visibleBomItems.map((it) => it._rowKey));
+    setBomItems((prev) =>
+      prev.map((it) =>
+        visibleRowKeys.has(it._rowKey) ? { ...it, checked } : it,
+      ),
+    );
+  };
 
   const handleToggleRow = (chiTietLsxId) => {
     setBomDirty(true);
@@ -1028,13 +1123,35 @@ export default function ProductionOrderBookingPage() {
                   {/* THANH LỌC MÀU & CÔNG CỤ NHANH */}
                   <div className="space-y-2.5 border-b border-slate-100 bg-slate-50/70 p-3.5 sm:px-5">
                     <p className="text-sm text-slate-600">Đã chọn sẵn số lượng kế hoạch. Chỉ sửa nếu cần đặt ít hơn.</p>
-                    <label className="order-filter-label">
-                      Màu sản phẩm
-                      <select className="order-combobox" value={colorFilter} onChange={(e) => setColorFilter(e.target.value)}>
-                        <option value="ALL">Tất cả màu ({distinctColors.length})</option>
-                        {distinctColors.map((color) => <option key={color} value={color}>{color}</option>)}
-                      </select>
-                    </label>
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                      <div className="relative flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-egmf-primary focus-within:ring-2 focus-within:ring-egmf-primary/15">
+                        <Search size={17} className="shrink-0 text-slate-400" />
+                        <input
+                          type="text"
+                          value={sizeKeyword}
+                          onChange={(e) => setSizeKeyword(e.target.value)}
+                          placeholder="Lọc theo PO, màu, cỡ..."
+                          className="h-full w-full bg-transparent py-2 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                        />
+                        {sizeKeyword && (
+                          <button
+                            type="button"
+                            onClick={() => setSizeKeyword("")}
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+                            aria-label="Xóa tìm kiếm"
+                          >
+                            <X size={12} />
+                          </button>
+                        )}
+                      </div>
+
+                      <label className="order-filter-label !mb-0">
+                        <select className="order-combobox" value={colorFilter} onChange={(e) => setColorFilter(e.target.value)}>
+                          <option value="ALL">Tất cả màu ({distinctColors.length})</option>
+                          {distinctColors.map((color) => <option key={color} value={color}>{color}</option>)}
+                        </select>
+                      </label>
+                    </div>
 
                     {colorFilter !== "ALL" && (
                       <button type="button" className="order-color-only" onClick={() => handleSelectOnlyColor(colorFilter)}>
@@ -1269,46 +1386,197 @@ export default function ProductionOrderBookingPage() {
                       </button>
                     </div>
 
+                    {/* THANH TÌM KIẾM NPL */}
+                    <div className="relative flex min-h-[46px] w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3.5 shadow-2xs focus-within:border-egmf-primary focus-within:ring-2 focus-within:ring-egmf-primary/15">
+                      <Search size={18} className="shrink-0 text-slate-400" />
+                      <input
+                        type="text"
+                        value={bomSearchKeyword}
+                        onChange={(e) => setBomSearchKeyword(e.target.value)}
+                        placeholder="Tìm kiếm NPL: mã vật tư, tên, loại, màu SP, cỡ..."
+                        className="h-full w-full bg-transparent py-2.5 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 sm:text-base"
+                      />
+                      {bomSearchKeyword && (
+                        <button
+                          type="button"
+                          onClick={() => setBomSearchKeyword("")}
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 active:scale-90"
+                          aria-label="Xóa tìm kiếm"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* BỘ LỌC NHANH THEO NHÓM NPL VÀ TRẠNG THÁI */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-xs font-bold text-slate-500">Phân loại:</span>
+                        <button
+                          type="button"
+                          onClick={() => setBomCategoryFilter("ALL")}
+                          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-extrabold transition-all active:scale-95 ${
+                            bomCategoryFilter === "ALL"
+                              ? "bg-slate-900 text-white shadow-2xs"
+                              : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          <span>Tất cả</span>
+                          <span className="rounded-full bg-slate-200/80 px-1.5 py-0.2 text-[10px] font-bold text-slate-700">
+                            {bomItems.length}
+                          </span>
+                        </button>
+
+                        {countNlTotal > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setBomCategoryFilter("NGUYEN_LIEU")}
+                            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-extrabold transition-all active:scale-95 ${
+                              bomCategoryFilter === "NGUYEN_LIEU"
+                                ? "bg-blue-600 text-white shadow-2xs"
+                                : "border border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100"
+                            }`}
+                          >
+                            <Scissors size={12} />
+                            <span>Nguyên liệu</span>
+                            <span className="rounded-full bg-blue-100 px-1.5 py-0.2 text-[10px] font-bold text-blue-800">
+                              {countNlTotal}
+                            </span>
+                          </button>
+                        )}
+
+                        {countPlTotal > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setBomCategoryFilter("PHU_LIEU")}
+                            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-extrabold transition-all active:scale-95 ${
+                              bomCategoryFilter === "PHU_LIEU"
+                                ? "bg-amber-600 text-white shadow-2xs"
+                                : "border border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100"
+                            }`}
+                          >
+                            <Shirt size={12} />
+                            <span>Phụ liệu</span>
+                            <span className="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-900">
+                              {countPlTotal}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-xs font-bold text-slate-500">Trạng thái:</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setBomStatusFilter((prev) =>
+                              prev === "CHECKED" ? "ALL" : "CHECKED",
+                            )
+                          }
+                          className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-extrabold transition-all active:scale-95 ${
+                            bomStatusFilter === "CHECKED"
+                              ? "bg-emerald-700 text-white shadow-2xs"
+                              : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          <Check size={12} strokeWidth={3} />
+                          <span>Đã chọn ({checkedBomItems.length})</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* DÒNG THÔNG BÁO KẾT QUẢ ĐANG LỌC & THAO TÁC NHANH */}
+                    {(bomSearchKeyword.trim() ||
+                      bomCategoryFilter !== "ALL" ||
+                      bomStatusFilter !== "ALL") && (
+                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-blue-50/80 px-3 py-2 text-xs text-blue-900">
+                        <div className="flex items-center gap-1.5">
+                          <Filter size={13} className="text-blue-600" />
+                          <span>
+                            Tìm thấy <strong>{visibleBomItems.length}</strong> /{" "}
+                            {bomItems.length} NPL
+                            {bomSearchKeyword.trim() && (
+                              <span> cho từ khóa &ldquo;{bomSearchKeyword}&rdquo;</span>
+                            )}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {visibleBomItems.length > 0 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleAllVisibleBom(true)}
+                                className="rounded-md bg-white px-2 py-1 font-bold text-blue-700 shadow-2xs hover:bg-blue-100 active:scale-95"
+                              >
+                                Chọn mục đang lọc
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleAllVisibleBom(false)}
+                                className="rounded-md bg-white px-2 py-1 font-bold text-slate-600 shadow-2xs hover:bg-slate-100 active:scale-95"
+                              >
+                                Bỏ chọn mục đang lọc
+                              </button>
+                            </>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBomSearchKeyword("");
+                              setBomCategoryFilter("ALL");
+                              setBomStatusFilter("ALL");
+                            }}
+                            className="rounded-md bg-blue-200/60 px-2 py-1 font-bold text-blue-800 hover:bg-blue-200 active:scale-95"
+                          >
+                            Xóa lọc
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* THANH NÚT CHỌN VẬT TƯ NHANH GIỐNG HỆT DESKTOP */}
                     <details>
-                      <summary className="cursor-pointer py-2 text-sm font-semibold text-slate-700">Thay đổi vật tư được chọn</summary>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectBomByType("ALL")}
-                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-extrabold text-slate-700 active:scale-95 hover:border-egmf-primary"
-                      >
-                        <CheckSquare size={14} className="text-egmf-primary" />
-                        <span>Chọn tất cả</span>
-                      </button>
+                      <summary className="cursor-pointer py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
+                        Thao tác chọn hàng loạt (Desktop)
+                      </summary>
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectBomByType("ALL")}
+                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-extrabold text-slate-700 active:scale-95 hover:border-egmf-primary"
+                        >
+                          <CheckSquare size={14} className="text-egmf-primary" />
+                          <span>Chọn tất cả</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleSelectBomByType("NGUYEN_LIEU")}
-                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-extrabold text-blue-700 active:scale-95 hover:bg-blue-100"
-                      >
-                        <Scissors size={14} />
-                        <span>Chọn Nguyên liệu</span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectBomByType("NGUYEN_LIEU")}
+                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-extrabold text-blue-700 active:scale-95 hover:bg-blue-100"
+                        >
+                          <Scissors size={14} />
+                          <span>Chọn Nguyên liệu</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleSelectBomByType("PHU_LIEU")}
-                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-extrabold text-amber-800 active:scale-95 hover:bg-amber-100"
-                      >
-                        <Shirt size={14} />
-                        <span>Chọn Phụ liệu</span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectBomByType("PHU_LIEU")}
+                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-extrabold text-amber-800 active:scale-95 hover:bg-amber-100"
+                        >
+                          <Shirt size={14} />
+                          <span>Chọn Phụ liệu</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleSelectBomByType("NONE")}
-                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-600 active:scale-95"
-                      >
-                        <Square size={14} className="text-slate-500" />
-                        <span>Bỏ chọn</span>
-                      </button>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectBomByType("NONE")}
+                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-600 active:scale-95"
+                        >
+                          <Square size={14} className="text-slate-500" />
+                          <span>Bỏ chọn</span>
+                        </button>
+                      </div>
                     </details>
                   </div>
 
@@ -1321,9 +1589,31 @@ export default function ProductionOrderBookingPage() {
                       <div className="py-10">
                         <Empty description="Không tìm thấy định mức vật tư (BCD) phù hợp cho PO/Màu/Cỡ đã chọn" />
                       </div>
+                    ) : visibleBomItems.length === 0 ? (
+                      <div className="py-12 text-center">
+                        <Empty
+                          description={
+                            bomSearchKeyword.trim()
+                              ? `Không tìm thấy NPL nào khớp với "${bomSearchKeyword}"`
+                              : "Không tìm thấy NPL nào phù hợp bộ lọc đã chọn"
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBomSearchKeyword("");
+                            setBomCategoryFilter("ALL");
+                            setBomStatusFilter("ALL");
+                          }}
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:border-egmf-primary hover:text-egmf-primary active:scale-95"
+                        >
+                          <RotateCcw size={14} />
+                          <span>Đặt lại bộ lọc & tìm kiếm</span>
+                        </button>
+                      </div>
                     ) : (
                       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                        {bomItems.map((item, idx) => {
+                        {visibleBomItems.map((item, idx) => {
                           const isNL = isNguyenLieuItem(item.LoaiNPL);
                           return (
                             <article
