@@ -7,8 +7,11 @@ import {
 } from "lucide-react";
 
 import { formatDateTime } from "../../../shared/utils/formatDateTime";
+import { useLocation } from "react-router-dom";
 
 export function FabricInspectionCard({ item, onClick }) {
+  const location = useLocation();
+  console.log(location);
   const details = [
     { label: "Nhà cung cấp", value: item.TenNgan ?? item.NhaCungCap },
     { label: "Mã hàng", value: item.MaHang },

@@ -205,7 +205,11 @@ export default function FabricInspectionList() {
                     key={item.Id ?? item.SoPhieuKiem ?? index}
                     item={item}
                     onClick={() => {
-                      navigate(`/fabric-inspection/${item.PKVId}/rolls`);
+                      navigate(`/fabric-inspection/${item.PKVId}/rolls`, {
+                        state: {
+                          SoPhieuKiem: item.SoPhieuKiem,
+                        },
+                      });
                     }}
                   />
                 ))}

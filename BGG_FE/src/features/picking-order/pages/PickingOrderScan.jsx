@@ -99,10 +99,9 @@ export default function PickingOrderScan() {
           PKVId: PKVId,
         };
         const response = await themCayTaiPhieu(payload);
-        const result = response.data;
-        console.log(response);
-        if (result.success && result.data?.ThanhCong === 1) {
-          showSuccessToast(result.data.ThongBao);
+
+        if (response.success && response.data?.ThanhCong === 1) {
+          showSuccessToast(response.data.ThongBao);
           navigate(`/fabric-inspection/${PKVId}/rolls`);
         } else {
           showErrorToast(response.message);

@@ -90,20 +90,23 @@ export class FabricInspectionService implements IFabricInspectionService {
           dto.PKVId,
           dto.MaCay,
         );
-      if (!result || result.length === 0)
-        throw new NotFoundException('Không tìm thấy danh sách cây vải');
+
+      console.log('DTO:', dto);
+      console.log('RESULT:', result);
 
       return {
         success: true,
         message: 'Lấy danh sách cây vải thành công',
-        data: result,
+        data: result ?? [],
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
+
       this.logger.error(
         'Lỗi lấy danh sách cây vải',
         error instanceof Error ? error.stack : String(error),
       );
+
       throw new InternalServerErrorException('Có lỗi khi lấy danh sách cây');
     }
   }
@@ -352,13 +355,10 @@ export class FabricInspectionService implements IFabricInspectionService {
         dto.MaCay,
         dto.PKVId,
       );
-
-      console.log(result);
-
       return {
         success: result?.ThanhCong === 1,
         message: result?.ThongBao ?? 'Thêm cây vào phiếu thất bại',
-        data: result ?? { KetQua: 0, ThongBao: '' },
+        data: result ?? { ThanhCong: 0, ThongBao: '' },
       };
     } catch (error) {
       this.logger.error(
