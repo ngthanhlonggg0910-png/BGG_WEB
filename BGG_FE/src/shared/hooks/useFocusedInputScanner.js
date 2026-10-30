@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useBarcodeScanner } from "./useBarcodeScanner";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { getCurrentUser } from "../auth/session";
 
 function isScannableInput(element) {
   if (element instanceof HTMLTextAreaElement) {
@@ -79,8 +80,11 @@ function resolveScanType(location) {
 }
 
 export function useFocusedInputScanner() {
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { pkvId } = useParams();
+  const user = getCurrentUser();
+  const TKId = user?.data?.TKId;
 
   const focusedInputRef = useRef(null);
   const [focusedInputLabel, setFocusedInputLabel] = useState("ô đang chọn");
@@ -94,6 +98,12 @@ export function useFocusedInputScanner() {
     };
 
     document.addEventListener("focusin", trackFocusedInput);
+
+    // A page can focus its scan field during its own effect, before this
+    // layout-level listener is registered. Capture the current focus too so
+    // the first camera scan has a target instead of being discarded.
+    trackFocusedInput({ target: document.activeElement });
+
     return () => document.removeEventListener("focusin", trackFocusedInput);
   }, []);
 
@@ -105,7 +115,7 @@ export function useFocusedInputScanner() {
     // the same scan page, but processes the scanned code in that page's form.
     if (
       location.pathname === "/picking-order-scan" &&
-      resolveScanType(location) !== "fabric-inspection"
+      resolveScanType(location) === "picking"
     ) {
       const PhieuSoanHangId = resolvePickingOrderId(location);
 
@@ -201,6 +211,17 @@ export function useFocusedInputScanner() {
         },
       );
 
+      return;
+    }
+
+    if (/^\/fabric-inspection\/\d+\/rolls$/.test(location.pathname)) {
+      navigate("/picking-order-scan?scanType=ADD_ROLL_TO_INSPECTION", {
+        state: {
+          scanType: "ADD_ROLL_TO_INSPECTION",
+          TKId: TKId,
+          PKVId: pkvId,
+        },
+      });
       return;
     }
 

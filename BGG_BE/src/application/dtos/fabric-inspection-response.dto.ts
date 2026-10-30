@@ -4,6 +4,7 @@ import {
   QM_PhieuKiemVai_Cay_ChiTiet_LayDanhSachLoi,
   QM_DoKhoVai,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile,
+  QM_PhieuKiemVai_ThemCayVaoPhieu,
 } from '../../domain/entities/fbabric-inspection.js';
 
 export class QM_PhieuKiemVai_TheoTKId_ResponseDTO {
@@ -60,6 +61,12 @@ export class QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO {
   success: boolean;
   message: string;
   data: QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile;
+}
+
+export class QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: QM_PhieuKiemVai_ThemCayVaoPhieu;
 }
 
 export class QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO {
