@@ -4,6 +4,7 @@ import {
   Ban,
   Calculator,
   Check,
+  CheckCircle2,
   CheckSquare,
   ChevronDown,
   ChevronUp,
@@ -602,17 +603,78 @@ export default function ProductionOrderBookingPage() {
         ? res.data.createdOrders
         : [];
 
-      if (createdList.length > 1) {
-        message.success(
-          `Đã tách và gửi ${createdList.length} Đơn đặt hàng (${createdCode}) sang Kho Vải & Kho Phụ Liệu!`,
-        );
-      } else {
-        message.success(
-          `Đã gửi Đơn đặt hàng ${createdCode} xuống Kho (Chờ Thủ kho tạo Phiếu soạn)!`,
-        );
-      }
+      const boPhanText =
+        loaiDatHang === "NguyenLieu"
+          ? "Nhà Cắt (Kho Vải)"
+          : loaiDatHang === "PhuLieu"
+            ? "Nhà May (Kho Phụ Liệu)"
+            : "Tất cả (Kho Vải & Kho Phụ Liệu)";
 
-      await loadLsxDetail();
+      let navigated = false;
+      const handleBackOut = () => {
+        if (navigated) return;
+        navigated = true;
+        const targetType =
+          loaiDatHang && ["NguyenLieu", "PhuLieu"].includes(loaiDatHang)
+            ? `&type=${loaiDatHang}`
+            : "";
+        navigate(`/production-orders?tab=ddh${targetType}`);
+      };
+
+      modal.success({
+        width: 560,
+        centered: true,
+        className: "egmf-confirm",
+        icon: (
+          <span className="egmf-confirm-icon !bg-emerald-50 !text-emerald-600">
+            <CheckCircle2 size={24} />
+          </span>
+        ),
+        title: "Gửi đơn đặt hàng thành công!",
+        content: (
+          <div className="space-y-4">
+            <p className="text-base leading-relaxed text-slate-600">
+              {createdList.length > 1
+                ? `Đã tách và gửi thành công ${createdList.length} đơn đặt hàng sang Kho Vải & Kho Phụ Liệu.`
+                : `Đơn đặt hàng đã được gửi thành công xuống Kho (chờ Thủ kho tạo Phiếu soạn).`}
+            </p>
+            <dl className="egmf-confirm-summary">
+              <div>
+                <dt>Mã đơn đặt</dt>
+                <dd className="font-bold text-emerald-700">{createdCode || "—"}</dd>
+              </div>
+              <div>
+                <dt>Lệnh sản xuất</dt>
+                <dd>{lsxHeader?.SoLSX || "—"}</dd>
+              </div>
+              <div>
+                <dt>Mã hàng</dt>
+                <dd>{lsxHeader?.MaHang || "—"}</dd>
+              </div>
+              <div>
+                <dt>Bộ phận đặt</dt>
+                <dd>{boPhanText}</dd>
+              </div>
+              {ngayCanGiao && (
+                <div>
+                  <dt>Ngày cần giao</dt>
+                  <dd>
+                    {dayjs(ngayCanGiao).isValid()
+                      ? dayjs(ngayCanGiao).format("DD/MM/YYYY")
+                      : ngayCanGiao}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        ),
+        okText: "Đồng ý",
+        okButtonProps: {
+          className: "bg-emerald-600 hover:bg-emerald-700 text-white font-bold",
+        },
+        onOk: handleBackOut,
+        afterClose: handleBackOut,
+      });
     } catch (err) {
       console.error("Lỗi tạo đơn đặt hàng LSX:", err);
       message.error(err?.message || "Không thể gửi đơn đặt hàng");
