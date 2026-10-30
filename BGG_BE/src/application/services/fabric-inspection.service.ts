@@ -8,6 +8,7 @@ import {
   QM_PhieuKiemVai_CayVai_Delete_RequestDTO,
   QM_PhieuKiemVai_CayVai_XongCay_Android_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
+  QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   layMaMau_RequestDTO,
   layArt_RequestDTO,
@@ -24,6 +25,7 @@ import {
   QM_PhieuKiemVai_CayVai_Delete_ResponseDTO,
   QM_PhieuKiemVai_CayVai_XongCay_Android_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO,
+  QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO,
   QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO,
   layDanhSachChungLoaiCoItem_ResponseDTO,
@@ -336,6 +338,35 @@ export class FabricInspectionService implements IFabricInspectionService {
       );
       throw new InternalServerErrorException(
         'Có lỗi khi tạo phiếu kiểm vải auto',
+      );
+    }
+  }
+
+  async themCayVaoPhieu(
+    dto: QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO,
+  ): Promise<QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO> {
+    try {
+      console.log('ĐÃ VÀO SERVICE', dto);
+      const result = await this.fabricInspectionRepository.themCayVaoPhieu(
+        dto.TKId,
+        dto.MaCay,
+        dto.PKVId,
+      );
+
+      console.log(result);
+
+      return {
+        success: result?.ThanhCong === 1,
+        message: result?.ThongBao ?? 'Thêm cây vào phiếu thất bại',
+        data: result ?? { KetQua: 0, ThongBao: '' },
+      };
+    } catch (error) {
+      this.logger.error(
+        'Lỗi khi thêm cây vào phiếu kiểm vải',
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException(
+        'Có lỗi khi thêm cây vào phiếu kiểm vải',
       );
     }
   }

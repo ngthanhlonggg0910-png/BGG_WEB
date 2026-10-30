@@ -62,6 +62,12 @@ export class QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO {
   MaCay: string;
 }
 
+export class QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO {
+  TKId: number;
+  MaCay: string;
+  PKVId: number;
+}
+
 export class QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO {
   TKId: number;
   MaHang: string;

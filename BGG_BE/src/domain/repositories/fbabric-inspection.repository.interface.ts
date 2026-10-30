@@ -5,6 +5,7 @@ import type {
   QM_PhieuKiemVai_Cay_ChiTiet,
   QM_DoKhoVai,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile,
+  QM_PhieuKiemVai_ThemCayVaoPhieu,
 } from '../entities/fbabric-inspection.js';
 
 export interface IFabricInspectionRepository {
@@ -76,6 +77,12 @@ export interface IFabricInspectionRepository {
     TKId: number,
     MaCay: string,
   ): Promise<QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile>;
+
+  themCayVaoPhieu(
+    TKId: number,
+    MaCay: string,
+    PKVId: number,
+  ): Promise<QM_PhieuKiemVai_ThemCayVaoPhieu>;
 
   taoPhieuKiemThuCong(
     TKId: number,
