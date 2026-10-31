@@ -35,7 +35,6 @@ export default function PickingOrderScan() {
     const code = inputRef.current?.value.trim() ?? basketCode.trim();
 
     if (!code) {
-      toast.warning("Vui lòng nhập hoặc quét mã");
       return;
     }
 

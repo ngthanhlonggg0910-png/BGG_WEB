@@ -9,6 +9,7 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO,
+  QM_PhieuKiemVai_XoaPhieu_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   layMaMau_RequestDTO,
   layArt_RequestDTO,
@@ -26,6 +27,7 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO,
   QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO,
+  QM_PhieuKiemVai_XoaPhieu_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO,
   QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO,
   layDanhSachChungLoaiCoItem_ResponseDTO,
@@ -368,6 +370,26 @@ export class FabricInspectionService implements IFabricInspectionService {
       throw new InternalServerErrorException(
         'Có lỗi khi thêm cây vào phiếu kiểm vải',
       );
+    }
+  }
+
+  async xoaPhieu(
+    dto: QM_PhieuKiemVai_XoaPhieu_RequestDTO,
+  ): Promise<QM_PhieuKiemVai_XoaPhieu_ResponseDTO> {
+    try {
+      const result = await this.fabricInspectionRepository.xoaPhieu(dto.PKVId);
+
+      return {
+        success: result?.KetQua === 1,
+        message: result?.ThongBao ?? 'Xóa phiếu kiểm vải thất bại',
+        data: result ?? { KetQua: 0, ThongBao: '' },
+      };
+    } catch (error) {
+      this.logger.error(
+        'Lỗi khi xóa phiếu kiểm vải',
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException('Có lỗi khi xóa phiếu kiểm vải');
     }
   }
 

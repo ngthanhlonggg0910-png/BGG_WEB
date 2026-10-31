@@ -211,6 +211,11 @@ export default function FabricInspectionList() {
                         },
                       });
                     }}
+                    onDelete={() => {
+                      setFabricInspections((prev) =>
+                        prev.filter((phieu) => phieu.PKVId !== item.PKVId),
+                      );
+                    }}
                   />
                 ))}
               </div>

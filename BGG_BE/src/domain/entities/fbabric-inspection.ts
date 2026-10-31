@@ -91,3 +91,8 @@ export class QM_PhieuKiemVai_ThemCayVaoPhieu {
   ThanhCong: number;
   ThongBao: string;
 }
+
+export class QM_PhieuKiemVai_XoaPhieu {
+  KetQua: number;
+  ThongBao: string;
+}
