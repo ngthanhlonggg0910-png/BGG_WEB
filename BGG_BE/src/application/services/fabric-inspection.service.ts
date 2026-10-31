@@ -92,10 +92,6 @@ export class FabricInspectionService implements IFabricInspectionService {
           dto.PKVId,
           dto.MaCay,
         );
-
-      console.log('DTO:', dto);
-      console.log('RESULT:', result);
-
       return {
         success: true,
         message: 'Lấy danh sách cây vải thành công',
@@ -351,7 +347,6 @@ export class FabricInspectionService implements IFabricInspectionService {
     dto: QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO,
   ): Promise<QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO> {
     try {
-      console.log('ĐÃ VÀO SERVICE', dto);
       const result = await this.fabricInspectionRepository.themCayVaoPhieu(
         dto.TKId,
         dto.MaCay,
@@ -550,8 +545,6 @@ export class FabricInspectionService implements IFabricInspectionService {
 
   async layLot(dto: layLot_RequestDTO): Promise<layLot_ResponseDTO> {
     try {
-      console.log('DTO:', dto);
-
       const result = await this.fabricInspectionRepository.layLot(
         dto.MaHang,
         dto.Item ?? '',

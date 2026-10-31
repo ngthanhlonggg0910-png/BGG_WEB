@@ -25,7 +25,7 @@ function Drawer({ children, onClose, open }) {
         type="button"
       />
       <aside
-        className="relative flex h-full w-[min(86vw,320px)] flex-col bg-white shadow-2xl"
+        className="relative flex h-full min-h-0 w-[min(86vw,320px)] flex-col overflow-hidden bg-white shadow-2xl"
         aria-label="Điều hướng"
       >
         <button

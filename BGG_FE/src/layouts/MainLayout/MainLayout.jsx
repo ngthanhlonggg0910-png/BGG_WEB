@@ -100,11 +100,17 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
 
     if (path === "/infor") return "Thông tin";
 
-    if (path.startsWith("/material-location-update")) return "materialLocation";
+    if (path.startsWith("/material-location-update")) return "update-material-location";
 
     if (path.startsWith("/warehouse")) return "warehouse";
 
-    if (path.startsWith("/production")) return "production";
+    if (path.startsWith("/mapping-qr")) return "mapping-qr";
+
+    if (path.startsWith("/production")) return "production-order-material";
+
+    if (path.startsWith("/picking-order")) return "soanhang";
+
+    if (path.startsWith("/fabric-inspection")) return "fabric-inspection";
 
     return "workspace";
   })();
@@ -112,6 +118,11 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
   // XỬ LÝ MENU
   const handleSelect = (key) => {
     setDrawerOpen(false);
+
+    if (key.startsWith("/")) {
+      navigate(key);
+      return;
+    }
 
     switch (key) {
       case "workspace":
@@ -188,14 +199,18 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
         <header
           className="
             sticky top-0 z-20
-            flex min-h-20 items-center gap-3
-            border-b border-egmf-border
-            bg-white/95 px-4
+            relative flex min-h-20 items-center gap-3 overflow-hidden
+            border-b border-blue-100/90
+            bg-gradient-to-r from-white via-white to-blue-50/60 px-4
             pt-[env(safe-area-inset-top)]
             backdrop-blur-md
             md:min-h-[88px] md:px-8 md:pt-0
           "
         >
+          <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 size-36 rounded-full bg-cyan-200/25 blur-2xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-24 top-0 hidden h-full w-56 opacity-40 md:block [background-image:linear-gradient(rgba(37,99,235,.14)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,.14)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(90deg,transparent,#000_45%,transparent)]" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-12 top-1/2 hidden h-px w-32 bg-gradient-to-r from-transparent via-cyan-300 to-transparent md:block" />
+
           {/* MOBILE MENU / BACK BUTTON */}
           <button
             type="button"
@@ -205,11 +220,11 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
             title={isHomePage ? "Mở menu" : "Quay lại"}
             onClick={handleMobileHeaderAction}
             className={`
-              group flex size-14 shrink-0 touch-manipulation
+              group relative z-10 flex size-12 shrink-0 touch-manipulation
               items-center justify-center
-              text-egmf-primary
+              rounded-xl bg-egmf-primary-tint text-egmf-primary
               transition-all duration-200
-              hover:text-egmf-primary-strong
+              hover:bg-egmf-primary-soft hover:text-egmf-primary-strong
               active:scale-90
               focus-visible:outline-none
               focus-visible:ring-4 focus-visible:ring-egmf-primary/25
@@ -232,12 +247,33 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
           </button>
 
           {/* SCREEN TITLE */}
-          <h1 className="m-0 min-w-0 flex-1 truncate text-[16px] font-extrabold text-slate-900 sm:text-lg">
+          <h1 className="relative z-10 m-0 min-w-0 flex-1 truncate pb-3 text-[16px] font-extrabold tracking-[-0.02em] text-slate-900 sm:text-lg">
             {screenTitle}
+            <svg
+              aria-hidden="true"
+              className="absolute bottom-0 left-0 h-3 w-[70%] max-w-[260px] overflow-visible"
+              viewBox="0 0 260 14"
+              preserveAspectRatio="none"
+            >
+              <path
+                d="M0 8 H24 L29 6 L34 10 L40 8 H58 L64 4 L70 12 L76 8 H96 L103 1 L110 13 L117 6 L124 8 H147 L153 5 L159 11 L166 8 H188 L194 3 L200 12 L207 8 H260"
+                fill="none"
+                stroke="url(#headerPulse)"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+              />
+              <defs>
+                <linearGradient id="headerPulse" x1="0" x2="260" y1="0" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#2563EB" />
+                  <stop offset="0.62" stopColor="#60A5FA" />
+                  <stop offset="1" stopColor="#22D3EE" />
+                </linearGradient>
+              </defs>
+            </svg>
           </h1>
 
           {/* ONLINE STATUS (GIỐNG WEB_KYDUYET) */}
-          <span className="hidden items-center gap-1.5 text-xs font-medium text-[#8b98ad] lg:flex">
+          <span className="relative z-10 hidden items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-semibold text-[#71809a] shadow-sm ring-1 ring-slate-100 lg:flex">
             <span
               className={`h-1.5 w-1.5 rounded-full ${
                 pwa.online ? "bg-[#3abc95]" : "bg-[#dc9056]"
@@ -247,7 +283,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
           </span>
 
           {/* LOGO MOBILE */}
-          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-egmf-primary-tint p-1.5 ${isOrderPage ? "lg:hidden" : "md:hidden"}`}>
+          <div className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-egmf-primary-tint p-1.5 ${isOrderPage ? "lg:hidden" : "md:hidden"}`}>
             <img
               src="/ic_launcher_512.png"
               alt="BGG Kho"
@@ -256,7 +292,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
           </div>
 
           {/* DESKTOP BRAND BADGE */}
-          <div className={`hidden items-center gap-2 rounded-lg bg-egmf-primary-tint px-3 py-2 ${isOrderPage ? "lg:flex" : "md:flex"}`}>
+          <div className={`relative z-10 hidden items-center gap-2 rounded-xl border border-blue-100 bg-white/80 px-3 py-2 shadow-sm ${isOrderPage ? "lg:flex" : "md:flex"}`}>
             <Layers3 size={17} className="text-egmf-primary" />
 
             <span className="text-sm font-bold text-egmf-primary-strong">

@@ -23,7 +23,7 @@ function FunctionGroup({
 
   return (
     <section aria-label={group.title} className="mb-4 md:mb-5">
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden border-blue-100 bg-[linear-gradient(180deg,rgba(239,246,255,.72)_0%,#ffffff_34%)] shadow-[0_10px_26px_rgba(37,99,235,.06)]">
         <CollapsiblePanel
           defaultOpen={defaultOpen}
           key={`${group.key}-${defaultOpen}`}
