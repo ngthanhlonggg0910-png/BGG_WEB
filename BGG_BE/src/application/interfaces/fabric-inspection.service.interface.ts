@@ -9,6 +9,7 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO,
+  QM_PhieuKiemVai_XoaPhieu_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   layMaMau_RequestDTO,
   layArt_RequestDTO,
@@ -26,6 +27,7 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO,
   QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO,
+  QM_PhieuKiemVai_XoaPhieu_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO,
   QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO,
   layDanhSachChungLoaiCoItem_ResponseDTO,
@@ -83,6 +85,10 @@ export interface IFabricInspectionService {
   themCayVaoPhieu(
     dto: QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO,
   ): Promise<QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO>;
+
+  xoaPhieu(
+    dto: QM_PhieuKiemVai_XoaPhieu_RequestDTO,
+  ): Promise<QM_PhieuKiemVai_XoaPhieu_ResponseDTO>;
 
   taoPhieuKiemThuCong(
     dto: QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,

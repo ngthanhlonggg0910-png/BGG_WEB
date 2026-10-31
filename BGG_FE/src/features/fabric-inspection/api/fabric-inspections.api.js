@@ -227,3 +227,10 @@ export async function themCayTaiPhieu(payload) {
     PKVId: payload.PKVId,
   });
 }
+
+//Xóa phiếu kiểm vải
+export async function xoaPhieuKiem(PKVId) {
+  return postJson("/api/fabric-inspection/QM_PhieuKiemVai_XoaPhieu", {
+    PKVId: PKVId,
+  });
+}

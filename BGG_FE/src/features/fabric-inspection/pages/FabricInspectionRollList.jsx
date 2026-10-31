@@ -75,7 +75,7 @@ export default function FabricInspectionRollList({ onScan, onRollAction }) {
   }, [keyword, rolls]);
 
   return (
-    <MainLayout screenTitle="Chi tiết phiếu kiểm vải">
+    <MainLayout screenTitle={`Chi tiết phiếu kiểm vải ${pkvId}`}>
       <main className="mx-auto w-full max-w-[1300px] px-4 py-5 sm:px-6 sm:py-7 md:px-8">
         <section aria-label="Danh sách cây vải" className="space-y-5">
           <div className=" flex h-14 items-center gap-3 rounded-xl border border-egmf-primary-border-soft bg-egmf-surface-subtle px-4 transition-colors focus-within:border-egmf-primary focus-within:ring-[3px] focus-within:ring-egmf-primary/10">

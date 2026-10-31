@@ -9,6 +9,7 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_RequestDTO,
   QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO,
+  QM_PhieuKiemVai_XoaPhieu_RequestDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO,
   layMaMau_RequestDTO,
   layArt_RequestDTO,
@@ -26,6 +27,7 @@ import {
   QM_PhieuKiemVai_CayVai_XongCay_Android_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile_ResponseDTO,
   QM_PhieuKiemVai_ThemCayVaoPhieu_ResponseDTO,
+  QM_PhieuKiemVai_XoaPhieu_ResponseDTO,
   QM_PhieuKiemVai_TaoPhieuKiem_ResponseDTO,
   QM_PhieuKiemVai_LayDanhSachMaHang_Web_ResponseDTO,
   layDanhSachChungLoaiCoItem_ResponseDTO,
@@ -90,20 +92,23 @@ export class FabricInspectionService implements IFabricInspectionService {
           dto.PKVId,
           dto.MaCay,
         );
-      if (!result || result.length === 0)
-        throw new NotFoundException('Không tìm thấy danh sách cây vải');
+
+      console.log('DTO:', dto);
+      console.log('RESULT:', result);
 
       return {
         success: true,
         message: 'Lấy danh sách cây vải thành công',
-        data: result,
+        data: result ?? [],
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
+
       this.logger.error(
         'Lỗi lấy danh sách cây vải',
         error instanceof Error ? error.stack : String(error),
       );
+
       throw new InternalServerErrorException('Có lỗi khi lấy danh sách cây');
     }
   }
@@ -352,13 +357,10 @@ export class FabricInspectionService implements IFabricInspectionService {
         dto.MaCay,
         dto.PKVId,
       );
-
-      console.log(result);
-
       return {
         success: result?.ThanhCong === 1,
         message: result?.ThongBao ?? 'Thêm cây vào phiếu thất bại',
-        data: result ?? { KetQua: 0, ThongBao: '' },
+        data: result ?? { ThanhCong: 0, ThongBao: '' },
       };
     } catch (error) {
       this.logger.error(
@@ -368,6 +370,26 @@ export class FabricInspectionService implements IFabricInspectionService {
       throw new InternalServerErrorException(
         'Có lỗi khi thêm cây vào phiếu kiểm vải',
       );
+    }
+  }
+
+  async xoaPhieu(
+    dto: QM_PhieuKiemVai_XoaPhieu_RequestDTO,
+  ): Promise<QM_PhieuKiemVai_XoaPhieu_ResponseDTO> {
+    try {
+      const result = await this.fabricInspectionRepository.xoaPhieu(dto.PKVId);
+
+      return {
+        success: result?.KetQua === 1,
+        message: result?.ThongBao ?? 'Xóa phiếu kiểm vải thất bại',
+        data: result ?? { KetQua: 0, ThongBao: '' },
+      };
+    } catch (error) {
+      this.logger.error(
+        'Lỗi khi xóa phiếu kiểm vải',
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException('Có lỗi khi xóa phiếu kiểm vải');
     }
   }
 

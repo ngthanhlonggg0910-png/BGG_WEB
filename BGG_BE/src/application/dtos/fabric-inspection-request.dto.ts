@@ -68,6 +68,10 @@ export class QM_PhieuKiemVai_ThemCayVaoPhieu_RequestDTO {
   PKVId: number;
 }
 
+export class QM_PhieuKiemVai_XoaPhieu_RequestDTO {
+  PKVId: number;
+}
+
 export class QM_PhieuKiemVai_TaoPhieuKiem_RequestDTO {
   TKId: number;
   MaHang: string;

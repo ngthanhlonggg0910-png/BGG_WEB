@@ -10,6 +10,7 @@ import {
   QM_DoKhoVai,
   QM_PhieuKiemVai_TaoPhieuKiem_Auto_Mobile,
   QM_PhieuKiemVai_ThemCayVaoPhieu,
+  QM_PhieuKiemVai_XoaPhieu,
 } from '../../domain/entities/fbabric-inspection.js';
 
 @Injectable()
@@ -202,6 +203,15 @@ export class FabricInspectionRepository implements IFabricInspectionRepository {
       .input('MaCay', sql.NVarChar(200), MaCay)
       .input('PKVId', sql.BigInt, PKVId)
       .execute('QM_PhieuKiemVai_ThemCayVaoPhieu');
+    return result.recordset[0];
+  }
+
+  async xoaPhieu(PKVId: number): Promise<QM_PhieuKiemVai_XoaPhieu> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('PKVId', sql.BigInt, PKVId)
+      .execute('QM_PhieuKiemVai_XoaPhieu');
     return result.recordset[0];
   }
 
