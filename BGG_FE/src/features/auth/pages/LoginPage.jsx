@@ -19,6 +19,7 @@ import {
 
 import { login } from "../api/authApi";
 import { saveUser } from "../../../shared/auth/session";
+import { showWarningToast } from "../../../shared/components/ui/CustomToast";
 import "./LoginPage.css";
 
 const COPYRIGHT_YEAR = new Date().getFullYear();
@@ -146,11 +147,11 @@ export default function Login() {
     event.preventDefault();
     if (isLoading) return;
     if (!username.trim()) {
-      toast.warning("Vui lòng nhập tên đăng nhập");
+      showWarningToast("Vui lòng nhập tên đăng nhập");
       return;
     }
     if (!password) {
-      toast.warning("Vui lòng nhập mật khẩu");
+      showWarningToast("Vui lòng nhập mật khẩu");
       return;
     }
     try {

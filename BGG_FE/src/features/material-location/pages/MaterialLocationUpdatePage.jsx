@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { getCurrentUser } from "../../../shared/auth/session";
+import { showWarningToast } from "../../../shared/components/ui/CustomToast";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { updateMaterialLocation } from "../api/materialLocationApi";
 
@@ -32,12 +33,12 @@ export default function MaterialLocationUpdate() {
     const npl = (submittedNpl ?? maNPL).trim();
 
     if (!ro || !npl) {
-      toast.warning("Vui lòng nhập đầy đủ mã rọ và mã NPL.");
+      showWarningToast("Vui lòng nhập đầy đủ mã rọ và mã NPL.");
       return;
     }
 
     if (scannedLabels.some((item) => item.maNPL === npl)) {
-      toast.warning("Mã NPL này đã được cập nhật.");
+      showWarningToast("Mã NPL này đã được cập nhật.");
       setMaNPL("");
       return;
     }

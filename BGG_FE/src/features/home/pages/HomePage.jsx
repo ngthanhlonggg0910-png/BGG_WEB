@@ -1,14 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import {
-  LayoutGrid,
-  Search,
-  X,
-  Layers3,
-  Blocks,
-  ArrowRight,
-} from "lucide-react";
+import { Search, X, Layers3 } from "lucide-react";
 
 import FunctionGroup from "../components/FunctionGroup";
 import EmptyState from "../../../shared/components/ui/EmptyState";
@@ -80,83 +73,58 @@ export default function Home() {
     <MainLayout screenTitle="KHO BÁN THÀNH PHẨM CẮT">
       <div className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-5 sm:px-6 sm:py-7 md:px-9 md:py-9">
         {/* ================= HEADER ================= */}
-        <section
-          className="relative isolate overflow-hidden rounded-[24px] border border-blue-400/35 p-5 text-white shadow-[0_20px_45px_rgba(30,64,175,.23)] sm:p-7"
-          style={{
-            background:
-              "linear-gradient(135deg, #2563eb 0%, #1748bf 55%, #102a72 100%)",
-          }}
-        >
-          {/* LỚP TRANG TRÍ NỀN */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-cyan-200/30 blur-2xl"
-          />
+        <section className="relative isolate min-h-[330px] overflow-hidden rounded-[28px] border-2 border-blue-200/90 bg-[linear-gradient(118deg,#ffffff_0%,#f7fbff_44%,#e8f3ff_100%)] p-5 shadow-[0_20px_44px_rgba(37,99,235,.16),0_0_0_5px_rgba(219,234,254,.72)] sm:min-h-[370px] sm:p-8 lg:min-h-[430px] lg:p-10">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(rgba(37,99,235,.16)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(90deg,#000,transparent_56%)]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -left-20 bottom-[-90px] size-72 rounded-full border-[22px] border-blue-100/85" />
+          <div aria-hidden="true" className="pointer-events-none absolute -left-12 bottom-[-130px] size-80 rounded-full border-[18px] border-cyan-100/70" />
 
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -bottom-14 left-[28%] h-40 w-40 rounded-full bg-indigo-300/25 blur-xl"
+            className="pointer-events-none absolute inset-0 hidden bg-cover bg-right bg-no-repeat lg:block"
+            style={{
+              backgroundImage:
+                "linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,.98) 33%, rgba(247,251,255,.78) 46%, rgba(219,234,254,.16) 66%, rgba(37,99,235,.1) 100%), url('/images/garment-workspace-hero.png')",
+            }}
           />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] bg-contain bg-right-bottom bg-no-repeat opacity-75 [mask-image:linear-gradient(to_bottom,transparent_0%,#000_34%)] lg:hidden"
+            style={{
+              backgroundImage: "url('/images/garment-workspace-hero.png')",
+            }}
+          />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-blue-50/15 via-white/30 to-white/95 lg:hidden" />
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 hidden size-[410px] rounded-full border-[34px] border-white/35 lg:block" />
+          <div aria-hidden="true" className="pointer-events-none absolute -right-10 bottom-[-220px] hidden size-[540px] rounded-full border-[46px] border-blue-400/30 lg:block" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-[12%] top-[20%] hidden size-3 rounded-full bg-white shadow-[0_0_0_7px_rgba(255,255,255,.2),0_0_20px_rgba(255,255,255,.8)] lg:block" />
+          <span aria-hidden="true" className="pointer-events-none absolute bottom-10 right-12 hidden text-[11px] font-bold tracking-[.22em] text-white/70 lg:block">NPL FLOW</span>
 
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,.34)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.34)_1px,transparent_1px)] [background-size:38px_38px] [mask-image:linear-gradient(115deg,#000,transparent_70%)]" />
-          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] overflow-hidden lg:block">
-            <span className="absolute right-[8%] top-[22%] h-px w-[44%] rotate-[22deg] bg-gradient-to-r from-transparent via-cyan-100/80 to-transparent" />
-            <span className="absolute right-[22%] top-[55%] h-px w-[36%] -rotate-[28deg] bg-gradient-to-r from-transparent via-blue-100/75 to-transparent" />
-            <span className="absolute right-[11%] top-[19%] size-2 rounded-full bg-cyan-100 shadow-[0_0_0_5px_rgba(103,232,249,.14),0_0_16px_rgba(103,232,249,.85)]" />
-            <span className="absolute right-[42%] top-[43%] size-2.5 rounded-full bg-white shadow-[0_0_0_6px_rgba(191,219,254,.14),0_0_18px_rgba(191,219,254,.9)]" />
-            <span className="absolute right-[21%] top-[67%] size-1.5 rounded-full bg-cyan-100 shadow-[0_0_0_4px_rgba(103,232,249,.14),0_0_12px_rgba(103,232,249,.8)]" />
-            <span className="absolute -right-3 bottom-[-30px] size-40 rounded-[42px] border border-white/15 bg-white/[.04] rotate-12" />
-          </div>
-          <div aria-hidden="true" className="pointer-events-none absolute right-[12%] top-1/2 hidden h-24 w-56 -translate-y-1/2 lg:block">
-            <span className="absolute left-3 top-11 h-px w-40 bg-gradient-to-r from-transparent via-cyan-200/70 to-transparent" />
-            <span className="absolute left-10 top-8 size-7 rounded-xl border border-white/40 bg-cyan-200/20 shadow-lg shadow-cyan-950/20" />
-            <span className="absolute left-28 top-3 size-12 rounded-2xl border border-white/35 bg-white/15 shadow-lg shadow-blue-950/20" />
-            <span className="absolute right-0 top-9 size-9 rounded-xl border border-white/40 bg-blue-300/25 shadow-lg shadow-blue-950/20" />
-          </div>
-
-          <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            {/* THÔNG TIN CHÍNH */}
-            <div className="max-w-2xl space-y-2 sm:space-y-2.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm sm:text-xs">
-                  <Layers3 size={13} className="text-cyan-200" />
+          <div className="relative z-10 flex h-full max-w-2xl flex-col justify-between gap-8 lg:min-h-[350px] lg:max-w-[55%]">
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="inline-flex items-center gap-2 rounded-full border-2 border-blue-200 bg-white/70 px-3.5 py-2 text-xs font-extrabold text-blue-800 shadow-sm backdrop-blur-sm sm:px-4 sm:text-sm">
+                  <Layers3 size={18} strokeWidth={2.35} className="text-egmf-primary" />
                   <span>Hệ thống Quản lý Kho & Sản xuất</span>
                 </span>
-
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/20 px-2.5 py-1 text-[11px] font-bold text-emerald-50">
-                  <span className="size-1.5 animate-pulse rounded-full bg-emerald-300" />
-                  <span>v1.0</span>
+                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-700 shadow-sm ring-1 ring-emerald-100">
+                  <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_0_5px_rgba(34,197,94,.13)]" />
+                  v1.0
                 </span>
               </div>
 
-              <h1 className="text-2xl font-extrabold tracking-[-0.035em] sm:text-3xl md:text-[34px]">
+              <h1 className="mt-7 text-4xl font-black tracking-[-0.055em] text-blue-950 sm:text-5xl lg:text-[56px] lg:leading-[1.05]">
                 Không gian làm việc
               </h1>
+              <span aria-hidden="true" className="mt-3 block h-2 w-36 rounded-full bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-300 sm:w-48" />
 
-              <p className="max-w-xl text-sm leading-relaxed text-blue-100 sm:text-[15px]">
-                Truy cập nhanh các nghiệp vụ kho, kiểm vải và cấp phát nguyên
-                liệu
+              <p className="mt-7 max-w-xl text-base font-medium leading-relaxed text-slate-500 sm:text-xl sm:leading-relaxed">
+                Truy cập nhanh các nghiệp vụ kho, kiểm vải và cấp phát nguyên liệu
               </p>
             </div>
 
-            {/* THỐNG KÊ TỔNG QUAN */}
-            <div className="flex items-center gap-3 self-start sm:self-auto">
-              <div className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3.5 shadow-lg shadow-blue-950/15 backdrop-blur-md">
-                <div aria-hidden="true" className="absolute -right-5 -top-5 size-16 rounded-full bg-cyan-300/20" />
-                <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-300 to-blue-400 shadow-lg shadow-cyan-950/20">
-                  <Blocks size={21} className="text-blue-950" />
-                </div>
-
-                <div className="relative">
-                  <div className="text-2xl font-extrabold leading-none">
-                    {totalFunctions}
-                  </div>
-
-                  <div className="mt-1 text-xs font-medium text-blue-100">
-                    Chức năng khả dụng
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-end gap-2 text-blue-800">
+              <strong className="text-4xl font-black leading-none tracking-[-0.05em] sm:text-5xl">{totalFunctions}</strong>
+              <span className="pb-0.5 text-sm font-bold text-slate-500 sm:text-base">Chức năng khả dụng</span>
             </div>
           </div>
         </section>

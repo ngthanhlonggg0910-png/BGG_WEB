@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, ScanBarcode, ScanQrCode } from "lucide-react";
-import { toast } from "react-toastify";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../../../shared/auth/session";
 import {
   showErrorToast,
   showSuccessToast,
+  showWarningToast,
 } from "../../../shared/components/ui/CustomToast";
 import { taoPhieuKiemVaiAuto } from "../../fabric-inspection/api/fabric-inspections.api";
 import { themCayTaiPhieu } from "../../fabric-inspection/api/fabric-inspections.api";
@@ -41,7 +41,7 @@ export default function PickingOrderScan() {
     // TRƯỜNG HỢP 1: SOẠN HÀNG - QUÉT MÃ RỔ
     if (scanType === "picking") {
       if (!PhieuSoanHangId || !code) {
-        toast.warning("Thiếu mã phiếu soạn hàng hoặc mã rổ");
+        showWarningToast("Thiếu mã phiếu soạn hàng hoặc mã rổ");
         return;
       }
 

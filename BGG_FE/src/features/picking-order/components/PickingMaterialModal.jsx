@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Modal, InputNumber } from "antd";
-import { toast } from "react-toastify";
 import { PackageCheck, X, Check } from "lucide-react";
 import { getCurrentUser } from "../../../shared/auth/session";
 import { pickFabricRoll } from "../api/pickingOrderAPI";
 import {
   showSuccessToast,
   showErrorToast,
+  showWarningToast,
 } from "../../../shared/components/ui/CustomToast";
 
 export default function PickingMaterialModal({
@@ -58,7 +58,7 @@ export default function PickingMaterialModal({
       sltxNumber <= 0 ||
       sltNumber < 0
     ) {
-      toast.warning("Số lượng không hợp lệ!");
+      showWarningToast("Số lượng không hợp lệ!");
       return;
     }
 

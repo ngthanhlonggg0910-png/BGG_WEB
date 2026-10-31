@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { useBarcodeScanner } from "./useBarcodeScanner";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getCurrentUser } from "../auth/session";
+import { showWarningToast } from "../components/ui/CustomToast";
 
 function isScannableInput(element) {
   if (element instanceof HTMLTextAreaElement) {
@@ -120,7 +121,7 @@ export function useFocusedInputScanner() {
       const PhieuSoanHangId = resolvePickingOrderId(location);
 
       if (!PhieuSoanHangId) {
-        toast.warning("Không tìm thấy ID phiếu soạn hàng");
+        showWarningToast("Không tìm thấy ID phiếu soạn hàng");
         return;
       }
 
@@ -137,7 +138,7 @@ export function useFocusedInputScanner() {
     const input = focusedInputRef.current;
 
     if (!input || !document.contains(input)) {
-      toast.warning("Hãy chọn ô nhập liệu trước khi quét mã.");
+      showWarningToast("Hãy chọn ô nhập liệu trước khi quét mã.");
       return;
     }
 
@@ -197,7 +198,7 @@ export function useFocusedInputScanner() {
       console.log(location);
 
       if (!PhieuSoanHangId) {
-        toast.warning("Không tìm thấy ID phiếu soạn hàng");
+        showWarningToast("Không tìm thấy ID phiếu soạn hàng");
         return;
       }
 
@@ -229,7 +230,7 @@ export function useFocusedInputScanner() {
     const input = focusedInputRef.current;
 
     if (!input || !document.contains(input)) {
-      toast.warning("Hãy chọn ô nhập liệu trước khi quét mã.");
+      showWarningToast("Hãy chọn ô nhập liệu trước khi quét mã.");
       return;
     }
 

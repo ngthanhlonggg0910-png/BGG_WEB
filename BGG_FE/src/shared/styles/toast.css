@@ -1,11 +1,24 @@
 /* Toast container */
 .Toastify__toast.custom-toast {
-  border: 1px solid #e5e7eb !important;
-  border-left: 1px solid #e5e7eb !important;
-  border-radius: 18px !important;
-  padding: 14px 12px 18px 14px !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+  min-height: 88px !important;
+  border: 1px solid #dbeafe !important;
+  border-radius: 20px !important;
+  padding: 14px 14px 18px 14px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%) !important;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.13), 0 3px 10px rgba(37, 99, 235, 0.07) !important;
   overflow: hidden;
+}
+
+.Toastify__toast.custom-toast--success {
+  border-color: #bbf7d0 !important;
+}
+
+.Toastify__toast.custom-toast--error {
+  border-color: #fecdd3 !important;
+}
+
+.Toastify__toast.custom-toast--warning {
+  border-color: #fde68a !important;
 }
 
 /* Nội dung */
@@ -23,24 +36,28 @@
 
 /* Thanh tiến trình chung */
 .custom-toast .Toastify__progress-bar {
-  height: 4px !important;
+  height: 3px !important;
   opacity: 1 !important;
 }
 
 /* Lỗi - màu đỏ */
-.custom-toast .custom-toast-progress-error {
-  background: #ef4444 !important;
-}
-
 /* Thành công - màu xanh */
 .custom-toast .custom-toast-progress-success {
-  background: #22c55e !important;
+  background: linear-gradient(90deg, #10b981, #34d399) !important;
+}
+
+.custom-toast .custom-toast-progress-warning {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+}
+
+.custom-toast .custom-toast-progress-error {
+  background: linear-gradient(90deg, #f43f5e, #fb7185) !important;
 }
 
 /* Mobile */
 @media (max-width: 640px) {
   .Toastify__toast-container {
-    width: 85% !important;
+    width: calc(100% - 24px) !important;
     max-width: 420px !important;
     left: auto !important;
     right: 12px !important;
@@ -49,10 +66,9 @@
   }
 
   .Toastify__toast.custom-toast {
-    width: 100% !important;
-    min-height: 72px !important;
+    min-height: 84px !important;
     margin-bottom: 10px !important;
     border-radius: 16px !important;
-    padding: 12px 8px 16px 12px !important;
+    padding: 12px 12px 16px !important;
   }
 }

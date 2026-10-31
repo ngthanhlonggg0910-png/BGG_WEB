@@ -1,4 +1,4 @@
-import { ArrowLeft, Menu, Layers3 } from "lucide-react";
+import { ArrowLeft, Menu, PanelLeftClose, PanelLeftOpen, ScanBarcode } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -22,6 +22,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
   const pwa = usePwa();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const viewportHeightRef = useRef(0);
   const {
@@ -183,7 +184,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
           hidden w-[270px] flex-col
           overflow-y-auto
           border-r border-egmf-border
-          bg-white ${isOrderPage ? "lg:flex" : "md:flex"}
+          bg-white ${isSidebarCollapsed ? "hidden" : isOrderPage ? "lg:flex" : "md:flex"}
         `}
       >
         <Sidebar
@@ -194,7 +195,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
       </aside>
 
       {/* MAIN CONTENT */}
-      <div className={`min-w-0 ${isOrderPage ? "lg:ml-[270px]" : "md:ml-[270px]"}`}>
+      <div className={`min-w-0 ${isSidebarCollapsed ? "ml-0" : isOrderPage ? "lg:ml-[270px]" : "md:ml-[270px]"}`}>
         {/* HEADER */}
         <header
           className="
@@ -246,6 +247,16 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
             )}
           </button>
 
+          <button
+            type="button"
+            onClick={() => setIsSidebarCollapsed((current) => !current)}
+            aria-label={isSidebarCollapsed ? "Mở thanh điều hướng" : "Thu gọn thanh điều hướng"}
+            title={isSidebarCollapsed ? "Mở thanh điều hướng" : "Thu gọn thanh điều hướng"}
+            className={`relative z-10 hidden size-10 shrink-0 place-items-center rounded-xl border border-blue-100 bg-white/85 text-egmf-primary shadow-sm transition hover:border-egmf-primary hover:bg-egmf-primary-tint focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 ${isOrderPage ? "lg:grid" : "md:grid"}`}
+          >
+            {isSidebarCollapsed ? <PanelLeftOpen size={19} strokeWidth={2.2} /> : <PanelLeftClose size={19} strokeWidth={2.2} />}
+          </button>
+
           {/* SCREEN TITLE */}
           <h1 className="relative z-10 m-0 min-w-0 flex-1 truncate pb-3 text-[16px] font-extrabold tracking-[-0.02em] text-slate-900 sm:text-lg">
             {screenTitle}
@@ -291,14 +302,15 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
             />
           </div>
 
-          {/* DESKTOP BRAND BADGE */}
-          <div className={`relative z-10 hidden items-center gap-2 rounded-xl border border-blue-100 bg-white/80 px-3 py-2 shadow-sm ${isOrderPage ? "lg:flex" : "md:flex"}`}>
-            <Layers3 size={17} className="text-egmf-primary" />
-
-            <span className="text-sm font-bold text-egmf-primary-strong">
-              BGG Kho
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={startScan}
+            className="relative z-10 hidden h-10 shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-egmf-primary to-blue-500 px-3 text-sm font-bold text-white shadow-[0_8px_18px_rgba(37,99,235,.24)] transition hover:-translate-y-px hover:shadow-[0_11px_22px_rgba(37,99,235,.32)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/25 md:flex"
+            title="Quét mã"
+          >
+            <ScanBarcode size={20} strokeWidth={2.2} />
+            <span className="hidden lg:inline">Quét mã</span>
+          </button>
         </header>
 
         {/* BANNERS TRẠNG THÁI MẠNG & CẬP NHẬT PWA */}
