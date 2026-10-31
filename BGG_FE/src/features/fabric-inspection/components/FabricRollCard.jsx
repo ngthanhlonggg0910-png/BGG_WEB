@@ -101,6 +101,7 @@ export function FabricRollCard({ item, index, onReload }) {
   const [defects, setDefects] = useState([]);
   const [defectsLoading, setDefectsLoading] = useState(false);
   const [defectsError, setDefectsError] = useState("");
+  const [isExpanded, setIsExpanded] = useState(false);
 
   if (!item) return null;
 
@@ -275,25 +276,46 @@ export function FabricRollCard({ item, index, onReload }) {
   return (
     <>
       <article className="w-full overflow-hidden rounded-egmf-large border border-egmf-border bg-white shadow-egmf-card transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(37,99,235,0.09)]">
-        <header className="flex items-start gap-3 border-b border-egmf-border-subtle px-4 py-4 sm:px-5">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
-            <Layers3 size={22} strokeWidth={2.1} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="m-0 text-[12px] font-bold uppercase tracking-[0.1em] text-egmf-muted-soft">
-              Cây vải #{index + 1}
-            </p>
-            <h3 className="m-0 mt-1 break-all text-xl font-extrabold leading-tight text-egmf-ink sm:text-[22px]">
-              {item.MaCayVai === null ||
-              item.MaCayVai === undefined ||
-              item.MaCayVai === ""
-                ? "—"
-                : String(item.MaCayVai)}
-            </h3>
-          </div>
+        <header>
+          <button
+            type="button"
+            onClick={() => setIsExpanded((current) => !current)}
+            aria-expanded={isExpanded}
+            aria-controls={`fabric-roll-details-${item.CTId ?? index}`}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-egmf-primary-tint focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 sm:px-5"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
+              <Layers3 size={21} strokeWidth={2.1} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[12px] font-bold uppercase tracking-[0.1em] text-egmf-muted-soft">
+                Cây vải #{index + 1}
+              </span>
+              <span className="mt-0.5 block truncate text-lg font-extrabold leading-tight text-egmf-ink sm:text-xl">
+                {item.MaCayVai === null ||
+                item.MaCayVai === undefined ||
+                item.MaCayVai === ""
+                  ? "—"
+                  : String(item.MaCayVai)}
+              </span>
+              <span className="mt-1 block truncate text-[13px] font-medium text-egmf-muted">
+                {item.MaHang ? String(item.MaHang) : "Chưa có mã hàng"}
+                {item.Mua ? ` · ${String(item.Mua)}` : ""}
+              </span>
+            </span>
+            <ChevronDown
+              size={22}
+              strokeWidth={2.4}
+              className={`shrink-0 text-egmf-muted transition-transform duration-200 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+            />
+          </button>
         </header>
 
-        <div className="px-4 py-4 sm:px-5">
+        {isExpanded && (
+          <>
+        <div id={`fabric-roll-details-${item.CTId ?? index}`} className="border-t border-egmf-border-subtle px-4 py-4 sm:px-5">
           <div className="flex gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 text-egmf-ink">
@@ -660,6 +682,8 @@ export function FabricRollCard({ item, index, onReload }) {
             })}
           </div>
         </footer>
+          </>
+        )}
       </article>
 
       <Modal
