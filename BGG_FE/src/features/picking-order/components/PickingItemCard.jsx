@@ -48,25 +48,35 @@ export default function PickingItemCard({ item, index }) {
 
   const requested = Number(item.SoLuongYeuCau) || 0;
   const picked = Number(item.SoLuongThucSoan) || 0;
+  const isNotStarted = picked === 0;
+  const isPartiallyPicked = picked > 0 && picked < requested;
+  const isCompleted = !isNotStarted && picked >= requested;
+  const cardBackground = isCompleted
+    ? "bg-emerald-100"
+    : isPartiallyPicked
+      ? "bg-amber-100"
+      : "bg-white";
 
   return (
     <>
-      <tr className="border-y border-egmf-primary-border bg-egmf-primary-tint text-egmf-ink">
-        <td className="whitespace-nowrap px-2 py-2 text-center text-sm font-extrabold">
+      <tr className="border-y border-blue-700 bg-blue-600 text-white">
+        <td className="whitespace-nowrap border-r border-white/15 px-2 py-2.5 text-center text-sm font-extrabold">
           STT
         </td>
-        <td className="whitespace-nowrap px-2 py-2 text-center text-sm font-extrabold">
+        <td className="whitespace-nowrap border-r border-white/15 px-2 py-2.5 text-center text-sm font-extrabold">
           Tên hàng
         </td>
-        <td className="whitespace-nowrap px-1 py-2 text-center text-sm font-extrabold">
+        <td className="whitespace-nowrap border-r border-white/15 px-1 py-2.5 text-center text-sm font-extrabold">
           Đặt hàng
         </td>
-        <td className="whitespace-nowrap px-1 py-2 text-center text-sm font-extrabold">
+        <td className="whitespace-nowrap px-1 py-2.5 text-center text-sm font-extrabold">
           Soạn hàng
         </td>
       </tr>
 
-      <tr className="border-b-8 border-egmf-surface bg-white align-middle transition-colors last:border-b-0">
+      <tr
+        className={`border-b-8 border-egmf-surface align-middle transition-colors last:border-b-0 ${cardBackground}`}
+      >
         <td className="px-1 py-4 text-center align-middle">
           <span className="text-xs font-extrabold text-egmf-ink">
             {index + 1}

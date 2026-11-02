@@ -27,6 +27,13 @@ export function saveUser(user, rememberMe) {
 
   const storage = rememberMe ? localStorage : sessionStorage;
   storage.setItem(USER_KEY, JSON.stringify(user));
+
+  // A remembered login must survive closing and reopening an installed PWA.
+  // This is best-effort: browsers may decline the request, but localStorage
+  // remains the source of truth and is only cleared by an explicit logout.
+  if (rememberMe && navigator.storage?.persist) {
+    void navigator.storage.persist().catch(() => {});
+  }
 }
 
 export function clearSession() {

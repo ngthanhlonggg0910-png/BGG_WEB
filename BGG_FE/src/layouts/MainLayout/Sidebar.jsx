@@ -17,25 +17,16 @@ import { menuGroups } from "../../features/home/data/menuData";
 
 const groupThemes = [
   {
-    icon: "bg-egmf-primary-soft text-egmf-primary",
-    activeIcon: "bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-blue-500/25",
-    active: "bg-blue-50/90 text-slate-900 ring-1 ring-blue-100",
-    marker: "bg-egmf-primary",
-    child: "bg-egmf-primary",
+    icon: "bg-sky-50 text-sky-600 shadow-sky-100/80",
+    child: "bg-sky-50 text-sky-600 group-hover:bg-sky-100",
   },
   {
-    icon: "bg-egmf-primary-soft text-egmf-primary",
-    activeIcon: "bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-blue-500/25",
-    active: "bg-blue-50/90 text-slate-900 ring-1 ring-blue-100",
-    marker: "bg-egmf-primary",
-    child: "bg-egmf-primary",
+    icon: "bg-amber-50 text-amber-600 shadow-amber-100/80",
+    child: "bg-amber-50 text-amber-600 group-hover:bg-amber-100",
   },
   {
-    icon: "bg-egmf-primary-soft text-egmf-primary",
-    activeIcon: "bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-blue-500/25",
-    active: "bg-blue-50/90 text-slate-900 ring-1 ring-blue-100",
-    marker: "bg-egmf-primary",
-    child: "bg-egmf-primary",
+    icon: "bg-emerald-50 text-emerald-600 shadow-emerald-100/80",
+    child: "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100",
   },
 ];
 
@@ -76,7 +67,7 @@ export default function Sidebar({ selectedKey, onSelect, onInstallApp }) {
       <Brand />
       <TreeNavigation selectedKey={selectedKey} onSelect={onSelect} />
 
-      <div className="mt-auto mb-[max(4.5rem,calc(env(safe-area-inset-bottom)+1rem))] shrink-0 border-t border-slate-100 bg-white/80 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm md:mb-0">
+      <div className="mt-auto mb-[max(4.5rem,calc(env(safe-area-inset-bottom)+1rem))] shrink-0 border-t border-slate-100 bg-white/80 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3.5 backdrop-blur-sm md:mb-0">
         {/* Lời gọi cài PWA gọn để ưu tiên không gian cho menu. */}
         {onInstallApp && (
           <div className="mb-2 flex items-center gap-2.5 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-cyan-50/60 p-2 shadow-sm">
@@ -191,8 +182,8 @@ function TreeNavigation({ selectedKey, onSelect }) {
   const [groupOpen, setGroupOpen] = useState({});
 
   return (
-    <nav aria-label="Điều hướng chính" className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-4 [scrollbar-width:thin]">
-      <p className="mb-3 px-3 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
+    <nav aria-label="Điều hướng chính" className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-5 [scrollbar-width:thin]">
+      <p className="mb-4 px-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
         MENU CHỨC NĂNG
       </p>
 
@@ -200,22 +191,17 @@ function TreeNavigation({ selectedKey, onSelect }) {
         type="button"
         onClick={() => onSelect("workspace")}
         aria-current={selectedKey === "workspace" ? "page" : undefined}
-        className={cn(
-          "group mb-2.5 flex min-h-[50px] w-full items-center gap-3 rounded-2xl px-3 text-left shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
-          selectedKey === "workspace"
-            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/25"
-            : "border border-transparent bg-white/60 text-slate-600 hover:border-blue-100 hover:bg-blue-50/70 hover:text-egmf-primary-strong",
-        )}
+        className="group mb-3.5 flex min-h-14 w-full items-center gap-3 rounded-2xl px-3.5 text-left text-slate-700 transition-all duration-200 hover:bg-sky-50/70 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary"
       >
-        <span className={cn("grid size-9 place-items-center rounded-xl transition-transform group-hover:scale-105", selectedKey === "workspace" ? "bg-white/20 text-white" : "bg-egmf-primary-soft text-egmf-primary")}>
+        <span className="grid size-9 place-items-center rounded-xl bg-sky-50 text-sky-600 shadow-sm shadow-sky-100/80 transition-transform group-hover:scale-105">
           <LayoutGrid size={19} strokeWidth={2.2} />
         </span>
         <span className="flex-1 text-[15px] font-bold">Trang chủ</span>
       </button>
 
-      <ul className="m-0 space-y-1.5 p-0">
+      <ul className="m-0 space-y-3.5 p-0">
         {menuGroups.map((group, groupIndex) => {
-          const GroupIcon = group.items[0]?.icon ?? LayoutGrid;
+          const GroupIcon = group.icon ?? group.items[0]?.icon ?? LayoutGrid;
           const isGroupActive = group.items.some((item) => item.key === selectedKey);
           const isOpen = groupOpen[group.key] ?? isGroupActive;
           const panelId = `sidebar-group-${group.key}`;
@@ -228,21 +214,17 @@ function TreeNavigation({ selectedKey, onSelect }) {
                 onClick={() => setGroupOpen((current) => ({ ...current, [group.key]: !isOpen }))}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
-                className={cn(
-                  "group relative flex min-h-[48px] w-full items-center gap-3 rounded-2xl px-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
-                  isGroupActive ? theme.active : "text-slate-600 hover:bg-white hover:shadow-sm",
-                )}
+                className="group flex min-h-14 w-full items-center gap-3 rounded-2xl px-3.5 text-left text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary"
               >
-                {isGroupActive && <span className={cn("absolute bottom-3 left-0 top-3 w-1 rounded-r-full", theme.marker)} />}
-                <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl shadow-sm transition-transform group-hover:scale-105", isGroupActive ? theme.activeIcon : theme.icon)}>
+                <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl shadow-sm transition-transform group-hover:scale-105", theme.icon)}>
                   <GroupIcon size={19} strokeWidth={2.1} />
                 </span>
                 <span className="min-w-0 flex-1 text-[14px] font-bold leading-5">{group.title}</span>
-                <ChevronDown size={18} className={cn("shrink-0 text-slate-400 transition-transform duration-200", isOpen && "rotate-180", isGroupActive && "text-slate-500")} />
+                <ChevronDown size={18} className={cn("shrink-0 text-slate-400 transition-transform duration-200", isOpen && "rotate-180")} />
               </button>
 
               {isOpen && (
-                <ul id={panelId} className="relative ml-[29px] mt-1.5 space-y-1 border-l border-slate-200/90 px-0 pl-3">
+                <ul id={panelId} className="relative ml-[29px] mt-2.5 space-y-2.5 border-l border-slate-200/90 px-0 pl-3.5">
                   {group.items.map((item) => {
                     const ItemIcon = item.icon;
                     const isActive = selectedKey === item.key;
@@ -253,12 +235,9 @@ function TreeNavigation({ selectedKey, onSelect }) {
                           type="button"
                           onClick={() => onSelect(item.path)}
                           aria-current={isActive ? "page" : undefined}
-                          className={cn(
-                            "group flex min-h-9 w-full items-center gap-2.5 rounded-xl px-2.5 text-left text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
-                            isActive ? "bg-white font-bold text-slate-900 shadow-sm ring-1 ring-slate-100" : "font-medium text-slate-600 hover:bg-white/80 hover:text-slate-900",
-                          )}
+                          className="group flex min-h-12 w-full items-center gap-2.5 rounded-xl px-3 text-left text-[14px] font-medium text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary"
                         >
-                          <span className={cn("grid size-6 shrink-0 place-items-center rounded-lg transition-colors", isActive ? `${theme.child} text-white` : "bg-slate-100 text-slate-500 group-hover:bg-slate-200")}><ItemIcon size={14} strokeWidth={isActive ? 2.5 : 2} /></span>
+                          <span className={cn("grid size-6 shrink-0 place-items-center rounded-lg transition-colors", item.iconTheme ?? theme.child)}><ItemIcon size={14} strokeWidth={2.1} /></span>
                           <span className="min-w-0 flex-1 leading-5">{item.title}</span>
                         </button>
                       </li>
@@ -271,17 +250,14 @@ function TreeNavigation({ selectedKey, onSelect }) {
         })}
       </ul>
 
-      <div className="my-3 border-t border-slate-100" />
+      <div className="my-5 border-t border-slate-100" />
       <button
         type="button"
         onClick={() => onSelect("Thông tin")}
         aria-current={selectedKey === "Thông tin" ? "page" : undefined}
-        className={cn(
-          "group flex min-h-[48px] w-full items-center gap-3 rounded-2xl px-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
-          selectedKey === "Thông tin" ? "bg-blue-50 text-egmf-primary-strong shadow-sm ring-1 ring-blue-100" : "text-slate-600 hover:bg-white hover:shadow-sm",
-        )}
+        className="group flex min-h-14 w-full items-center gap-3 rounded-2xl px-3.5 text-left text-slate-700 transition-all hover:bg-violet-50/70 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary"
       >
-        <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/20"><UserRound size={18} strokeWidth={2.1} /></span>
+        <span className="grid size-9 place-items-center rounded-xl bg-violet-50 text-violet-600 shadow-sm shadow-violet-100/80"><UserRound size={18} strokeWidth={2.1} /></span>
         <span className="flex-1 text-[14px] font-bold">Thông tin tài khoản</span>
       </button>
     </nav>
