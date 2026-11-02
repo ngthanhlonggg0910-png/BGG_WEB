@@ -175,6 +175,8 @@ export default function ProductionOrderBookingPage() {
   const [bomSearchKeyword, setBomSearchKeyword] = useState("");
   const [bomCategoryFilter, setBomCategoryFilter] = useState("ALL"); // "ALL" | "NGUYEN_LIEU" | "PHU_LIEU"
   const [bomStatusFilter, setBomStatusFilter] = useState("ALL"); // "ALL" | "CHECKED" | "UNCHECKED"
+  // Đồng bộ số lượng cho tất cả vật tư đã tick chọn ở Bước 2
+  const [bulkSyncQty, setBulkSyncQty] = useState("");
   // Tìm kiếm nhanh cỡ/màu ở Bước 1
   const [sizeKeyword, setSizeKeyword] = useState("");
 
@@ -208,13 +210,11 @@ export default function ProductionOrderBookingPage() {
         selectedRows: selected,
       });
       const list = Array.isArray(res?.data) ? res.data : [];
-      // Khi lọc riêng Nhà Cắt (NguyenLieu) hoặc Nhà May (PhuLieu) -> chọn sẵn để thuận tiện thao tác;
-      // Khi chọn Tất cả (ALL) -> để người dùng chủ động tích chọn (hoặc bấm nút Chọn Nguyên liệu / Phụ liệu) giống Desktop
-      const defaultChecked = targetLoai !== "ALL";
+      // Mặc định bỏ chọn tất cả NPL để người dùng chủ động tích chọn các vật tư cần đặt
       setBomItems(
         list.map((it, idx) => ({
           ...it,
-          checked: defaultChecked,
+          checked: false,
           GhiChu: it.GhiChuLot || it.GhiChu || currentLot || ghiChuLot || "",
           _rowKey: `${it.PDMId || idx}_${idx}`,
         })),
@@ -242,6 +242,7 @@ export default function ProductionOrderBookingPage() {
 
       setLsxHeader(header);
       setExistingOrders(orders);
+      setBulkSyncQty("");
 
       if (header) {
         const defaultDate =
@@ -399,6 +400,10 @@ export default function ProductionOrderBookingPage() {
   const selectedSizeCount = useMemo(() => {
     return sizeRows.filter((r) => r.checked && Number(r.SoLuongDat) > 0).length;
   }, [sizeRows]);
+
+  const tickedBomCount = useMemo(() => {
+    return bomItems.filter((it) => it.checked).length;
+  }, [bomItems]);
 
   const checkedBomItems = useMemo(() => {
     return bomItems.filter((it) => it.checked && Number(it.SoLuongYeuCau) > 0);
@@ -591,6 +596,37 @@ export default function ProductionOrderBookingPage() {
         const next = Math.max(0, Math.round((cur + delta) * 10000) / 10000);
         return { ...it, SoLuongYeuCau: next, checked: next > 0 };
       }),
+    );
+  };
+
+  // Đồng bộ cùng 1 số lượng cho tất cả vật tư đã tick chọn
+  const handleSyncQtyForChecked = () => {
+    if (tickedBomCount === 0) {
+      message.warning(
+        "Vui lòng tích chọn ít nhất 1 vật tư để đồng bộ số lượng!",
+      );
+      return;
+    }
+    const raw = String(bulkSyncQty ?? "")
+      .trim()
+      .replace(",", ".");
+    if (!raw) {
+      message.warning("Vui lòng nhập số lượng cần đồng bộ!");
+      return;
+    }
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      message.warning("Số lượng đồng bộ phải lớn hơn 0!");
+      return;
+    }
+    const normalizedQty = Math.round(parsed * 10000) / 10000;
+    setBomItems((prev) =>
+      prev.map((it) =>
+        it.checked ? { ...it, SoLuongYeuCau: normalizedQty } : it,
+      ),
+    );
+    message.success(
+      `Đã đồng bộ số lượng ${normalizedQty.toLocaleString("vi-VN")} cho ${tickedBomCount} vật tư đã chọn!`,
     );
   };
 
@@ -1111,7 +1147,7 @@ export default function ProductionOrderBookingPage() {
                     >
                       {bomDirty
                         ? "Cần cập nhật vật tư"
-                        : `Đã chọn ${checkedBomItems.length}/${bomItems.length} vật tư`}
+                        : `Đã chọn ${tickedBomCount}/${bomItems.length} vật tư`}
                     </div>
                   </div>
                 </button>
@@ -1366,10 +1402,10 @@ export default function ProductionOrderBookingPage() {
                       <div>
                         <h3 className="text-[15px] font-extrabold text-slate-900 sm:text-base">
                           Kiểm tra vật tư (Đã chọn{" "}
-                          {checkedBomItems.length}/{bomItems.length} mặt hàng)
+                          {tickedBomCount}/{bomItems.length} mặt hàng)
                         </h3>
                         <p className="text-xs text-slate-500">
-                          Số lượng đã được tính sẵn. Kiểm tra trước khi gửi kho.
+                          Mặc định bỏ chọn tất cả. Tích chọn các vật tư cần đặt trước khi gửi kho.
                         </p>
                       </div>
 
@@ -1480,7 +1516,7 @@ export default function ProductionOrderBookingPage() {
                           }`}
                         >
                           <Check size={12} strokeWidth={3} />
-                          <span>Đã chọn ({checkedBomItems.length})</span>
+                          <span>Đã chọn ({tickedBomCount})</span>
                         </button>
                       </div>
                     </div>
@@ -1535,49 +1571,131 @@ export default function ProductionOrderBookingPage() {
                       </div>
                     )}
 
-                    {/* THANH NÚT CHỌN VẬT TƯ NHANH GIỐNG HỆT DESKTOP */}
-                    <details>
-                      <summary className="cursor-pointer py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
-                        Thao tác chọn hàng loạt (Desktop)
-                      </summary>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleSelectBomByType("ALL")}
-                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-extrabold text-slate-700 active:scale-95 hover:border-egmf-primary"
-                        >
-                          <CheckSquare size={14} className="text-egmf-primary" />
-                          <span>Chọn tất cả</span>
-                        </button>
+                    {/* THANH NÚT CHỌN / BỎ CHỌN NHANH */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectBomByType("ALL")}
+                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-extrabold text-slate-700 hover:border-egmf-primary active:scale-95 sm:text-sm"
+                      >
+                        <CheckSquare size={14} className="text-egmf-primary" />
+                        <span>Chọn tất cả</span>
+                      </button>
+
+                      {countNlTotal > 0 && countPlTotal > 0 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectBomByType("NGUYEN_LIEU")}
+                            className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-extrabold text-blue-700 hover:bg-blue-100 active:scale-95 sm:text-sm"
+                          >
+                            <Scissors size={14} />
+                            <span>Chọn Nguyên liệu</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleSelectBomByType("PHU_LIEU")}
+                            className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-extrabold text-amber-800 hover:bg-amber-100 active:scale-95 sm:text-sm"
+                          >
+                            <Shirt size={14} />
+                            <span>Chọn Phụ liệu</span>
+                          </button>
+                        </>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleSelectBomByType("NONE")}
+                        disabled={tickedBomCount === 0}
+                        className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 active:scale-95 disabled:opacity-40 sm:text-sm"
+                      >
+                        <Square size={14} className="text-slate-500" />
+                        <span>Bỏ chọn tất cả</span>
+                      </button>
+                    </div>
+
+                    {/* ĐỒNG BỘ SỐ LƯỢNG CHO TẤT CẢ VẬT TƯ ĐÃ TICK CHỌN */}
+                    <div
+                      className={`flex flex-col gap-2 rounded-xl border p-2.5 transition-all sm:flex-row sm:items-center sm:justify-between sm:px-3.5 ${
+                        tickedBomCount > 0
+                          ? "border-egmf-primary/40 bg-blue-50/70 shadow-2xs"
+                          : "border-dashed border-slate-300 bg-white/80"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <SlidersHorizontal
+                          size={16}
+                          className={
+                            tickedBomCount > 0
+                              ? "shrink-0 text-egmf-primary"
+                              : "shrink-0 text-slate-400"
+                          }
+                        />
+                        {tickedBomCount > 0 ? (
+                          <span className="font-semibold text-slate-800">
+                            Đồng bộ số lượng cho{" "}
+                            <strong className="font-extrabold text-egmf-primary">
+                              {tickedBomCount} vật tư
+                            </strong>{" "}
+                            đã tick chọn:
+                          </span>
+                        ) : (
+                          <span className="font-medium text-slate-500">
+                            Đồng bộ số lượng: tích chọn các vật tư bên dưới rồi nhập số lượng cần đặt
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex flex-1 items-center sm:w-44 sm:flex-initial">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="any"
+                            min={0}
+                            value={bulkSyncQty}
+                            onChange={(e) => setBulkSyncQty(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleSyncQtyForChecked();
+                              }
+                            }}
+                            placeholder="Nhập SL (VD: 200)"
+                            aria-label="Số lượng đồng bộ cho vật tư đã chọn"
+                            className="h-11 w-full rounded-xl border border-slate-300 bg-white pl-3 pr-8 text-sm font-extrabold text-slate-900 outline-none placeholder:font-medium placeholder:text-slate-400 focus:border-egmf-primary focus:ring-2 focus:ring-egmf-primary/15 sm:text-base"
+                          />
+                          {bulkSyncQty !== "" && (
+                            <button
+                              type="button"
+                              onClick={() => setBulkSyncQty("")}
+                              className="absolute right-2 flex !min-h-0 h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 active:scale-90"
+                              aria-label="Xóa số lượng đồng bộ"
+                            >
+                              <X size={13} />
+                            </button>
+                          )}
+                        </div>
 
                         <button
                           type="button"
-                          onClick={() => handleSelectBomByType("NGUYEN_LIEU")}
-                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-extrabold text-blue-700 active:scale-95 hover:bg-blue-100"
+                          onClick={handleSyncQtyForChecked}
+                          disabled={
+                            tickedBomCount === 0 ||
+                            String(bulkSyncQty).trim() === ""
+                          }
+                          className="inline-flex min-h-[44px] shrink-0 touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-egmf-primary px-4 py-2 text-sm font-extrabold text-white shadow-2xs transition hover:opacity-95 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none"
                         >
-                          <Scissors size={14} />
-                          <span>Chọn Nguyên liệu</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSelectBomByType("PHU_LIEU")}
-                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-extrabold text-amber-800 active:scale-95 hover:bg-amber-100"
-                        >
-                          <Shirt size={14} />
-                          <span>Chọn Phụ liệu</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSelectBomByType("NONE")}
-                          className="inline-flex min-h-[38px] touch-manipulation items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold text-slate-600 active:scale-95"
-                        >
-                          <Square size={14} className="text-slate-500" />
-                          <span>Bỏ chọn</span>
+                          <Check size={16} strokeWidth={2.5} />
+                          <span>
+                            {tickedBomCount > 0
+                              ? `Đồng bộ (${tickedBomCount})`
+                              : "Đồng bộ"}
+                          </span>
                         </button>
                       </div>
-                    </details>
+                    </div>
                   </div>
 
                   <div className="p-3 sm:p-5">
