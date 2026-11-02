@@ -73,7 +73,7 @@ export default function Home() {
     <MainLayout screenTitle="KHO BÁN THÀNH PHẨM CẮT">
       <div className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-5 sm:px-6 sm:py-7 md:px-9 md:py-9">
         {/* ================= HEADER ================= */}
-        <section className="relative isolate min-h-[330px] overflow-hidden rounded-[28px] border-2 border-blue-200/90 bg-[linear-gradient(118deg,#ffffff_0%,#f7fbff_44%,#e8f3ff_100%)] p-5 shadow-[0_20px_44px_rgba(37,99,235,.16),0_0_0_5px_rgba(219,234,254,.72)] sm:min-h-[370px] sm:p-8 lg:min-h-[430px] lg:p-10">
+        <section className="relative isolate min-h-[330px] overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(118deg,#ffffff_0%,#f7fbff_44%,#e8f3ff_100%)] p-5 sm:min-h-[370px] sm:p-8 lg:min-h-[430px] lg:p-10">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(rgba(37,99,235,.16)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(90deg,#000,transparent_56%)]" />
           <div aria-hidden="true" className="pointer-events-none absolute -left-20 bottom-[-90px] size-72 rounded-full border-[22px] border-blue-100/85" />
           <div aria-hidden="true" className="pointer-events-none absolute -left-12 bottom-[-130px] size-80 rounded-full border-[18px] border-cyan-100/70" />
@@ -88,12 +88,12 @@ export default function Home() {
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] bg-contain bg-right-bottom bg-no-repeat opacity-75 [mask-image:linear-gradient(to_bottom,transparent_0%,#000_34%)] lg:hidden"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[52%] bg-contain bg-right-bottom bg-no-repeat opacity-100 [mask-image:linear-gradient(to_bottom,transparent_0%,#000_22%)] lg:hidden"
             style={{
               backgroundImage: "url('/images/garment-workspace-hero.png')",
             }}
           />
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-blue-50/15 via-white/30 to-white/95 lg:hidden" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-blue-50/10 via-white/10 to-white/55 lg:hidden" />
           <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 hidden size-[410px] rounded-full border-[34px] border-white/35 lg:block" />
           <div aria-hidden="true" className="pointer-events-none absolute -right-10 bottom-[-220px] hidden size-[540px] rounded-full border-[46px] border-blue-400/30 lg:block" />
           <div aria-hidden="true" className="pointer-events-none absolute right-[12%] top-[20%] hidden size-3 rounded-full bg-white shadow-[0_0_0_7px_rgba(255,255,255,.2),0_0_20px_rgba(255,255,255,.8)] lg:block" />
@@ -130,8 +130,8 @@ export default function Home() {
         </section>
 
         {/* ================= KHU VỰC TÌM KIẾM ================= */}
-        <section className="relative rounded-[20px] border border-blue-100 bg-gradient-to-r from-blue-50/80 via-white to-cyan-50/70 p-1.5 shadow-[0_8px_20px_rgba(37,99,235,.06)]">
-          <div className="flex items-center gap-3 rounded-[15px] border border-white/90 bg-white/90 px-3 py-2.5 shadow-sm transition focus-within:border-blue-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-egmf-primary/10 sm:px-4">
+        <section className="relative rounded-2xl border border-slate-200 bg-white px-3 py-2.5 transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-100/70 sm:px-4">
+          <div className="flex items-center gap-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
               <Search size={18} strokeWidth={2.4} />
             </span>
@@ -140,7 +140,7 @@ export default function Home() {
               type="text"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Tìm kiếm nhanh chức năng (ví dụ: quét rổ, kiểm vải, đặt hàng, vị trí...)"
+              placeholder="Tìm kiếm chức năng"
               className="h-9 w-full bg-transparent text-sm font-medium text-egmf-ink placeholder:font-normal placeholder:text-egmf-muted focus:outline-none"
             />
 
@@ -158,7 +158,7 @@ export default function Home() {
 
           {/* DÒNG THÔNG BÁO KẾT QUẢ KHI ĐANG TÌM KIẾM */}
           {searchValue && (
-            <div className="mt-2 flex items-center justify-between px-1 text-xs text-egmf-muted">
+            <div className="mt-2 flex items-center justify-between border-t border-slate-100 px-1 pt-2 text-xs text-egmf-muted">
               <span>
                 Tìm thấy{" "}
                 <strong className="text-egmf-ink">

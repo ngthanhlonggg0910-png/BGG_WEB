@@ -164,8 +164,11 @@ export default function AccessoryPickingPage() {
       prev.map((item) => ({
         ...item,
         checked: false,
+        SLTX: "",
       })),
     );
+
+    setSearchValue("");
   };
 
   return (
