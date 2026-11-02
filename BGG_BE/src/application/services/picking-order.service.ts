@@ -14,12 +14,14 @@ import {
   wh_DanhSachChiTietPhieuSoanHang_TheoPhieuSoanHangId_RequestDTO,
   wh_DanhSachPhieuSoanHangNgayVaTinhTrang_RequestDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_RequestDTO,
+  wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_RequestDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_RequestDTO,
 } from '../dtos/picking-order-request.dto.js';
 import {
   wh_DanhSachChiTietPhieuSoanHang_TheoPhieuSoanHangId_ResponseDTO,
   wh_DanhSachPhieuSoanHang_TuNgayDenNgay_ResponseDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_ResponseDTO,
+  wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_ResponseDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_ResponseDTO,
 } from '../dtos/picking-order-response.dto.js';
 import type { IPickingOrderRepository } from '../../domain/repositories/picking-order.repository.interface.js';
@@ -122,6 +124,37 @@ export class PickingOrderService implements IPickingOrderService {
       if (error instanceof HttpException) throw error;
       this.logger.error(
         'Lỗi lấy danh sách vật tư',
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw new InternalServerErrorException('Lấy danh sách vật tư thất bại');
+    }
+  }
+
+  async getDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang(
+    dto: wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_RequestDTO,
+  ): Promise<wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_ResponseDTO> {
+    try {
+      const result =
+        await this.pickingOrderRepository.getDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang(
+          dto.PhieuSoanHangId,
+          dto.SoRo,
+          dto.MaCay,
+        );
+
+      if (!result || result.length === 0) {
+        throw new NotFoundException('Không tìm thấy danh sách vật tư');
+      }
+
+      return {
+        success: true,
+        message: 'Lấy danh sách thành công',
+        data: result,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      this.logger.error(
+        'Lỗi lấy danh sách vật tư theo QR trang',
         error instanceof Error ? error.stack : String(error),
       );
 

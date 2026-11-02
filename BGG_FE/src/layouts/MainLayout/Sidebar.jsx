@@ -72,36 +72,41 @@ const _sidebarItems = [
 
 export default function Sidebar({ selectedKey, onSelect, onInstallApp }) {
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto bg-[radial-gradient(circle_at_12%_-5%,rgba(96,165,250,.18),transparent_28%),#ffffff] md:overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[radial-gradient(circle_at_12%_-5%,rgba(96,165,250,.18),transparent_28%),#ffffff]">
       <Brand />
       <TreeNavigation selectedKey={selectedKey} onSelect={onSelect} />
 
-      {/* THẺ CÀI ĐẶT ỨNG DỤNG PWA (GIỐNG WEB_KYDUYET) */}
-      {onInstallApp && (
-        <div className="mx-3 mb-3 overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-4 text-[#7082a3] shadow-[0_10px_26px_rgba(37,99,235,.08)]">
-          <span className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25"><Smartphone size={21} /></span>
-          <strong className="mt-3 block text-[13px] font-bold text-[#314566]">
-            Thao tác kho mọi lúc
-          </strong>
-          <p className="my-2 text-xs leading-relaxed text-[#7082a3]">
-            Thêm ứng dụng vào màn hình chính để truy cập nhanh hơn.
-          </p>
-          <button
-            type="button"
-            onClick={onInstallApp}
-            className="flex w-full items-center justify-between rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-xs font-bold text-egmf-primary shadow-sm transition hover:-translate-y-px hover:border-egmf-primary hover:bg-egmf-primary-tint hover:shadow-md"
-          >
-            <span>Cài ứng dụng</span>
-            <Download size={15} />
-          </button>
-        </div>
-      )}
+      <div className="mt-auto mb-[max(4.5rem,calc(env(safe-area-inset-bottom)+1rem))] shrink-0 border-t border-slate-100 bg-white/80 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm md:mb-0">
+        {/* Lời gọi cài PWA gọn để ưu tiên không gian cho menu. */}
+        {onInstallApp && (
+          <div className="mb-2 flex items-center gap-2.5 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-cyan-50/60 p-2 shadow-sm">
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/20">
+              <Smartphone size={18} strokeWidth={2.2} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <strong className="block truncate text-xs font-bold text-slate-800">
+                Cài đặt ứng dụng
+              </strong>
+              <span className="block truncate text-[11px] text-slate-500">
+                Truy cập nhanh hơn
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={onInstallApp}
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-blue-200 bg-white px-2.5 text-[11px] font-bold text-egmf-primary shadow-sm transition hover:border-egmf-primary hover:bg-egmf-primary-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary/25"
+              aria-label="Cài đặt ứng dụng"
+            >
+              <span>Cài</span>
+              <Download size={14} strokeWidth={2.4} />
+            </button>
+          </div>
+        )}
 
-      <div className="shrink-0 border-t border-slate-100 px-3 py-4">
         <LogoutButton onClick={() => onSelect("Đăng xuất")} />
 
-        <div className="mt-3 flex items-center justify-center gap-1.5 text-xs font-medium text-slate-400">
-          <ShieldCheck size={14} />
+        <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-400">
+          <ShieldCheck size={13} />
           <span>BGG Kho · v1.0</span>
         </div>
       </div>
@@ -186,7 +191,7 @@ function TreeNavigation({ selectedKey, onSelect }) {
   const [groupOpen, setGroupOpen] = useState({});
 
   return (
-    <nav aria-label="Điều hướng chính" className="flex-none overflow-visible px-3 py-5 md:min-h-0 md:flex-1 md:overflow-y-auto [scrollbar-width:thin]">
+    <nav aria-label="Điều hướng chính" className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-4 [scrollbar-width:thin]">
       <p className="mb-3 px-3 text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
         MENU CHỨC NĂNG
       </p>
@@ -196,7 +201,7 @@ function TreeNavigation({ selectedKey, onSelect }) {
         onClick={() => onSelect("workspace")}
         aria-current={selectedKey === "workspace" ? "page" : undefined}
         className={cn(
-          "group mb-3 flex min-h-[54px] w-full items-center gap-3 rounded-2xl px-3 text-left shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
+          "group mb-2.5 flex min-h-[50px] w-full items-center gap-3 rounded-2xl px-3 text-left shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
           selectedKey === "workspace"
             ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-blue-500/25"
             : "border border-transparent bg-white/60 text-slate-600 hover:border-blue-100 hover:bg-blue-50/70 hover:text-egmf-primary-strong",
@@ -205,8 +210,7 @@ function TreeNavigation({ selectedKey, onSelect }) {
         <span className={cn("grid size-9 place-items-center rounded-xl transition-transform group-hover:scale-105", selectedKey === "workspace" ? "bg-white/20 text-white" : "bg-egmf-primary-soft text-egmf-primary")}>
           <LayoutGrid size={19} strokeWidth={2.2} />
         </span>
-        <span className="flex-1 text-[15px] font-bold">Không gian làm việc</span>
-        <ChevronRight size={18} className={selectedKey === "workspace" ? "text-white" : "text-slate-400 transition-transform group-hover:translate-x-0.5"} />
+        <span className="flex-1 text-[15px] font-bold">Trang chủ</span>
       </button>
 
       <ul className="m-0 space-y-1.5 p-0">
@@ -225,7 +229,7 @@ function TreeNavigation({ selectedKey, onSelect }) {
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 className={cn(
-                  "group relative flex min-h-[52px] w-full items-center gap-3 rounded-2xl px-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
+                  "group relative flex min-h-[48px] w-full items-center gap-3 rounded-2xl px-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
                   isGroupActive ? theme.active : "text-slate-600 hover:bg-white hover:shadow-sm",
                 )}
               >
@@ -250,7 +254,7 @@ function TreeNavigation({ selectedKey, onSelect }) {
                           onClick={() => onSelect(item.path)}
                           aria-current={isActive ? "page" : undefined}
                           className={cn(
-                            "group flex min-h-10 w-full items-center gap-2.5 rounded-xl px-2.5 text-left text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
+                            "group flex min-h-9 w-full items-center gap-2.5 rounded-xl px-2.5 text-left text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
                             isActive ? "bg-white font-bold text-slate-900 shadow-sm ring-1 ring-slate-100" : "font-medium text-slate-600 hover:bg-white/80 hover:text-slate-900",
                           )}
                         >
@@ -267,19 +271,18 @@ function TreeNavigation({ selectedKey, onSelect }) {
         })}
       </ul>
 
-      <div className="my-4 border-t border-slate-100" />
+      <div className="my-3 border-t border-slate-100" />
       <button
         type="button"
         onClick={() => onSelect("Thông tin")}
         aria-current={selectedKey === "Thông tin" ? "page" : undefined}
         className={cn(
-          "group flex min-h-[52px] w-full items-center gap-3 rounded-2xl px-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
+          "group flex min-h-[48px] w-full items-center gap-3 rounded-2xl px-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-egmf-primary",
           selectedKey === "Thông tin" ? "bg-blue-50 text-egmf-primary-strong shadow-sm ring-1 ring-blue-100" : "text-slate-600 hover:bg-white hover:shadow-sm",
         )}
       >
         <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/20"><UserRound size={18} strokeWidth={2.1} /></span>
         <span className="flex-1 text-[14px] font-bold">Thông tin tài khoản</span>
-        <ChevronRight size={18} className="text-slate-400 transition-transform group-hover:translate-x-0.5" />
       </button>
     </nav>
   );
@@ -288,8 +291,8 @@ function TreeNavigation({ selectedKey, onSelect }) {
 // LOGO
 function Brand() {
   return (
-    <div className="flex items-center gap-3 border-b border-slate-100 bg-white px-5 py-5">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-egmf-primary-soft p-1.5">
+    <div className="flex shrink-0 items-center gap-3 border-b border-slate-100 bg-white px-4 py-4">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-egmf-primary-soft p-1.5">
         <img
           src="/ic_launcher_512.png"
           alt="BGG Kho"
@@ -298,7 +301,7 @@ function Brand() {
       </div>
 
       <div className="min-w-0">
-        <h2 className="m-0 text-[22px] font-extrabold tracking-tight text-slate-900">
+        <h2 className="m-0 text-xl font-extrabold tracking-tight text-slate-900">
           BGG Kho
         </h2>
 
@@ -317,9 +320,9 @@ function LogoutButton({ onClick }) {
       type="button"
       onClick={onClick}
       className="
-        group flex min-h-[52px] w-full items-center gap-3
-        rounded-2xl px-3 text-left
-        text-[15px] font-semibold text-red-600
+        group flex min-h-11 w-full items-center gap-3
+        rounded-xl px-2.5 text-left
+        text-sm font-semibold text-red-600
         transition-colors duration-200
         hover:bg-red-50 hover:shadow-sm
         active:bg-red-100
@@ -327,13 +330,13 @@ function LogoutButton({ onClick }) {
         focus-visible:ring-2 focus-visible:ring-red-400
       "
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-50 to-rose-100 text-red-600 transition-transform group-hover:scale-105">
-        <LogOut size={21} strokeWidth={2.1} />
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-red-50 to-rose-100 text-red-600 transition-transform group-hover:scale-105">
+        <LogOut size={19} strokeWidth={2.1} />
       </span>
 
       <span className="flex-1">Đăng xuất</span>
 
-      <ChevronRight size={19} className="text-red-400" />
+      <ChevronRight size={18} className="text-red-400" />
     </button>
   );
 }

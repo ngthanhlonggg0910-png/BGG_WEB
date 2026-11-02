@@ -27,7 +27,7 @@ import MappingQrListPage from "../features/mapping-qr/pages/MappingQrListPage";
 import MappingQrBarcodePage from "../features/mapping-qr/pages/MappingQrBarcodePage";
 import InspectionDetailPage from "../features/mapping-qr/pages/InspectionDetailPage";
 import MappingQrMaterialDetailPage from "../features/mapping-qr/pages/MappingQrMaterialDetailPage";
-
+import AccessoryPickingPage from "../features/picking-order/pages/AccessoryPickingPage";
 // Kiểm tra user đã đăng nhập chưa
 function PrivateRoute({ children }) {
   const location = useLocation();
@@ -77,11 +77,21 @@ export default function AppRouter() {
           }
         />
 
+        {/* SOẠN HÀNG */}
         <Route
           path="/picking-orders"
           element={
             <PrivateRoute>
               <PickingOrderList />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/accessory-picking"
+          element={
+            <PrivateRoute>
+              <AccessoryPickingPage />
             </PrivateRoute>
           }
         />

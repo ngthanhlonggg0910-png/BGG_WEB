@@ -399,7 +399,10 @@ export default function PickingOrderList() {
                             navigate(
                               `/picking-order-detail?phieuSoanHangId=${encodeURIComponent(item.PhieuSoanHangId)}`,
                               {
-                              state: { order: item },
+                                state: {
+                                  order: item,
+                                  kho: selectedWarehouse,
+                                },
                               },
                             );
                           }}

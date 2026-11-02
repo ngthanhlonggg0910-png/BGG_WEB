@@ -4,12 +4,14 @@ import {
   wh_DanhSachPhieuSoanHangNgayVaTinhTrang_RequestDTO,
   wh_DanhSachChiTietPhieuSoanHang_TheoPhieuSoanHangId_RequestDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_RequestDTO,
+  wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_RequestDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_RequestDTO,
 } from '../../application/dtos/picking-order-request.dto.js';
 import {
   wh_DanhSachPhieuSoanHang_TuNgayDenNgay_ResponseDTO,
   wh_DanhSachChiTietPhieuSoanHang_TheoPhieuSoanHangId_ResponseDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_ResponseDTO,
+  wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_ResponseDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_ResponseDTO,
 } from '../../application/dtos/picking-order-response.dto.js';
 
@@ -46,6 +48,16 @@ export class PickingOrderController {
     @Body() dto: wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_RequestDTO,
   ): Promise<wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_ResponseDTO> {
     return this.pickingOrderService.getDanhSachVatTuTheoMaRoVaPhieuSoanHang(
+      dto,
+    );
+  }
+
+  @Post('wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang')
+  async getDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang(
+    @Body()
+    dto: wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_RequestDTO,
+  ): Promise<wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_ResponseDTO> {
+    return this.pickingOrderService.getDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang(
       dto,
     );
   }

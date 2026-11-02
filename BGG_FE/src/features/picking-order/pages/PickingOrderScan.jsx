@@ -13,16 +13,18 @@ import { themCayTaiPhieu } from "../../fabric-inspection/api/fabric-inspections.
 export default function PickingOrderScan() {
   const location = useLocation();
   const navigate = useNavigate();
-  console.log(location);
 
   const [basketCode, setBasketCode] = useState("");
+
   const scanType =
     location.state?.scanType ??
     new URLSearchParams(location.search).get("scanType");
+
   const PhieuSoanHangId =
     location.state?.PhieuSoanHangId ??
     new URLSearchParams(location.search).get("phieuSoanHangId");
 
+  const kho = location.state?.kho;
   const PKVId = location.state?.PKVId;
 
   const user = getCurrentUser();
@@ -47,21 +49,25 @@ export default function PickingOrderScan() {
 
       const payload = {
         PhieuSoanHangId: PhieuSoanHangId,
-        // Read from the DOM-derived code. Camera scans submit immediately,
-        // before React state is guaranteed to finish updating.
         MaRo: code,
+        kho: kho,
       };
 
-      navigate("/picking-order-materials", {
-        state: payload,
-      });
+      if (kho === "NA") {
+        navigate("/picking-order-materials", {
+          state: payload,
+        });
+      } else {
+        navigate("/accessory-picking", {
+          state: payload,
+        });
+      }
     }
 
     //TRƯỜNG HỢP 2: TẠO PHIẾU KIỂM VẢI
     if (scanType === "fabric-inspection") {
       try {
         const response = await taoPhieuKiemVaiAuto(TKId, code);
-        console.log(response);
 
         // 1. SQL báo thất bại
         if (!response.success) {
@@ -91,7 +97,6 @@ export default function PickingOrderScan() {
     //TH3: THÊM CÂY VẢI VÀO PHIẾU HIỆN TẠI
     if (scanType === "ADD_ROLL_TO_INSPECTION") {
       try {
-        console.log("Đã vào");
         const payload = {
           TKId: TKId,
           MaCay: code,
@@ -134,11 +139,12 @@ export default function PickingOrderScan() {
             </div>
 
             <h1 className="text-lg font-extrabold tracking-tight text-egmf-ink sm:text-2xl">
-              {scanType === "fabric-inspection"
+              {scanType === "fabric-inspection" ||
+              scanType === "ADD_ROLL_TO_INSPECTION"
                 ? "Quét mã cây"
-                : scanType === "ADD_ROLL_TO_INSPECTION"
-                  ? "Quét mã cây"
-                  : "Quét mã rọ"}
+                : scanType === "picking" && kho === "NA"
+                  ? "Quét mã rọ"
+                  : "Quét mã QR trắng"}
             </h1>
 
             <p className="mx-auto mt-1.5 max-w-md text-sm font-medium leading-5 text-egmf-ink-soft sm:mt-2 sm:leading-6 sm:text-[15px]">

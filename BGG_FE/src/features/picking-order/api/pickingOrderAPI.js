@@ -46,3 +46,19 @@ export async function pickFabricRoll(payload) {
     },
   );
 }
+
+//Lấy danh sách vật tư theo mã qr trắng
+export async function layDanhSachVatTuTheoMaQrTrang(
+  phieuSoanHangId,
+  maRo,
+  maCay,
+) {
+  return postJson(
+    "/api/picking-order/wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang",
+    {
+      PhieuSoanHangId: phieuSoanHangId,
+      SoRo: maRo,
+      MaCay: maCay,
+    },
+  );
+}

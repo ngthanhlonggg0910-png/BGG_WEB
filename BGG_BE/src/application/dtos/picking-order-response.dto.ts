@@ -23,6 +23,12 @@ export class wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_ResponseDTO {
   data: wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang[];
 }
 
+export class wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang[];
+}
+
 export class wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_ResponseDTO {
   success: boolean;
   message: string;

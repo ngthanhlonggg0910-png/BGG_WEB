@@ -1,6 +1,7 @@
 import Barcode from "react-barcode";
 import { CalendarDays, ClipboardList, Package, UserRound } from "lucide-react";
 import { formatDateTime } from "../../../shared/utils/formatDateTime";
+import { useLocation } from "react-router-dom";
 
 const InfoItem = ({ label, value }) => (
   <div className="min-w-0">

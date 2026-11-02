@@ -41,6 +41,20 @@ export class wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_RequestDTO {
   SoRo: string;
 }
 
+export class wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_RequestDTO {
+  @IsInt()
+  @Min(1)
+  PhieuSoanHangId: number;
+
+  // Stored procedure hiện chưa sử dụng giá trị này, nhưng vẫn yêu cầu tham số.
+  @IsString()
+  SoRo: string;
+
+  @IsString()
+  @IsNotEmpty()
+  MaCay: string;
+}
+
 export class wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_RequestDTO {
   @IsInt()
   @Min(1)

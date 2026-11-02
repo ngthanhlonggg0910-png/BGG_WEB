@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "react-toastify";
 
 const DEFAULT_CAMERA_FEATURES = { torch: false, zoom: null };
@@ -9,8 +15,6 @@ const HIGH_QUALITY_REAR_CAMERA = {
   audio: false,
   video: {
     facingMode: { ideal: "environment" },
-    // Ideal values let older and iOS devices select their best available
-    // rear-camera resolution instead of rejecting the camera request.
     width: { ideal: 2560 },
     height: { ideal: 1440 },
     frameRate: { ideal: 30, max: 60 },
@@ -52,9 +56,7 @@ export function useBarcodeScanner(onDetected) {
   const [scanTarget, setScanTarget] = useState(null);
   const [scanError, setScanError] = useState("");
   const [scanStatus, setScanStatus] = useState("idle");
-  const [cameraFeatures, setCameraFeatures] = useState(
-    DEFAULT_CAMERA_FEATURES,
-  );
+  const [cameraFeatures, setCameraFeatures] = useState(DEFAULT_CAMERA_FEATURES);
   const [torchOn, setTorchOn] = useState(false);
   const [isDocumentVisible, setIsDocumentVisible] = useState(
     () => typeof document === "undefined" || !document.hidden,
@@ -187,7 +189,9 @@ export function useBarcodeScanner(onDetected) {
       const supportsContinuousFocus = Array.isArray(capabilities.focusMode)
         ? capabilities.focusMode.includes("continuous")
         : false;
-      const supportsContinuousExposure = Array.isArray(capabilities.exposureMode)
+      const supportsContinuousExposure = Array.isArray(
+        capabilities.exposureMode,
+      )
         ? capabilities.exposureMode.includes("continuous")
         : false;
       const supportsZoom =

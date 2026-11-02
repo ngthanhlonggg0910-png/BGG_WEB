@@ -111,6 +111,22 @@ export class PickingOrderRepository implements IPickingOrderRepository {
     return result.recordset;
   }
 
+  async getDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang(
+    PhieuSoanHangId: number,
+    SoRo: string,
+    MaCay: string,
+  ): Promise<wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang[]> {
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('PhieuSoanHangId', sql.BigInt, PhieuSoanHangId)
+      .input('SoRo', sql.NVarChar(150), SoRo)
+      .input('MaCay', sql.NVarChar(150), MaCay)
+      .execute('wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang');
+
+    return result.recordset ?? [];
+  }
+
   async wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android(
     PhieuSoanHangId: number,
     MaCay: string,

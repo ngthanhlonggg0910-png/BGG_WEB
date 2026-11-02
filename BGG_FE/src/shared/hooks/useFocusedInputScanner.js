@@ -100,9 +100,6 @@ export function useFocusedInputScanner() {
 
     document.addEventListener("focusin", trackFocusedInput);
 
-    // A page can focus its scan field during its own effect, before this
-    // layout-level listener is registered. Capture the current focus too so
-    // the first camera scan has a target instead of being discarded.
     trackFocusedInput({ target: document.activeElement });
 
     return () => document.removeEventListener("focusin", trackFocusedInput);
@@ -112,8 +109,6 @@ export function useFocusedInputScanner() {
     const code = String(value ?? "");
     if (!code.trim()) return;
 
-    // Only the picking flow needs a picking-order ID. Fabric inspection uses
-    // the same scan page, but processes the scanned code in that page's form.
     if (
       location.pathname === "/picking-order-scan" &&
       resolveScanType(location) === "picking"
@@ -195,7 +190,7 @@ export function useFocusedInputScanner() {
     // Trang chi tiết phiếu soạn hàng → chuyển đến trang quét rổ
     if (location.pathname === "/picking-order-detail") {
       const PhieuSoanHangId = resolvePickingOrderId(location);
-      console.log(location);
+      const kho = location?.state?.kho;
 
       if (!PhieuSoanHangId) {
         showWarningToast("Không tìm thấy ID phiếu soạn hàng");
@@ -208,6 +203,7 @@ export function useFocusedInputScanner() {
           state: {
             scanType: "picking",
             PhieuSoanHangId: PhieuSoanHangId,
+            kho: kho,
           },
         },
       );

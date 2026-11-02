@@ -24,6 +24,12 @@ export interface IPickingOrderRepository {
     SoRo: string,
   ): Promise<wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang[]>;
 
+  getDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang(
+    PhieuSoanHangId: number,
+    SoRo: string,
+    MaCay: string,
+  ): Promise<wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang[]>;
+
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android(
     PhieuSoanHangId: number,
     MaCay: string,
