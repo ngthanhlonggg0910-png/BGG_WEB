@@ -6,8 +6,8 @@ import {
   Factory,
   Scissors,
   Shirt,
-  FileSpreadsheet,
   QrCode,
+  ClipboardCheck,
 } from "lucide-react";
 
 export const menuGroups = [
@@ -84,6 +84,13 @@ export const menuGroups = [
         title: "Kiểm vải",
         path: "/fabric-inspection",
         icon: ScanSearch,
+        iconTheme: "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100",
+      },
+      {
+        key: "accessory-inspection",
+        title: "Kiểm phụ liệu",
+        path: "/accessory-inspection",
+        icon: ClipboardCheck,
         iconTheme: "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100",
       },
     ],

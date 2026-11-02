@@ -64,19 +64,30 @@ export default function Home() {
       navigate("/production-orders?tab=ddh");
     } else if (item.key === "fabric-inspection") {
       navigate("/fabric-inspection");
+    } else if (item.key === "accessory-inspection") {
+      navigate("/accessory-inspection");
     } else {
       console.log("Chức năng được chọn:", item);
     }
   };
 
   return (
-    <MainLayout screenTitle="KHO BÁN THÀNH PHẨM CẮT">
+    <MainLayout screenTitle="Chức năng hệ thống">
       <div className="mx-auto w-full max-w-[1500px] space-y-5 px-4 py-5 sm:px-6 sm:py-7 md:px-9 md:py-9">
         {/* ================= HEADER ================= */}
         <section className="relative isolate min-h-[330px] overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(118deg,#ffffff_0%,#f7fbff_44%,#e8f3ff_100%)] p-5 sm:min-h-[370px] sm:p-8 lg:min-h-[430px] lg:p-10">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(rgba(37,99,235,.16)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(90deg,#000,transparent_56%)]" />
-          <div aria-hidden="true" className="pointer-events-none absolute -left-20 bottom-[-90px] size-72 rounded-full border-[22px] border-blue-100/85" />
-          <div aria-hidden="true" className="pointer-events-none absolute -left-12 bottom-[-130px] size-80 rounded-full border-[18px] border-cyan-100/70" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(rgba(37,99,235,.16)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(90deg,#000,transparent_56%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-20 bottom-[-90px] size-72 rounded-full border-[22px] border-blue-100/85"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -left-12 bottom-[-130px] size-80 rounded-full border-[18px] border-cyan-100/70"
+          />
 
           <div
             aria-hidden="true"
@@ -93,17 +104,38 @@ export default function Home() {
               backgroundImage: "url('/images/garment-workspace-hero.png')",
             }}
           />
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-blue-50/10 via-white/10 to-white/55 lg:hidden" />
-          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 hidden size-[410px] rounded-full border-[34px] border-white/35 lg:block" />
-          <div aria-hidden="true" className="pointer-events-none absolute -right-10 bottom-[-220px] hidden size-[540px] rounded-full border-[46px] border-blue-400/30 lg:block" />
-          <div aria-hidden="true" className="pointer-events-none absolute right-[12%] top-[20%] hidden size-3 rounded-full bg-white shadow-[0_0_0_7px_rgba(255,255,255,.2),0_0_20px_rgba(255,255,255,.8)] lg:block" />
-          <span aria-hidden="true" className="pointer-events-none absolute bottom-10 right-12 hidden text-[11px] font-bold tracking-[.22em] text-white/70 lg:block">NPL FLOW</span>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-blue-50/10 via-white/10 to-white/55 lg:hidden"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-24 -top-24 hidden size-[410px] rounded-full border-[34px] border-white/35 lg:block"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-10 bottom-[-220px] hidden size-[540px] rounded-full border-[46px] border-blue-400/30 lg:block"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-[12%] top-[20%] hidden size-3 rounded-full bg-white shadow-[0_0_0_7px_rgba(255,255,255,.2),0_0_20px_rgba(255,255,255,.8)] lg:block"
+          />
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-10 right-12 hidden text-[11px] font-bold tracking-[.22em] text-white/70 lg:block"
+          >
+            NPL FLOW
+          </span>
 
           <div className="relative z-10 flex h-full max-w-2xl flex-col justify-between gap-8 lg:min-h-[350px] lg:max-w-[55%]">
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-2 rounded-full border-2 border-blue-200 bg-white/70 px-3.5 py-2 text-xs font-extrabold text-blue-800 shadow-sm backdrop-blur-sm sm:px-4 sm:text-sm">
-                  <Layers3 size={18} strokeWidth={2.35} className="text-egmf-primary" />
+                  <Layers3
+                    size={18}
+                    strokeWidth={2.35}
+                    className="text-egmf-primary"
+                  />
                   <span>Hệ thống Quản lý Kho & Sản xuất</span>
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-700 shadow-sm ring-1 ring-emerald-100">
@@ -115,16 +147,24 @@ export default function Home() {
               <h1 className="mt-7 text-4xl font-black tracking-[-0.055em] text-blue-950 sm:text-5xl lg:text-[56px] lg:leading-[1.05]">
                 Không gian làm việc
               </h1>
-              <span aria-hidden="true" className="mt-3 block h-2 w-36 rounded-full bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-300 sm:w-48" />
+              <span
+                aria-hidden="true"
+                className="mt-3 block h-2 w-36 rounded-full bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-300 sm:w-48"
+              />
 
               <p className="mt-7 max-w-xl text-base font-medium leading-relaxed text-slate-500 sm:text-xl sm:leading-relaxed">
-                Truy cập nhanh các nghiệp vụ kho, kiểm vải và cấp phát nguyên liệu
+                Truy cập nhanh các nghiệp vụ kho, kiểm vải và cấp phát nguyên
+                liệu
               </p>
             </div>
 
             <div className="flex items-end gap-2 text-blue-800">
-              <strong className="text-4xl font-black leading-none tracking-[-0.05em] sm:text-5xl">{totalFunctions}</strong>
-              <span className="pb-0.5 text-sm font-bold text-slate-500 sm:text-base">Chức năng khả dụng</span>
+              <strong className="text-4xl font-black leading-none tracking-[-0.05em] sm:text-5xl">
+                {totalFunctions}
+              </strong>
+              <span className="pb-0.5 text-sm font-bold text-slate-500 sm:text-base">
+                Chức năng khả dụng
+              </span>
             </div>
           </div>
         </section>
@@ -202,7 +242,9 @@ export default function Home() {
         <section className="flex flex-col items-center justify-between gap-3 rounded-xl border border-egmf-border bg-white px-5 py-4 text-xs text-egmf-muted sm:flex-row">
           <div className="flex items-center gap-2">
             <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-            <span>Hệ thống hoạt động bình thường · Kết nối máy chủ ổn định</span>
+            <span>
+              Hệ thống hoạt động bình thường · Kết nối máy chủ ổn định
+            </span>
           </div>
 
           <div className="flex items-center gap-1 font-medium text-egmf-ink-secondary">

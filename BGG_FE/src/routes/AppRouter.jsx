@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -28,6 +28,18 @@ import MappingQrBarcodePage from "../features/mapping-qr/pages/MappingQrBarcodeP
 import InspectionDetailPage from "../features/mapping-qr/pages/InspectionDetailPage";
 import MappingQrMaterialDetailPage from "../features/mapping-qr/pages/MappingQrMaterialDetailPage";
 import AccessoryPickingPage from "../features/picking-order/pages/AccessoryPickingPage";
+import AccessoryInspectionListPage from "../features/accessory-inspection/page/AccessoryInspectionListPage";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
+  return null;
+}
+
 // Kiểm tra user đã đăng nhập chưa
 function PrivateRoute({ children }) {
   const location = useLocation();
@@ -60,6 +72,7 @@ function StartRoute() {
 export default function AppRouter() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* Mở app */}
         <Route path="/" element={<StartRoute />} />
@@ -246,6 +259,15 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <MappingQrMaterialDetailPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/accessory-inspection"
+          element={
+            <PrivateRoute>
+              <AccessoryInspectionListPage />
             </PrivateRoute>
           }
         />

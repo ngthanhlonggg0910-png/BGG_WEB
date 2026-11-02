@@ -106,11 +106,17 @@ const statusSelectStyles = {
   valueContainer: (base) => ({ ...base, padding: "0 12px" }),
 };
 
-export default function MappingQrListPage() {
+export default function MappingQrListPage({
+  sourcePage,
+  screenTitle = "Mapping QR",
+}) {
   const navigate = useNavigate();
-
   const location = useLocation();
-  const loai = location?.state?.loai;
+  const isAccessoryInspection = sourcePage === "accessory-inspection";
+  const loai = isAccessoryInspection ? "pl" : location.state?.loai;
+
+  console.log(sourcePage);
+
   const [savedFilter] = useState(() => readSavedFilter(loai));
 
   const [statusOptions, setStatusOptions] = useState([]);
@@ -216,7 +222,7 @@ export default function MappingQrListPage() {
   }, []);
 
   return (
-    <MainLayout screenTitle="Mapping QR">
+    <MainLayout screenTitle={screenTitle}>
       <ConfigProvider
         theme={{
           token: {
@@ -393,6 +399,8 @@ export default function MappingQrListPage() {
                               state: {
                                 loai: loai,
                                 maPhieu: item.maPhieu,
+                                sourcePage: sourcePage,
+                                data: item,
                               },
                             })
                           }

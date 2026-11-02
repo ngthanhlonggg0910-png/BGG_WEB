@@ -25,7 +25,6 @@ import {
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_ResponseDTO,
 } from '../dtos/picking-order-response.dto.js';
 import type { IPickingOrderRepository } from '../../domain/repositories/picking-order.repository.interface.js';
-import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class PickingOrderService implements IPickingOrderService {

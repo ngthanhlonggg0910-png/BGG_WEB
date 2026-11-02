@@ -73,13 +73,6 @@ function resolvePickingOrderId(location) {
   return id;
 }
 
-function resolveScanType(location) {
-  return (
-    location.state?.scanType ??
-    new URLSearchParams(location.search).get("scanType")
-  );
-}
-
 export function useFocusedInputScanner() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -108,27 +101,6 @@ export function useFocusedInputScanner() {
   const handleScannedValue = (value) => {
     const code = String(value ?? "");
     if (!code.trim()) return;
-
-    if (
-      location.pathname === "/picking-order-scan" &&
-      resolveScanType(location) === "picking"
-    ) {
-      const PhieuSoanHangId = resolvePickingOrderId(location);
-
-      if (!PhieuSoanHangId) {
-        showWarningToast("Không tìm thấy ID phiếu soạn hàng");
-        return;
-      }
-
-      navigate("/picking-order-materials", {
-        state: {
-          PhieuSoanHangId,
-          MaRo: code,
-        },
-      });
-
-      return;
-    }
 
     const input = focusedInputRef.current;
 

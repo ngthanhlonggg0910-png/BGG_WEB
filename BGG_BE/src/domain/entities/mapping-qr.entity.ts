@@ -106,6 +106,7 @@ export class WH_ChiTietPhieuGiamDinh_PGDId {
   ItemCode: string | null;
   ProductCode: string | null;
   SoLuongChungTuThucTe: number;
+  NgayGiamDinh: Date;
 }
 
 export class wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile {
