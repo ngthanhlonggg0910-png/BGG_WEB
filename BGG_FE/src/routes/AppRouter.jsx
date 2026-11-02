@@ -23,6 +23,7 @@ import FabricInspectionRollListPage from "../features/fabric-inspection/pages/Fa
 import ProductionOrderListPage from "../features/production-order/pages/ProductionOrderListPage";
 import ProductionOrderBookingPage from "../features/production-order/pages/ProductionOrderBookingPage";
 import MappingOptionPage from "../features/mapping-qr/pages/MappingOptionPage";
+import RawMaterialRollQrPage from "../features/mapping-qr/pages/RawMaterialRollQrPage";
 import MappingQrListPage from "../features/mapping-qr/pages/MappingQrListPage";
 import MappingQrBarcodePage from "../features/mapping-qr/pages/MappingQrBarcodePage";
 import InspectionDetailPage from "../features/mapping-qr/pages/InspectionDetailPage";
@@ -227,6 +228,10 @@ export default function AppRouter() {
           }
         />
 
+        <Route
+          path="/mapping-qr-raw-material"
+          element={<PrivateRoute><RawMaterialRollQrPage /></PrivateRoute>}
+        />
         <Route
           path="/mapping-qr-list"
           element={
