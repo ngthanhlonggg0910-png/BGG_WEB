@@ -87,6 +87,10 @@ function getDdhStatusBadge(ddh) {
   };
 }
 
+function isCancelledDdh(ddh) {
+  return String(ddh?.TrangThai || "").trim().toLowerCase() === "dahuy";
+}
+
 function canCancelDdh(ddh) {
   const trangThai = String(ddh?.TrangThai || "")
     .trim()
@@ -129,8 +133,11 @@ export default function ProductionOrderListPage({ initialTab }) {
   const { modal } = AntApp.useApp();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const currentTab = searchParams.get("tab") || initialTab || "lsx";
-  const [activeTab, setActiveTab] = useState(currentTab); // "lsx" | "ddh"
+  const rawTab = searchParams.get("tab") || initialTab || "lsx";
+  const currentTab = ["lsx", "ddh", "ddh_huy"].includes(rawTab)
+    ? rawTab
+    : "lsx";
+  const [activeTab, setActiveTab] = useState(currentTab); // "lsx" | "ddh" | "ddh_huy"
 
   const profile = getCurrentProfile();
   const tkId = Number(profile?.TKId || 0);
@@ -165,10 +172,13 @@ export default function ProductionOrderListPage({ initialTab }) {
   // Đồng bộ tab trên URL query param
   const handleChangeTab = (tabKey) => {
     setActiveTab(tabKey);
+    if (tabKey === "ddh_huy") {
+      setDdhStatusFilter("ALL");
+    }
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      if (tabKey === "ddh") {
-        next.set("tab", "ddh");
+      if (tabKey === "ddh" || tabKey === "ddh_huy") {
+        next.set("tab", tabKey);
       } else {
         next.delete("tab");
         next.delete("type");
@@ -177,57 +187,83 @@ export default function ProductionOrderListPage({ initialTab }) {
     });
   };
 
-  const fetchLsxList = async () => {
+  const fetchLsxList = async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await getListProductionOrders({});
       setLsxList(Array.isArray(res?.data) ? res.data : []);
     } catch (err) {
       console.error("Lỗi tải danh sách LSX:", err);
-      message.error(err?.message || "Không thể tải danh sách Lệnh sản xuất");
+      if (!silent) {
+        message.error(err?.message || "Không thể tải danh sách Lệnh sản xuất");
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  const fetchDdhList = async () => {
+  const fetchDdhList = async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await getMaterialOrders({});
       setDdhList(Array.isArray(res?.data) ? res.data : []);
     } catch (err) {
       console.error("Lỗi tải danh sách Đơn đặt hàng LSX:", err);
-      message.error(err?.message || "Không thể tải danh sách Đơn đặt hàng");
+      if (!silent) {
+        message.error(err?.message || "Không thể tải danh sách Đơn đặt hàng");
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    const tabFromUrl = searchParams.get("tab") || initialTab || "lsx";
-    if (tabFromUrl && tabFromUrl !== activeTab) {
+    const raw = searchParams.get("tab") || initialTab || "lsx";
+    const tabFromUrl = ["lsx", "ddh", "ddh_huy"].includes(raw) ? raw : "lsx";
+    if (tabFromUrl !== activeTab) {
       setActiveTab(tabFromUrl);
     }
     const typeFromUrl = searchParams.get("type");
     if (typeFromUrl && ["ALL", "NguyenLieu", "PhuLieu"].includes(typeFromUrl)) {
       setDdhTypeFilter(typeFromUrl);
+    } else if (!typeFromUrl) {
+      setDdhTypeFilter("ALL");
     }
   }, [searchParams, initialTab]);
 
-  const countCat = useMemo(
-    () => ddhList.filter((d) => d.LoaiDatHang === "NguyenLieu").length,
+  // Tách bạch hoàn toàn Đơn đặt hàng đang hiện hành và Đơn đặt hàng đã hủy
+  const activeDdhList = useMemo(
+    () => ddhList.filter((d) => !isCancelledDdh(d)),
     [ddhList],
   );
-  const countMay = useMemo(
-    () => ddhList.filter((d) => d.LoaiDatHang === "PhuLieu").length,
+  const cancelledDdhList = useMemo(
+    () => ddhList.filter((d) => isCancelledDdh(d)),
     [ddhList],
+  );
+
+  const currentDdhPool =
+    activeTab === "ddh_huy" ? cancelledDdhList : activeDdhList;
+
+  const countCat = useMemo(
+    () => currentDdhPool.filter((d) => d.LoaiDatHang === "NguyenLieu").length,
+    [currentDdhPool],
+  );
+  const countMay = useMemo(
+    () => currentDdhPool.filter((d) => d.LoaiDatHang === "PhuLieu").length,
+    [currentDdhPool],
   );
 
   useEffect(() => {
     if (activeTab === "lsx") {
-      fetchLsxList();
+      fetchLsxList({ silent: lsxList.length > 0 });
+      if (ddhList.length === 0) {
+        fetchDdhList({ silent: true });
+      }
     } else {
-      fetchDdhList();
+      fetchDdhList({ silent: ddhList.length > 0 });
+      if (lsxList.length === 0) {
+        fetchLsxList({ silent: true });
+      }
     }
   }, [activeTab]);
 
@@ -260,27 +296,28 @@ export default function ProductionOrderListPage({ initialTab }) {
 
   const filteredDdh = useMemo(() => {
     const q = keyword.trim().toLowerCase();
-    return ddhList.filter((item) => {
+    return currentDdhPool.filter((item) => {
       if (ddhTypeFilter !== "ALL" && item.LoaiDatHang !== ddhTypeFilter) {
         return false;
       }
-      if (ddhStatusFilter !== "ALL") {
+      // Ở View Đơn hiện hành ("ddh"), lọc theo trạng thái xử lý kho
+      if (activeTab === "ddh" && ddhStatusFilter !== "ALL") {
         const itemTt = String(item.TrangThai || "").toLowerCase();
         const itemPshTt = String(item.TinhTrangPSH || "").toLowerCase();
         if (ddhStatusFilter === "ChoSoanHang") {
-          if (itemTt === "dahuy" || (item.PhieuSoanHangId && itemPshTt !== "huy")) {
+          if (item.PhieuSoanHangId && itemPshTt !== "huy") {
             return false;
           }
         } else if (ddhStatusFilter === "DaTaoPSH") {
-          if (!item.PhieuSoanHangId || itemPshTt === "huy" || itemPshTt === "hoanthanh") {
+          if (
+            !item.PhieuSoanHangId ||
+            itemPshTt === "huy" ||
+            itemPshTt === "hoanthanh"
+          ) {
             return false;
           }
         } else if (ddhStatusFilter === "HoanThanh") {
           if (itemTt !== "hoanthanh" && itemPshTt !== "hoanthanh") {
-            return false;
-          }
-        } else if (ddhStatusFilter === "DaHuy") {
-          if (itemTt !== "dahuy") {
             return false;
           }
         }
@@ -304,7 +341,7 @@ export default function ProductionOrderListPage({ initialTab }) {
           .includes(q)
       );
     });
-  }, [ddhList, keyword, ddhTypeFilter, ddhStatusFilter]);
+  }, [currentDdhPool, activeTab, keyword, ddhTypeFilter, ddhStatusFilter]);
 
   const handleOpenBooking = (lsxItem, loaiDatHang) => {
     navigate(
@@ -529,22 +566,14 @@ export default function ProductionOrderListPage({ initialTab }) {
           setCancelling(true);
           await cancelMaterialOrderFromLsx(ddh.DonDatHangId, currentUserName);
           message.success(
-            `Đã hủy đơn đặt hàng [${ddh.SoDonDatHang}] thành công!`,
+            `Đã hủy đơn đặt hàng [${ddh.SoDonDatHang}]! Phiếu đã chuyển sang mục Đơn Đã Hủy.`,
           );
           if (selectedDdh?.DonDatHangId === ddh.DonDatHangId) {
-            setSelectedDdh((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    TrangThai: "DaHuy",
-                    TenTrangThai: "Đã hủy",
-                    PhieuSoanHangId: null,
-                    MaSoPhieuSoan: "",
-                  }
-                : null,
-            );
+            setSelectedDdh(null);
+            setDetailModalOpen(false);
           }
           await fetchDdhList();
+          fetchLsxList({ silent: true });
         } catch (err) {
           message.error(err?.message || "Không thể hủy đơn đặt hàng");
         } finally {
@@ -569,12 +598,16 @@ export default function ProductionOrderListPage({ initialTab }) {
                   <h2 className="truncate text-[16px] font-extrabold leading-tight text-egmf-ink sm:text-lg">
                     {activeTab === "lsx"
                       ? "Đặt hàng Nhà Cắt & Nhà May"
-                      : "Danh sách Đơn đặt & Tạo Phiếu Soạn"}
+                      : activeTab === "ddh_huy"
+                        ? "Danh sách Đơn Đặt Hàng Đã Hủy"
+                        : "Danh sách Đơn Đặt Hàng Hiện Hành"}
                   </h2>
                   <p className="mt-0.5 truncate text-xs text-egmf-muted sm:text-sm">
                     {activeTab === "lsx"
                       ? "Chọn Lệnh sản xuất để tính BOM và gửi đơn sang Kho"
-                      : "Tiếp nhận đơn đặt hàng và chủ động phát hành Phiếu Soạn Hàng"}
+                      : activeTab === "ddh_huy"
+                        ? "Lưu trữ tất cả các phiếu đặt hàng vật tư đã hủy"
+                        : "Chỉ hiển thị các đơn đặt hàng đang hoạt động và phát hành Phiếu Soạn Hàng"}
                   </p>
                 </div>
               </div>
@@ -596,18 +629,21 @@ export default function ProductionOrderListPage({ initialTab }) {
 
             <div className="space-y-3 p-3 sm:space-y-4 sm:p-5">
               {/* TAB BUTTONS - CAO 48PX DỄ CHẠM TRÊN ĐIỆN THOẠI & TABLET */}
-              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+              <div className="grid grid-cols-3 gap-1.5 rounded-xl bg-slate-100 p-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => handleChangeTab("lsx")}
-                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-extrabold transition-all sm:gap-2 sm:text-sm ${
+                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-extrabold transition-all sm:gap-2 sm:px-2.5 sm:text-sm ${
                     activeTab === "lsx"
                       ? "bg-egmf-primary text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <ClipboardList size={17} className="shrink-0" />
-                  <span className="truncate">
+                  <ClipboardList size={16} className="shrink-0" />
+                  <span className="truncate sm:hidden">
+                    LSX ({lsxList.length})
+                  </span>
+                  <span className="hidden truncate sm:inline">
                     1. Lệnh Sản Xuất ({lsxList.length})
                   </span>
                 </button>
@@ -615,90 +651,139 @@ export default function ProductionOrderListPage({ initialTab }) {
                 <button
                   type="button"
                   onClick={() => handleChangeTab("ddh")}
-                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-extrabold transition-all sm:gap-2 sm:text-sm ${
+                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-extrabold transition-all sm:gap-2 sm:px-2.5 sm:text-sm ${
                     activeTab === "ddh"
                       ? "bg-egmf-primary text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <FileSpreadsheet size={17} className="shrink-0" />
-                  <span className="truncate">
-                    2. Đơn Đặt Hàng ({ddhList.length})
+                  <FileSpreadsheet size={16} className="shrink-0" />
+                  <span className="truncate sm:hidden">
+                    Đơn đặt ({activeDdhList.length})
+                  </span>
+                  <span className="hidden truncate sm:inline">
+                    2. Đơn Đặt Hàng ({activeDdhList.length})
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleChangeTab("ddh_huy")}
+                  className={`flex min-h-[46px] touch-manipulation items-center justify-center gap-1 rounded-lg px-2 py-2 text-xs font-extrabold transition-all sm:gap-2 sm:px-2.5 sm:text-sm ${
+                    activeTab === "ddh_huy"
+                      ? "bg-rose-600 text-white shadow-sm"
+                      : "text-slate-600 hover:text-rose-700"
+                  }`}
+                >
+                  <Ban size={16} className="shrink-0" />
+                  <span className="truncate sm:hidden">
+                    Đã hủy ({cancelledDdhList.length})
+                  </span>
+                  <span className="hidden truncate sm:inline">
+                    3. Đơn Đã Hủy ({cancelledDdhList.length})
                   </span>
                 </button>
               </div>
 
-              {/* PHÂN LOẠI KHO NHẬN ĐƠN (KHO VẢI CẮT / KHO PHỤ LIỆU MAY) */}
-              {activeTab === "ddh" && (
-                <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                  <span className="text-xs font-bold text-slate-500">Kho nhận đơn:</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDdhTypeFilter("ALL");
-                      setSearchParams((prev) => {
-                        const next = new URLSearchParams(prev);
-                        next.delete("type");
-                        return next;
-                      });
-                    }}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all active:scale-95 ${
-                      ddhTypeFilter === "ALL"
-                        ? "bg-slate-900 text-white shadow-xs"
-                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    <span>Tất cả đơn</span>
-                    <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
-                      {ddhList.length}
+              {/* PHÂN LOẠI KHO NHẬN ĐƠN CHO CẢ VIEW ĐƠN HIỆN HÀNH & VIEW ĐƠN ĐÃ HỦY */}
+              {(activeTab === "ddh" || activeTab === "ddh_huy") && (
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-slate-500">
+                      Kho nhận đơn:
                     </span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDdhTypeFilter("ALL");
+                        setSearchParams((prev) => {
+                          const next = new URLSearchParams(prev);
+                          next.delete("type");
+                          return next;
+                        });
+                      }}
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all active:scale-95 ${
+                        ddhTypeFilter === "ALL"
+                          ? "bg-slate-900 text-white shadow-xs"
+                          : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span>
+                        {activeTab === "ddh_huy"
+                          ? "Tất cả phiếu hủy"
+                          : "Tất cả đơn hiện hành"}
+                      </span>
+                      <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-bold text-slate-700">
+                        {currentDdhPool.length}
+                      </span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDdhTypeFilter("NguyenLieu");
-                      setSearchParams((prev) => {
-                        const next = new URLSearchParams(prev);
-                        next.set("type", "NguyenLieu");
-                        return next;
-                      });
-                    }}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all active:scale-95 ${
-                      ddhTypeFilter === "NguyenLieu"
-                        ? "bg-blue-600 text-white shadow-xs"
-                        : "border border-blue-200 bg-blue-50/60 text-blue-700 hover:bg-blue-100"
-                    }`}
-                  >
-                    <Scissors size={13} />
-                    <span>Kho Vải (Cắt)</span>
-                    <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
-                      {countCat}
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDdhTypeFilter("NguyenLieu");
+                        setSearchParams((prev) => {
+                          const next = new URLSearchParams(prev);
+                          next.set("type", "NguyenLieu");
+                          return next;
+                        });
+                      }}
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all active:scale-95 ${
+                        ddhTypeFilter === "NguyenLieu"
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "border border-blue-200 bg-blue-50/60 text-blue-700 hover:bg-blue-100"
+                      }`}
+                    >
+                      <Scissors size={13} />
+                      <span>Kho Vải (Cắt)</span>
+                      <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-800">
+                        {countCat}
+                      </span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDdhTypeFilter("PhuLieu");
-                      setSearchParams((prev) => {
-                        const next = new URLSearchParams(prev);
-                        next.set("type", "PhuLieu");
-                        return next;
-                      });
-                    }}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all active:scale-95 ${
-                      ddhTypeFilter === "PhuLieu"
-                        ? "bg-amber-600 text-white shadow-xs"
-                        : "border border-amber-200 bg-amber-50/60 text-amber-800 hover:bg-amber-100"
-                    }`}
-                  >
-                    <Shirt size={13} />
-                    <span>Kho Phụ Liệu (May)</span>
-                    <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">
-                      {countMay}
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDdhTypeFilter("PhuLieu");
+                        setSearchParams((prev) => {
+                          const next = new URLSearchParams(prev);
+                          next.set("type", "PhuLieu");
+                          return next;
+                        });
+                      }}
+                      className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold transition-all active:scale-95 ${
+                        ddhTypeFilter === "PhuLieu"
+                          ? "bg-amber-600 text-white shadow-xs"
+                          : "border border-amber-200 bg-amber-50/60 text-amber-800 hover:bg-amber-100"
+                      }`}
+                    >
+                      <Shirt size={13} />
+                      <span>Kho Phụ Liệu (May)</span>
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">
+                        {countMay}
+                      </span>
+                    </button>
+                  </div>
+
+                  {activeTab === "ddh" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleChangeTab("ddh_huy")}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/80 px-3 py-1.5 text-xs font-extrabold text-rose-700 transition hover:bg-rose-100 active:scale-95"
+                    >
+                      <Ban size={13} />
+                      <span>Xem phiếu đã hủy ({cancelledDdhList.length})</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleChangeTab("ddh")}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-egmf-primary/30 bg-egmf-primary-tint px-3 py-1.5 text-xs font-extrabold text-egmf-primary-strong transition hover:opacity-90 active:scale-95"
+                    >
+                      <FileSpreadsheet size={13} />
+                      <span>Về đơn hiện hành ({activeDdhList.length})</span>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -739,27 +824,65 @@ export default function ProductionOrderListPage({ initialTab }) {
                         <option value="MoiTao">Mới tạo</option>
                       </select>
                     </label>
-                  ) : (
+                  ) : activeTab === "ddh" ? (
                     <>
                       <label className="order-filter-label">
                         Bộ phận / Kho
-                        <select className="order-combobox" value={ddhTypeFilter} onChange={(e) => setDdhTypeFilter(e.target.value)}>
+                        <select
+                          className="order-combobox"
+                          value={ddhTypeFilter}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setDdhTypeFilter(val);
+                            setSearchParams((prev) => {
+                              const next = new URLSearchParams(prev);
+                              if (val === "ALL") next.delete("type");
+                              else next.set("type", val);
+                              return next;
+                            });
+                          }}
+                        >
                           <option value="ALL">Tất cả bộ phận / kho</option>
                           <option value="NguyenLieu">Kho Vải (Nhà cắt)</option>
                           <option value="PhuLieu">Kho Phụ liệu (Nhà may)</option>
                         </select>
                       </label>
                       <label className="order-filter-label">
-                        Trạng thái đơn đặt hàng
-                        <select className="order-combobox" value={ddhStatusFilter} onChange={(e) => setDdhStatusFilter(e.target.value)}>
-                          <option value="ALL">Tất cả trạng thái</option>
+                        Trạng thái đơn hiện hành
+                        <select
+                          className="order-combobox"
+                          value={ddhStatusFilter}
+                          onChange={(e) => setDdhStatusFilter(e.target.value)}
+                        >
+                          <option value="ALL">Tất cả đơn hiện hành</option>
                           <option value="ChoSoanHang">Chờ tạo phiếu soạn</option>
                           <option value="DaTaoPSH">Đã có phiếu soạn</option>
                           <option value="HoanThanh">Đã xuất</option>
-                          <option value="DaHuy">Đã hủy</option>
                         </select>
                       </label>
                     </>
+                  ) : (
+                    <label className="order-filter-label sm:col-span-2">
+                      Bộ phận / Kho (Đơn đã hủy)
+                      <select
+                        className="order-combobox"
+                        value={ddhTypeFilter}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setDdhTypeFilter(val);
+                          setSearchParams((prev) => {
+                            const next = new URLSearchParams(prev);
+                            if (val === "ALL") next.delete("type");
+                            else next.set("type", val);
+                            return next;
+                          });
+                        }}
+                      >
+                        <option value="ALL">Tất cả bộ phận / kho</option>
+                        <option value="NguyenLieu">Kho Vải (Nhà cắt)</option>
+                        <option value="PhuLieu">Kho Phụ liệu (Nhà may)</option>
+                      </select>
+                    </label>
                   )}
                 </div>
               </div>
@@ -898,7 +1021,13 @@ export default function ProductionOrderListPage({ initialTab }) {
               )
             ) : filteredDdh.length === 0 ? (
               <div className="rounded-2xl border border-egmf-border bg-white py-12">
-                <Empty description="Chưa có đơn đặt hàng nào phù hợp bộ lọc" />
+                <Empty
+                  description={
+                    activeTab === "ddh_huy"
+                      ? "Chưa có phiếu đặt hàng nào bị hủy phù hợp bộ lọc"
+                      : "Hiện không có đơn đặt hàng đang hoạt động nào phù hợp bộ lọc"
+                  }
+                />
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
@@ -921,10 +1050,10 @@ export default function ProductionOrderListPage({ initialTab }) {
                           handleViewDdhDetail(ddh);
                         }
                       }}
-                      className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-3.5 shadow-egmf-card transition active:scale-[0.99] hover:border-egmf-primary/60 sm:p-4 ${
-                        ddh.TrangThai === "DaHuy"
-                          ? "border-slate-200 bg-slate-50/80 opacity-75"
-                          : "border-slate-200/90 bg-white"
+                      className={`flex cursor-pointer flex-col justify-between rounded-2xl border p-3.5 shadow-egmf-card transition active:scale-[0.99] sm:p-4 ${
+                        isCancelledDdh(ddh)
+                          ? "border-rose-200/80 bg-white hover:border-rose-300"
+                          : "border-slate-200/90 bg-white hover:border-egmf-primary/60"
                       }`}
                     >
                       <div>

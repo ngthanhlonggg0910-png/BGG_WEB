@@ -142,6 +142,15 @@ export default function AppRouter() {
         />
 
         <Route
+          path="/cancelled-material-orders"
+          element={
+            <PrivateRoute>
+              <ProductionOrderListPage initialTab="ddh_huy" />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/production-order-booking"
           element={
             <PrivateRoute>

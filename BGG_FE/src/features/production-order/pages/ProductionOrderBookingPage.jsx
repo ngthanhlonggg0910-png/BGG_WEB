@@ -154,6 +154,7 @@ export default function ProductionOrderBookingPage() {
   const [sizeRows, setSizeRows] = useState([]);
   const [existingOrders, setExistingOrders] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyTab, setHistoryTab] = useState("active"); // "active" | "cancelled"
 
   // Thông tin đơn đặt hàng ("ALL" | "NguyenLieu" | "PhuLieu" đồng bộ với Desktop)
   const [loaiDatHang, setLoaiDatHang] = useState(initialType);
@@ -400,6 +401,21 @@ export default function ProductionOrderBookingPage() {
   const selectedSizeCount = useMemo(() => {
     return sizeRows.filter((r) => r.checked && Number(r.SoLuongDat) > 0).length;
   }, [sizeRows]);
+
+  const activeExistingOrders = useMemo(
+    () =>
+      existingOrders.filter(
+        (o) => String(o?.TrangThai || "").trim().toLowerCase() !== "dahuy",
+      ),
+    [existingOrders],
+  );
+  const cancelledExistingOrders = useMemo(
+    () =>
+      existingOrders.filter(
+        (o) => String(o?.TrangThai || "").trim().toLowerCase() === "dahuy",
+      ),
+    [existingOrders],
+  );
 
   const tickedBomCount = useMemo(() => {
     return bomItems.filter((it) => it.checked).length;
@@ -1071,10 +1087,31 @@ export default function ProductionOrderBookingPage() {
                   )}
                 </div>
 
-                <div className="border-t border-slate-100 px-3.5 py-2.5 sm:px-5">
-                  <button type="button" onClick={() => setHistoryOpen(true)} className="order-color-only" aria-haspopup="dialog">
-                    Lịch sử đặt hàng ({existingOrders.length})
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-3.5 py-2.5 sm:px-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHistoryTab("active");
+                      setHistoryOpen(true);
+                    }}
+                    className="order-color-only"
+                    aria-haspopup="dialog"
+                  >
+                    Đơn đặt hiện hành ({activeExistingOrders.length})
                   </button>
+                  {cancelledExistingOrders.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistoryTab("cancelled");
+                        setHistoryOpen(true);
+                      }}
+                      className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+                      aria-haspopup="dialog"
+                    >
+                      Phiếu đã hủy ({cancelledExistingOrders.length})
+                    </button>
+                  )}
                 </div>
               </section>
 
@@ -2002,27 +2039,95 @@ export default function ProductionOrderBookingPage() {
         styles={{ body: { maxHeight: "65dvh", overflowY: "auto", padding: 16 }, header: { padding: "16px 48px 0 16px" }, footer: { padding: "0 16px 16px" } }}
       >
         <div className="order-page space-y-3">
-          {existingOrders.length === 0 ? <Empty description="Chưa có đơn đặt hàng" /> : existingOrders.map((order) => {
-            const status = getOrderStatusChip(order);
-            return (
-              <article key={order.DonDatHangId} className="rounded-xl border border-slate-200 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <strong className="text-base text-slate-900">{order.SoDonDatHang}</strong>
-                  <span className={`rounded-full border px-2 py-1 text-sm ${status.cls}`}>{status.text}</span>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  {order.LoaiDatHang === "NguyenLieu" ? "Nhà cắt · Nguyên liệu" : "Nhà may · Phụ liệu"}
-                </p>
-                {order.NguoiDat && <p className="mt-1 text-sm text-slate-600">Người đặt: {order.NguoiDat}</p>}
-                {order.NgayDat && dayjs(order.NgayDat).isValid() && <p className="mt-1 text-sm text-slate-600">Ngày đặt: {dayjs(order.NgayDat).format("DD/MM/YYYY HH:mm")}</p>}
-                {canCancelOrder(order) && (
-                  <button type="button" disabled={cancellingId === order.DonDatHangId} onClick={() => handleCancelOrder(order)} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 text-sm font-semibold text-rose-700 disabled:opacity-50">
-                    <Ban size={16} />{cancellingId === order.DonDatHangId ? "Đang hủy..." : "Hủy đơn"}
-                  </button>
-                )}
-              </article>
-            );
-          })}
+          <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => setHistoryTab("active")}
+              className={`rounded-lg px-3 py-2 text-xs font-extrabold transition sm:text-sm ${
+                historyTab === "active"
+                  ? "bg-egmf-primary text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Đơn hiện hành ({activeExistingOrders.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setHistoryTab("cancelled")}
+              className={`rounded-lg px-3 py-2 text-xs font-extrabold transition sm:text-sm ${
+                historyTab === "cancelled"
+                  ? "bg-rose-600 text-white shadow-xs"
+                  : "text-slate-600 hover:text-rose-700"
+              }`}
+            >
+              Phiếu đã hủy ({cancelledExistingOrders.length})
+            </button>
+          </div>
+
+          {(historyTab === "cancelled"
+            ? cancelledExistingOrders
+            : activeExistingOrders
+          ).length === 0 ? (
+            <Empty
+              description={
+                historyTab === "cancelled"
+                  ? "Chưa có phiếu đặt hàng nào bị hủy"
+                  : "Chưa có đơn đặt hàng đang hiện hành"
+              }
+            />
+          ) : (
+            (historyTab === "cancelled"
+              ? cancelledExistingOrders
+              : activeExistingOrders
+            ).map((order) => {
+              const status = getOrderStatusChip(order);
+              return (
+                <article
+                  key={order.DonDatHangId}
+                  className="rounded-xl border border-slate-200 p-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <strong className="text-base text-slate-900">
+                      {order.SoDonDatHang}
+                    </strong>
+                    <span
+                      className={`rounded-full border px-2 py-1 text-sm ${status.cls}`}
+                    >
+                      {status.text}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">
+                    {order.LoaiDatHang === "NguyenLieu"
+                      ? "Nhà cắt · Nguyên liệu"
+                      : "Nhà may · Phụ liệu"}
+                  </p>
+                  {order.NguoiDat && (
+                    <p className="mt-1 text-sm text-slate-600">
+                      Người đặt: {order.NguoiDat}
+                    </p>
+                  )}
+                  {order.NgayDat && dayjs(order.NgayDat).isValid() && (
+                    <p className="mt-1 text-sm text-slate-600">
+                      Ngày đặt: {dayjs(order.NgayDat).format("DD/MM/YYYY HH:mm")}
+                    </p>
+                  )}
+                  {canCancelOrder(order) && (
+                    <button
+                      type="button"
+                      disabled={cancellingId === order.DonDatHangId}
+                      onClick={() => handleCancelOrder(order)}
+                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 text-sm font-semibold text-rose-700 disabled:opacity-50"
+                    >
+                      <Ban size={16} />
+                      {cancellingId === order.DonDatHangId
+                        ? "Đang hủy..."
+                        : "Hủy đơn"}
+                    </button>
+                  )}
+                </article>
+              );
+            })
+          )}
         </div>
       </Modal>
     </MainLayout>
