@@ -245,16 +245,6 @@ export default function ProductionOrderBookingPage() {
       setExistingOrders(orders);
       setBulkSyncQty("");
 
-      if (header) {
-        const defaultDate =
-          loaiDatHang === "PhuLieu"
-            ? header.NgayVaoChuyen
-            : header.NgayCanMauCat || header.NgayVaoChuyen;
-        if (defaultDate && dayjs(defaultDate).isValid()) {
-          setNgayCanGiao(dayjs(defaultDate).format("YYYY-MM-DD"));
-        }
-      }
-
       const mappedRows = chiTiet.map((r) => ({
         ...r,
         checked: true,
@@ -293,6 +283,7 @@ export default function ProductionOrderBookingPage() {
   };
 
   useEffect(() => {
+    setNgayCanGiao(dayjs().format("YYYY-MM-DD"));
     loadLsxDetail();
   }, [lsxId]);
 
@@ -323,15 +314,6 @@ export default function ProductionOrderBookingPage() {
   const handleSwitchLoaiDatHang = async (newLoai) => {
     if (newLoai === loaiDatHang) return;
     setLoaiDatHang(newLoai);
-    if (lsxHeader) {
-      const targetDate =
-        newLoai === "PhuLieu"
-          ? lsxHeader.NgayVaoChuyen
-          : lsxHeader.NgayCanMauCat || lsxHeader.NgayVaoChuyen;
-      if (targetDate && dayjs(targetDate).isValid()) {
-        setNgayCanGiao(dayjs(targetDate).format("YYYY-MM-DD"));
-      }
-    }
     await runCalculateBom(sizeRows, newLoai, ghiChuLot);
   };
 
