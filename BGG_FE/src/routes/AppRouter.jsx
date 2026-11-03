@@ -30,6 +30,7 @@ import InspectionDetailPage from "../features/mapping-qr/pages/InspectionDetailP
 import MappingQrMaterialDetailPage from "../features/mapping-qr/pages/MappingQrMaterialDetailPage";
 import AccessoryPickingPage from "../features/picking-order/pages/AccessoryPickingPage";
 import AccessoryInspectionListPage from "../features/accessory-inspection/page/AccessoryInspectionListPage";
+import AccessoryQualityInspectionPage from "../features/accessory-inspection/page/AccessoryQualityInspectionPage";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -273,6 +274,15 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <AccessoryInspectionListPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/accessory-quality-inspection"
+          element={
+            <PrivateRoute>
+              <AccessoryQualityInspectionPage />
             </PrivateRoute>
           }
         />
