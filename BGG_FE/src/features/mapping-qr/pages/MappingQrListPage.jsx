@@ -115,10 +115,7 @@ export default function MappingQrListPage({
   const isAccessoryInspection = sourcePage === "accessory-inspection";
   const loai = isAccessoryInspection ? "pl" : location.state?.loai;
 
-  console.log(sourcePage);
-
   const [savedFilter] = useState(() => readSavedFilter(loai));
-
   const [statusOptions, setStatusOptions] = useState([]);
   const [keyword, setKeyword] = useState(savedFilter?.keyword ?? "");
   const [loading, setLoading] = useState(false);
