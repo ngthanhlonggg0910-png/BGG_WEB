@@ -9,6 +9,7 @@ import { PickingOrderModule } from './presentation/modules/picking-order.module.
 import { FabricInspectionModule } from './presentation/modules/fabric-inspection.module.js';
 import { ProductionOrderModule } from './presentation/modules/production-order.module.js';
 import { MappingQrModule } from './presentation/modules/mapping-qr.module.js';
+import { MaterialInspectionModule } from './presentation/modules/material-inspection.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -22,6 +23,7 @@ import { MappingQrModule } from './presentation/modules/mapping-qr.module.js';
     FabricInspectionModule,
     ProductionOrderModule,
     MappingQrModule,
+    MaterialInspectionModule,
   ],
 })
 export class AppModule {}

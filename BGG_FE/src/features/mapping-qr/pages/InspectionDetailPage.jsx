@@ -44,7 +44,7 @@ export default function InspectionDetailPage() {
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(true);
   const sourcePage = location.state?.sourcePage;
   const inforPGD = location?.state?.data;
-  console.log(inforPGD);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -115,8 +115,6 @@ export default function InspectionDetailPage() {
       (firstItem, secondItem) =>
         getQuantityPriority(firstItem) - getQuantityPriority(secondItem),
     );
-
-  //   console.log(materials);
 
   const toggleSelected = (id) => {
     setSelected((prev) =>
@@ -310,8 +308,6 @@ export default function InspectionDetailPage() {
           SoGross: tem.SL,
           QrTrangMapping: qr,
         };
-
-        console.log("PAYLOAD MAPPING:", payload);
 
         const response = await saveMapping(payload);
 
@@ -612,6 +608,17 @@ export default function InspectionDetailPage() {
                             </div>
                             <div className="min-w-0">
                               <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                                Code màu vải
+                              </dt>
+                              <dd
+                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                title={item.CodeMauVai}
+                              >
+                                {item.CodeMauVai || "—"}
+                              </dd>
+                            </div>
+                            <div className="min-w-0">
+                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
                                 Lot
                               </dt>
                               <dd
@@ -785,6 +792,8 @@ export default function InspectionDetailPage() {
                               navigate(`/accessory-quality-inspection`, {
                                 state: {
                                   item,
+                                  maPhieu: inforPGD.maPhieu,
+                                  pgdId: pgdId,
                                 },
                               });
                             }
