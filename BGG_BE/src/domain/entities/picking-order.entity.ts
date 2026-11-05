@@ -44,7 +44,17 @@ export class wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang {
   Lot: string;
   FA: string;
   SLBD: number;
+  SoLuong?: number;
+  SoLuongXuat?: number;
+  SLYeuCau?: number;
   MaRo: string;
+  CayId?: number;
+  CTPGDId?: number;
+  DVT?: string;
+  Mau?: string;
+  QuyCach?: string;
+  MaVatTu?: string;
+  PSHId?: number;
 }
 
 //Ghi nhận việc soạn hàng bằng cách quét mã cây vải,
