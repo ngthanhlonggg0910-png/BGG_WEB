@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ClipboardList,
   Search,
+  ShieldCheck,
 } from "lucide-react";
 
 import { useLocation } from "react-router-dom";
@@ -15,6 +16,7 @@ import TextField from "../../../shared/components/ui/TextField";
 import Button from "../../../shared/components/ui/Button";
 import PickingMaterialCard from "../components/PickingMaterialCard";
 import PickingMaterialModal from "../components/PickingMaterialModal";
+import ConfirmPickingModal from "../components/ConfirmPickingModal";
 import { getVatTuByRoAndPhieu } from "../api/pickingOrderAPI";
 
 export default function PickingOrderMaterialList() {
@@ -25,6 +27,7 @@ export default function PickingOrderMaterialList() {
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [keyword, setKeyWord] = useState("");
 
   const PhieuSoanHangId = Number(location.state?.PhieuSoanHangId);
@@ -78,25 +81,49 @@ export default function PickingOrderMaterialList() {
 
   return (
     <MainLayout screenTitle="Nguyên vật liệu xuất">
-      <div className="min-h-full bg-gray-50 p-3 sm:p-5">
-        <div className="mx-auto w-full max-w-5xl space-y-5">
-          {/* SCAN INPUT */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <ScanBarcode size={23} className="text-egmf-primary" />
+      <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto max-w-4xl space-y-6">
+          {/* SEARCH CARD */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <ScanBarcode size={24} />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">
+                    Soạn nguyên vật liệu
+                  </h1>
+                  <p className="text-xs text-gray-500">Mã rổ: <b>{MaRo || "—"}</b></p>
+                </div>
+              </div>
 
-              <h2 className="text-lg font-bold text-gray-900">
-                Quét mã vật tư
-              </h2>
+              {/* NÚT XÁC NHẬN XUẤT KHO TRỰC TIẾP */}
+              {PhieuSoanHangId > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
+                >
+                  <ShieldCheck size={18} />
+                  <span>Xác nhận xuất kho</span>
+                </button>
+              )}
             </div>
 
-            {/* Ô nhập mã cây */}
-            <div className="min-w-0 flex-1">
+            <div className="space-y-4">
               <TextField
-                type="text"
-                placeholder="Nhập hoặc quét mã cây..."
                 value={materialCode}
                 onChange={(e) => setMaterialCode(e.target.value)}
+                placeholder="Nhập hoặc quét mã vạch cây vải..."
+                size="large"
+                allowClear
+                autoFocus
+                onPressEnter={() => {
+                  if (materialCode?.trim()) {
+                    setOpen(true);
+                  }
+                }}
                 className="!w-full mb-3"
               />
             </div>
@@ -139,7 +166,7 @@ export default function PickingOrderMaterialList() {
                 <div className="flex items-center">
                   <ClipboardList size={23} className="text-egmf-primary" />
 
-                  <h2 className="text-lg font-bold text-gray-900">
+                  <h2 className="text-lg font-bold text-gray-900 ml-2">
                     Danh sách nguyên vật liệu
                   </h2>
                 </div>
@@ -149,24 +176,15 @@ export default function PickingOrderMaterialList() {
               </div>
               <div className="relative w-full">
                 <Search
-                  size={21}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                 />
-
                 <input
-                  type="search"
-                  placeholder="Nhập hoặc quét mã cây..."
+                  type="text"
                   value={keyword}
                   onChange={(e) => setKeyWord(e.target.value)}
-                  className="
-                    h-13 w-full rounded-xl
-                    border border-gray-200 bg-white
-                    pl-12 pr-4 text-base text-gray-800
-                    outline-none transition-all
-                    placeholder:text-gray-400
-                    focus:border-egmf-primary
-                    focus:ring-2 focus:ring-egmf-primary/15
-                  "
+                  placeholder="Lọc danh sách vật tư..."
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-4 text-sm text-gray-800 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
                 />
               </div>
             </div>
@@ -180,13 +198,13 @@ export default function PickingOrderMaterialList() {
                   </div>
 
                   <h3 className="text-base font-bold text-gray-800">
-                    {listSearch.trim()
+                    {materialCode.trim()
                       ? "Không tìm thấy vật tư"
                       : "Chưa có dữ liệu vật tư"}
                   </h3>
 
                   <p className="mt-2 max-w-xs text-sm leading-6 text-gray-500">
-                    {listSearch.trim()
+                    {materialCode.trim()
                       ? "Không có vật tư phù hợp với mã đang tìm kiếm."
                       : "Danh sách vật tư sẽ hiển thị tại đây sau khi tải dữ liệu."}
                   </p>
@@ -242,13 +260,23 @@ export default function PickingOrderMaterialList() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal soạn cây */}
       <PickingMaterialModal
         open={open}
         onClose={() => setOpen(false)}
         nplSearch={nplSearch}
         phieuSoanHangId={PhieuSoanHangId}
         onReload={fetchMaterials}
+      />
+
+      {/* Modal xác nhận xuất kho */}
+      <ConfirmPickingModal
+        open={confirmModalOpen}
+        onClose={() => setConfirmModalOpen(false)}
+        phieuSoanHangId={PhieuSoanHangId}
+        onSuccess={() => {
+          fetchMaterials();
+        }}
       />
     </MainLayout>
   );

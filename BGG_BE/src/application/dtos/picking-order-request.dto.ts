@@ -1,12 +1,45 @@
 import {
+  IsBoolean,
   IsDateString,
   IsEmpty,
   IsInt,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Min,
 } from 'class-validator';
+
+export class wh_KiemTraTienDoSoanHang_RequestDTO {
+  @IsInt()
+  @Min(1)
+  PhieuSoanHangId: number;
+}
+
+export class wh_XacNhanXuatKho_RequestDTO {
+  @IsInt()
+  @Min(1)
+  PhieuSoanHangId: number;
+
+  @IsBoolean()
+  xacNhanHoanTat: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  choPhepDongKhiThieu?: boolean;
+
+  @IsInt()
+  @Min(1)
+  tkId: number;
+
+  @IsString()
+  @IsNotEmpty()
+  tenNguoiXacNhan: string;
+
+  @IsOptional()
+  @IsString()
+  ghiChu?: string;
+}
 
 export class wh_DanhSachPhieuSoanHangNgayVaTinhTrang_RequestDTO {
   @IsString()

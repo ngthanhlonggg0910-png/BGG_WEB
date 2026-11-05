@@ -6,6 +6,8 @@ import {
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_RequestDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_RequestDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_RequestDTO,
+  wh_KiemTraTienDoSoanHang_RequestDTO,
+  wh_XacNhanXuatKho_RequestDTO,
 } from '../../application/dtos/picking-order-request.dto.js';
 import {
   wh_DanhSachPhieuSoanHang_TuNgayDenNgay_ResponseDTO,
@@ -13,6 +15,8 @@ import {
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_ResponseDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_ResponseDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_ResponseDTO,
+  wh_KiemTraTienDoSoanHang_ResponseDTO,
+  wh_XacNhanXuatKho_ResponseDTO,
 } from '../../application/dtos/picking-order-response.dto.js';
 
 @Controller('picking-order')
@@ -22,7 +26,7 @@ export class PickingOrderController {
     public readonly pickingOrderService: IPickingOrderService,
   ) {}
 
-  //Lấy danh sách phiếu soạn hàng theo ngày và tình trạng
+  // Lấy danh sách phiếu soạn hàng theo ngày và tình trạng
   @Post('wh_DanhSachPhieuSoanHangNgayVaTinhTrang')
   async getDanhSachPhieuSoanHangTheoNgayVaTinhTrang(
     @Body() dto: wh_DanhSachPhieuSoanHangNgayVaTinhTrang_RequestDTO,
@@ -32,7 +36,7 @@ export class PickingOrderController {
     );
   }
 
-  //Lấy danh sách chi tiết psh theo PhieuSoanHangId
+  // Lấy danh sách chi tiết psh theo PhieuSoanHangId
   @Post('wh_DanhSachChiTietPhieuSoanHang_TheoPhieuSoanHangId')
   async getDanhSachChiTietPhieuSoanHangTheoPhieuSoanHangId(
     @Body() dto: wh_DanhSachChiTietPhieuSoanHang_TheoPhieuSoanHangId_RequestDTO,
@@ -42,7 +46,7 @@ export class PickingOrderController {
     );
   }
 
-  //Lấy danh sách vật tư theo mã rọ + psh
+  // Lấy danh sách vật tư theo mã rọ + psh
   @Post('wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang')
   async getDanhSachVatTuTheoMaRoVaPhieuSoanHang(
     @Body() dto: wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_RequestDTO,
@@ -62,7 +66,7 @@ export class PickingOrderController {
     );
   }
 
-  //Soạn hàng
+  // Soạn hàng
   @Post('wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android')
   async wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android(
     @Body()
@@ -71,5 +75,21 @@ export class PickingOrderController {
     return this.pickingOrderService.wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android(
       dto,
     );
+  }
+
+  // Kiểm tra tiến độ soạn hàng và đợt xuất
+  @Post('wh_KiemTraTienDoSoanHang')
+  async kiemTraTienDoSoanHang(
+    @Body() dto: wh_KiemTraTienDoSoanHang_RequestDTO,
+  ): Promise<wh_KiemTraTienDoSoanHang_ResponseDTO> {
+    return this.pickingOrderService.kiemTraTienDoSoanHang(dto);
+  }
+
+  // Xác nhận xuất kho (xuất đợt hoặc hoàn tất xuất kho)
+  @Post('wh_XacNhanXuatKho')
+  async xacNhanXuatKho(
+    @Body() dto: wh_XacNhanXuatKho_RequestDTO,
+  ): Promise<wh_XacNhanXuatKho_ResponseDTO> {
+    return this.pickingOrderService.xacNhanXuatKho(dto);
   }
 }

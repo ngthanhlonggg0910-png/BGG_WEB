@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Archive, Barcode, Check, PackageOpen, Search, X } from "lucide-react";
+import { Archive, Barcode, Check, PackageOpen, Search, ShieldCheck, X } from "lucide-react";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { useLocation } from "react-router-dom";
 import { layDanhSachVatTuTheoMaQrTrang } from "../api/pickingOrderAPI";
@@ -9,6 +9,7 @@ import {
   showWarningToast,
 } from "../../../shared/components/ui/CustomToast";
 import { getCurrentUser } from "../../../shared/auth/session";
+import ConfirmPickingModal from "../components/ConfirmPickingModal";
 
 import { pickFabricRoll } from "../api/pickingOrderAPI";
 
@@ -23,6 +24,7 @@ export default function AccessoryPickingPage() {
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
   const updateItem = (id, field, value) => {
     setItems((prev) =>
@@ -79,7 +81,6 @@ export default function AccessoryPickingPage() {
           error.message ||
           "Có lỗi xảy ra khi lấy danh sách phụ liệu",
       );
-
       setItems([]);
     } finally {
       setLoading(false);
@@ -90,71 +91,68 @@ export default function AccessoryPickingPage() {
     fetchPL();
   }, [phieuSoanHangId, qrTrangMapping]);
 
+  //Xử lý xác nhận xuất cây
   const handleComfirm = async () => {
-    if (submitting) return;
+    const checkedItems = items.filter((item) => item.checked);
 
-    const selectedItems = items.filter((item) => item.checked);
-
-    if (selectedItems.length === 0) {
-      showWarningToast("Vui lòng chọn ít nhất 1 cây!");
+    if (checkedItems.length === 0) {
+      showWarningToast("Vui lòng chọn ít nhất một cây phụ liệu!");
       return;
+    }
+
+    //kiểm tra số lượng thực xuất
+    for (const item of checkedItems) {
+      const sltx = Number(item.SLTX);
+      if (!item.SLTX || isNaN(sltx) || sltx <= 0) {
+        showWarningToast(
+          `Vui lòng nhập số lượng thực xuất hợp lệ cho cây ${item.MaCay}`,
+        );
+        return;
+      }
+
+      if (sltx > item.SoLuong) {
+        showWarningToast(
+          `Số lượng thực xuất của cây ${item.MaCay} không được lớn hơn số lượng tồn (${item.SoLuong})`,
+        );
+        return;
+      }
     }
 
     setSubmitting(true);
 
-    let successCount = 0;
-    const errors = [];
-
     try {
-      for (const item of selectedItems) {
-        const sl = Number(item.SLTX);
-
-        if (!Number.isFinite(sl) || sl <= 0) {
-          errors.push(`Cây ${item.MaCay}: Số lượng không hợp lệ`);
-          continue;
-        }
-
+      for (const item of checkedItems) {
         const payload = {
           PhieuSoanHangId: phieuSoanHangId,
           MaCay: item.MaCay,
-          SoLuongThucSoan: sl,
-          TKQuet: Number(TKId),
+          SoLuongThucSoan: Number(item.SLTX),
+          TKQuet: TKId,
           TenNguoiQuyetXuat: tenNguoiQuetXuat,
         };
 
-        try {
-          const response = await pickFabricRoll(payload);
+        const res = await pickFabricRoll(payload);
 
-          if (response.success) {
-            successCount++;
-          } else {
-            errors.push(`Cây ${item.MaCay}: ${response.message}`);
-          }
-        } catch (error) {
-          console.error("Lỗi API:", error);
-
-          const message =
-            error.response?.data?.message || error.message || "Lỗi gọi API";
-
-          errors.push(`Cây ${item.MaCay}: ${message}`);
+        if (!res.success) {
+          showErrorToast(
+            res.message || `Soạn cây ${item.MaCay} không thành công!`,
+          );
+          return;
         }
       }
 
-      // Chạy sau khi đã soạn hết các cây
-      if (successCount === selectedItems.length) {
-        showSuccessToast(`Soạn thành công ${successCount} cây!`);
-      } else {
-        showErrorToast(
-          `Soạn thành công ${successCount}/${selectedItems.length} cây.\n${errors.join("\n")}`,
-        );
-      }
+      showSuccessToast("Soạn phụ liệu thành công!");
 
-      // Chỉ reload 1 lần sau khi soạn xong
-      if (successCount > 0) {
-        await fetchPL();
-      }
+      // Tải lại danh sách
+      await fetchPL();
+    } catch (error) {
+      console.error("Lỗi khi soạn phụ liệu:", error);
+
+      showErrorToast(
+        error.response?.data?.message ||
+          error.message ||
+          "Có lỗi xảy ra khi soạn phụ liệu",
+      );
     } finally {
-      // Chỉ mở lại nút khi toàn bộ quá trình kết thúc
       setSubmitting(false);
     }
   };
@@ -172,11 +170,12 @@ export default function AccessoryPickingPage() {
   };
 
   return (
-    <MainLayout screenTitle="Phiếu soạn hàng: GPA26100104">
+    <MainLayout screenTitle={`Soạn phụ liệu: ${qrTrangMapping || ""}`}>
       <div className="min-h-screen bg-slate-50">
         <div className="mx-auto w-full max-w-6xl px-4 py-5 pb-32 sm:px-6 sm:py-7 lg:px-8">
-          <section className="mx-auto w-full max-w-xl">
-            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 shadow-sm transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
+          {/* SEARCH & ACTIONS */}
+          <section className="mx-auto flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 shadow-sm transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
               <Search
                 size={19}
                 strokeWidth={2.25}
@@ -201,6 +200,18 @@ export default function AccessoryPickingPage() {
                 </button>
               )}
             </div>
+
+            {/* NÚT XÁC NHẬN XUẤT KHO */}
+            {phieuSoanHangId > 0 && (
+              <button
+                type="button"
+                onClick={() => setConfirmModalOpen(true)}
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
+              >
+                <ShieldCheck size={18} />
+                <span>Xác nhận xuất kho</span>
+              </button>
+            )}
           </section>
 
           <main className="mt-5 grid gap-4 lg:grid-cols-2 lg:gap-5">
@@ -218,7 +229,7 @@ export default function AccessoryPickingPage() {
                     khi có dữ liệu.
                   </p>
                   <span className="mt-5 inline-flex rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">
-                    Phiếu GPA26100104
+                    Mã rổ: {qrTrangMapping || "—"}
                   </span>
                 </div>
               </section>
@@ -241,60 +252,36 @@ export default function AccessoryPickingPage() {
                           onChange={(e) =>
                             updateItem(item.CayId, "checked", e.target.checked)
                           }
-                          className="size-7 shrink-0 cursor-pointer rounded-lg border-blue-300 text-egmf-primary accent-egmf-primary focus:ring-4 focus:ring-egmf-primary/20"
+                          className="size-5 rounded border-slate-300 text-egmf-primary focus:ring-egmf-primary"
                         />
-                        <span className="text-sm font-bold text-egmf-ink">
-                          Chọn cây để xuất
+                        <span className="truncate text-base font-extrabold text-egmf-ink">
+                          {item.MaCay}
                         </span>
                       </label>
-
-                      <span className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                        YC: {item.SLYeuCau}
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                        <Barcode size={14} />
+                        {item.CayId}
                       </span>
                     </div>
 
-                    <div className="pt-4">
-                      <div className="flex items-start gap-3">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-egmf-primary-soft text-egmf-primary">
-                          <Barcode size={21} strokeWidth={2} />
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-xs text-slate-500">Tên vật tư:</span>
+                        <span className="text-right text-xs font-bold text-slate-800">
+                          {item.TenNPL || item.MaVatTu || "—"}
                         </span>
-                        <div className="min-w-0">
-                          <span className="block text-xs font-semibold uppercase tracking-[.08em] text-egmf-muted">
-                            Mã cây
-                          </span>
-                          <h2 className="mt-0.5 break-all text-base font-extrabold tracking-[.01em] text-egmf-primary-strong sm:text-lg">
-                            {item.MaCay}
-                          </h2>
-                        </div>
                       </div>
-
-                      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                        <span className="block text-xs font-semibold uppercase tracking-[.08em] text-egmf-muted">
-                          Tên NPL
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-slate-500">Màu / Quy cách:</span>
+                        <span className="text-right text-xs font-semibold text-slate-700">
+                          {item.Mau || "—"} / {item.QuyCach || "—"}
                         </span>
-                        <p className="mt-1 break-words text-sm font-medium leading-6 text-slate-700">
-                          {item.TenNPL}
-                        </p>
                       </div>
-
-                      <div className="mt-4 grid grid-cols-2 gap-3">
-                        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                          <span className="flex items-center gap-1.5 text-xs font-semibold text-egmf-muted">
-                            <Archive size={14} className="text-egmf-primary" />
-                            SL đã xuất
-                          </span>
-                          <strong className="mt-1 block text-lg font-extrabold text-egmf-ink">
-                            {item.SoLuongXuat}
-                          </strong>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                          <span className="text-xs font-semibold text-egmf-muted">
-                            SL tồn
-                          </span>
-                          <strong className="mt-1 block text-lg font-extrabold text-egmf-ink">
-                            {item.SLBD}
-                          </strong>
-                        </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-slate-500">Tồn rổ:</span>
+                        <span className="text-xs font-extrabold text-blue-600">
+                          {Number(item.SoLuong || 0).toLocaleString()} {item.DVT || ""}
+                        </span>
                       </div>
 
                       <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
@@ -331,7 +318,7 @@ export default function AccessoryPickingPage() {
         <footer className="fixed bottom-[calc(80px+env(safe-area-inset-bottom))] left-0 right-0 z-20 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-4px_14px_rgba(15,23,42,.08)] md:bottom-0 md:left-[270px] md:px-8">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
             <span className="hidden text-sm text-egmf-muted sm:block">
-              Kiểm tra số lượng trước khi xác nhận xuất kho.
+              Kiểm tra số lượng trước khi xác nhận soạn.
             </span>
 
             <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto">
@@ -351,11 +338,21 @@ export default function AccessoryPickingPage() {
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-egmf-primary px-5 text-sm font-extrabold text-white shadow-[0_6px_14px_rgba(37,99,235,.2)] transition hover:bg-egmf-primary-strong hover:shadow-[0_8px_18px_rgba(37,99,235,.26)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/25 active:scale-[.98] sm:min-w-[150px]"
               >
                 <Check size={18} strokeWidth={2.7} />
-                {submitting ? "Đang soạn..." : "Xác nhận"}
+                {submitting ? "Đang soạn..." : "Xác nhận soạn"}
               </button>
             </div>
           </div>
         </footer>
+
+        {/* Modal xác nhận xuất kho */}
+        <ConfirmPickingModal
+          open={confirmModalOpen}
+          onClose={() => setConfirmModalOpen(false)}
+          phieuSoanHangId={phieuSoanHangId}
+          onSuccess={() => {
+            fetchPL();
+          }}
+        />
       </div>
     </MainLayout>
   );

@@ -4,6 +4,8 @@ import {
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_RequestDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_RequestDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_RequestDTO,
+  wh_KiemTraTienDoSoanHang_RequestDTO,
+  wh_XacNhanXuatKho_RequestDTO,
 } from '../dtos/picking-order-request.dto.js';
 import {
   wh_DanhSachPhieuSoanHang_TuNgayDenNgay_ResponseDTO,
@@ -11,6 +13,8 @@ import {
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_ResponseDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_ResponseDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_ResponseDTO,
+  wh_KiemTraTienDoSoanHang_ResponseDTO,
+  wh_XacNhanXuatKho_ResponseDTO,
 } from '../dtos/picking-order-response.dto.js';
 
 export interface IPickingOrderService {
@@ -36,4 +40,14 @@ export interface IPickingOrderService {
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android(
     dto: wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_RequestDTO,
   ): Promise<wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_ResponseDTO>;
+
+  // Kiểm tra tiến độ soạn hàng
+  kiemTraTienDoSoanHang(
+    dto: wh_KiemTraTienDoSoanHang_RequestDTO,
+  ): Promise<wh_KiemTraTienDoSoanHang_ResponseDTO>;
+
+  // Xác nhận xuất kho
+  xacNhanXuatKho(
+    dto: wh_XacNhanXuatKho_RequestDTO,
+  ): Promise<wh_XacNhanXuatKho_ResponseDTO>;
 }

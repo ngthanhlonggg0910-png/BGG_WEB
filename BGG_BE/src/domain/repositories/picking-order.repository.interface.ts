@@ -1,10 +1,14 @@
-import { promises } from 'dns';
 import {
   wh_DanhSachPhieuSoanHangNgayVaTinhTrang,
   wh_DanhSachChiTietPhieuSoanHang_TheoPhieuSoanHangId,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android,
 } from '../entities/picking-order.entity.js';
+import {
+  TienDoSoanHangData,
+  XacNhanXuatKhoData,
+} from '../../application/dtos/picking-order-response.dto.js';
+import { wh_XacNhanXuatKho_RequestDTO } from '../../application/dtos/picking-order-request.dto.js';
 
 export interface IPickingOrderRepository {
   getDanhSachPhieuSoanHangTheoNgayVaTinhTrang(
@@ -37,4 +41,10 @@ export interface IPickingOrderRepository {
     TKQuet: number,
     TenNguoiQuyetXuat: string,
   ): Promise<wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android[]>;
+
+  // Kiểm tra tiến độ soạn hàng và lịch sử đợt xuất
+  getTienDoSoanHang(phieuSoanHangId: number): Promise<TienDoSoanHangData>;
+
+  // Xác nhận xuất kho (xuất đợt hoặc hoàn tất xuất kho)
+  xacNhanXuatKho(dto: wh_XacNhanXuatKho_RequestDTO): Promise<XacNhanXuatKhoData>;
 }

@@ -62,3 +62,22 @@ export async function layDanhSachVatTuTheoMaQrTrang(
     },
   );
 }
+
+// Kiểm tra tiến độ soạn hàng và các đợt xuất
+export async function kiemTraTienDoSoanHang(phieuSoanHangId) {
+  return postJson("/api/picking-order/wh_KiemTraTienDoSoanHang", {
+    PhieuSoanHangId: Number(phieuSoanHangId),
+  });
+}
+
+// Xác nhận xuất kho (xuất đợt hoặc hoàn tất xuất kho)
+export async function xacNhanXuatKho(payload) {
+  return postJson("/api/picking-order/wh_XacNhanXuatKho", {
+    PhieuSoanHangId: Number(payload.phieuSoanHangId ?? payload.PhieuSoanHangId),
+    xacNhanHoanTat: Boolean(payload.xacNhanHoanTat),
+    choPhepDongKhiThieu: Boolean(payload.choPhepDongKhiThieu),
+    tkId: Number(payload.tkId),
+    tenNguoiXacNhan: String(payload.tenNguoiXacNhan || ""),
+    ghiChu: payload.ghiChu ? String(payload.ghiChu) : undefined,
+  });
+}

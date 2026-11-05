@@ -16,6 +16,8 @@ import {
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_RequestDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_RequestDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_RequestDTO,
+  wh_KiemTraTienDoSoanHang_RequestDTO,
+  wh_XacNhanXuatKho_RequestDTO,
 } from '../dtos/picking-order-request.dto.js';
 import {
   wh_DanhSachChiTietPhieuSoanHang_TheoPhieuSoanHangId_ResponseDTO,
@@ -23,6 +25,8 @@ import {
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_ResponseDTO,
   wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_ResponseDTO,
   wh_ChiTietPhieuSoanHang_ThemMoi_KhongMaRo_NhieuDong_Android_ResponseDTO,
+  wh_KiemTraTienDoSoanHang_ResponseDTO,
+  wh_XacNhanXuatKho_ResponseDTO,
 } from '../dtos/picking-order-response.dto.js';
 import type { IPickingOrderRepository } from '../../domain/repositories/picking-order.repository.interface.js';
 
@@ -219,5 +223,65 @@ export class PickingOrderService implements IPickingOrderService {
       message: 'Soạn hàng thành công',
       data,
     };
+  }
+
+  // Kiểm tra tiến độ soạn hàng
+  async kiemTraTienDoSoanHang(
+    dto: wh_KiemTraTienDoSoanHang_RequestDTO,
+  ): Promise<wh_KiemTraTienDoSoanHang_ResponseDTO> {
+    try {
+      const data = await this.pickingOrderRepository.getTienDoSoanHang(
+        dto.PhieuSoanHangId,
+      );
+
+      return {
+        success: true,
+        message: 'Lấy tiến độ soạn hàng thành công',
+        data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Lỗi kiểm tra tiến độ phiếu ${dto.PhieuSoanHangId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      if (error instanceof HttpException) throw error;
+
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Kiểm tra tiến độ soạn hàng thất bại',
+      );
+    }
+  }
+
+  // Xác nhận xuất kho
+  async xacNhanXuatKho(
+    dto: wh_XacNhanXuatKho_RequestDTO,
+  ): Promise<wh_XacNhanXuatKho_ResponseDTO> {
+    try {
+      this.logger.log(
+        `Yêu cầu xác nhận xuất kho: Phieu=${dto.PhieuSoanHangId}, HoanTat=${dto.xacNhanHoanTat}, ChoPhepThieu=${dto.choPhepDongKhiThieu}, Nguoi=${dto.tenNguoiXacNhan}`,
+      );
+
+      const data = await this.pickingOrderRepository.xacNhanXuatKho(dto);
+
+      return {
+        success: true,
+        message: data.isHoanThanh
+          ? 'Đã xác nhận hoàn tất xuất kho thành công'
+          : `Đã xác nhận xuất kho Đợt ${data.soDot} thành công (xuất thiếu)`,
+        data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Lỗi xác nhận xuất kho phiếu ${dto.PhieuSoanHangId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      if (error instanceof HttpException) throw error;
+
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'Xác nhận xuất kho thất bại',
+      );
+    }
   }
 }
