@@ -10,6 +10,7 @@ import { FabricInspectionModule } from './presentation/modules/fabric-inspection
 import { ProductionOrderModule } from './presentation/modules/production-order.module.js';
 import { MappingQrModule } from './presentation/modules/mapping-qr.module.js';
 import { MaterialInspectionModule } from './presentation/modules/material-inspection.module.js';
+import { MaterialReceiptModule } from './presentation/modules/material-receipt.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -24,6 +25,7 @@ import { MaterialInspectionModule } from './presentation/modules/material-inspec
     ProductionOrderModule,
     MappingQrModule,
     MaterialInspectionModule,
+    MaterialReceiptModule,
   ],
 })
 export class AppModule {}

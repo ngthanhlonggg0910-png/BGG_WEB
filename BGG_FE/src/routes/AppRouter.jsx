@@ -31,6 +31,8 @@ import MappingQrMaterialDetailPage from "../features/mapping-qr/pages/MappingQrM
 import AccessoryPickingPage from "../features/picking-order/pages/AccessoryPickingPage";
 import AccessoryInspectionListPage from "../features/accessory-inspection/page/AccessoryInspectionListPage";
 import AccessoryQualityInspectionPage from "../features/accessory-inspection/page/AccessoryQualityInspectionPage";
+import MaterialReceiptListPage from "../features/material-receipt/pages/MaterialReceiptListPage";
+import MaterialReceiptDetailPage from "../features/material-receipt/pages/MaterialReceiptDetailPage";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -170,6 +172,24 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <ProductionOrderBookingPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/material-receipts"
+          element={
+            <PrivateRoute>
+              <MaterialReceiptListPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/material-receipts/:phieuSoanHangId"
+          element={
+            <PrivateRoute>
+              <MaterialReceiptDetailPage />
             </PrivateRoute>
           }
         />

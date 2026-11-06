@@ -8,6 +8,7 @@ import {
   Shirt,
   QrCode,
   ClipboardCheck,
+  PackageCheck,
 } from "lucide-react";
 
 export const menuGroups = [
@@ -64,6 +65,13 @@ export const menuGroups = [
         path: "/production-orders?tab=ddh&type=PhuLieu",
         icon: Shirt,
         iconTheme: "bg-fuchsia-50 text-fuchsia-600 group-hover:bg-fuchsia-100",
+      },
+      {
+        key: "material-receipts",
+        title: "Nhận hàng NPL (Cắt / May)",
+        path: "/material-receipts",
+        icon: PackageCheck,
+        iconTheme: "bg-teal-50 text-teal-600 group-hover:bg-teal-100",
       },
       {
         key: "soanhang",

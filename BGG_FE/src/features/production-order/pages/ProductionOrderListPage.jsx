@@ -9,6 +9,7 @@ import {
   FilePlus2,
   FileSpreadsheet,
   Layers,
+  PackageCheck,
   RefreshCw,
   Scissors,
   Search,
@@ -61,6 +62,12 @@ function getDdhStatusBadge(ddh) {
     return {
       label: "Đã hủy",
       cls: "bg-rose-50 text-rose-700 border-rose-200 line-through",
+    };
+  }
+  if (trangThai === "danhanhang") {
+    return {
+      label: "Đã nhận hàng",
+      cls: "bg-teal-50 text-teal-700 border-teal-200",
     };
   }
   if (trangThai === "hoanthanh" || tinhTrangPsh === "hoanthanh") {
@@ -1187,14 +1194,27 @@ export default function ProductionOrderListPage({ initialTab }) {
 
                           {/* NÚT MỞ PHIẾU SOẠN (NẾU ĐÃ CÓ PSH) */}
                           {ddh.PhieuSoanHangId && ddh.TinhTrangPSH !== "huy" && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleOpenPickingOrder(ddh, e)}
-                              className="inline-flex min-h-[38px] touch-manipulation items-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-extrabold text-blue-700 active:scale-95 hover:bg-blue-100"
-                            >
-                              <ExternalLink size={14} />
-                              <span>Soạn hàng</span>
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => handleOpenPickingOrder(ddh, e)}
+                                className="inline-flex min-h-[38px] touch-manipulation items-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-extrabold text-blue-700 active:scale-95 hover:bg-blue-100"
+                              >
+                                <ExternalLink size={14} />
+                                <span>Soạn hàng</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/material-receipts/${ddh.PhieuSoanHangId}`);
+                                }}
+                                className="inline-flex min-h-[38px] touch-manipulation items-center gap-1 rounded-xl border border-teal-200 bg-teal-50 px-2.5 py-1.5 text-xs font-extrabold text-teal-700 active:scale-95 hover:bg-teal-100"
+                              >
+                                <PackageCheck size={14} />
+                                <span>Nhận hàng</span>
+                              </button>
+                            </>
                           )}
 
                           {/* NÚT HỦY ĐƠN */}
@@ -1496,19 +1516,32 @@ export default function ProductionOrderListPage({ initialTab }) {
                 {/* NÚT MỞ PHIẾU SOẠN (NẾU ĐÃ CÓ PSH) */}
                 {selectedDdh.PhieuSoanHangId &&
                   selectedDdh.TinhTrangPSH !== "huy" && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        setDetailModalOpen(false);
-                        handleOpenPickingOrder(selectedDdh, e);
-                      }}
-                      className="inline-flex min-h-[46px] w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-extrabold text-white shadow-md active:scale-[0.99] hover:bg-blue-700 sm:w-auto"
-                    >
-                      <ExternalLink size={17} />
-                      <span>
-                        Mở Phiếu Soạn ({selectedDdh.MaSoPhieuSoan})
-                      </span>
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          setDetailModalOpen(false);
+                          handleOpenPickingOrder(selectedDdh, e);
+                        }}
+                        className="inline-flex min-h-[46px] w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-extrabold text-white shadow-md active:scale-[0.99] hover:bg-blue-700 sm:w-auto"
+                      >
+                        <ExternalLink size={17} />
+                        <span>
+                          Mở Phiếu Soạn ({selectedDdh.MaSoPhieuSoan})
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDetailModalOpen(false);
+                          navigate(`/material-receipts/${selectedDdh.PhieuSoanHangId}`);
+                        }}
+                        className="inline-flex min-h-[46px] w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-extrabold text-white shadow-md active:scale-[0.99] hover:bg-teal-700 sm:w-auto"
+                      >
+                        <PackageCheck size={18} />
+                        <span>Nhận hàng (Cắt / May)</span>
+                      </button>
+                    </>
                   )}
 
                 {/* NÚT HỦY ĐƠN ĐẶT */}
