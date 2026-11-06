@@ -126,10 +126,10 @@ BEGIN
   IF @InputUnit IS NOT NULL
   BEGIN
    IF @InputUnit NOT IN(N'YDS',N'M') THROW 50122,N'Đơn vị nhập chỉ được là yard hoặc mét.',1;
-   IF @Unit NOT IN(N'YDS',N'YRD',N'YARD',N'YARDS',N'M',N'MTR',N'MTRS',N'MET',N'MÉT',N'METRE',N'METRES',N'METER',N'METERS')
+   IF @Unit NOT IN(N'YD',N'YDS',N'YRD',N'YARD',N'YARDS',N'M',N'MTR',N'MTRS',N'MET',N'MÉT',N'METRE',N'METRES',N'METER',N'METERS')
     THROW 50122,N'Vật tư không có đơn vị chiều dài, không thể nhập yard/mét.',1;
    IF @InputUnit=N'YDS' AND @Unit IN(N'M',N'MTR',N'MTRS',N'MET',N'MÉT',N'METRE',N'METRES',N'METER',N'METERS') SET @Quantity=ROUND(@Quantity*0.9144,4);
-   ELSE IF @InputUnit=N'M' AND @Unit IN(N'YDS',N'YRD',N'YARD',N'YARDS')
+   ELSE IF @InputUnit=N'M' AND @Unit IN(N'YD',N'YDS',N'YRD',N'YARD',N'YARDS')
    BEGIN
     IF @Quantity/0.9144>9999999999.9999 THROW 50103,N'Số lượng quy đổi vượt giới hạn.',1;
     SET @Quantity=ROUND(@Quantity/0.9144,4);
@@ -138,7 +138,7 @@ BEGIN
   END;
 
   DECLARE @Met decimal(18,4)=0,@Yard decimal(18,4)=0,@Gross decimal(18,4)=0;
-  IF @Unit IN(N'YDS',N'YRD',N'YARD',N'YARDS') BEGIN SET @Yard=@Quantity; SET @Met=ROUND(@Quantity*0.9144,4); END;
+  IF @Unit IN(N'YD',N'YDS',N'YRD',N'YARD',N'YARDS') BEGIN SET @Yard=@Quantity; SET @Met=ROUND(@Quantity*0.9144,4); END;
   IF @Unit IN(N'M',N'MTR',N'MTRS',N'MET',N'MÉT',N'METRE',N'METRES',N'METER',N'METERS')
    BEGIN SET @Met=@Quantity; SET @Yard=ROUND(@Quantity/0.9144,4); END;
   IF @Unit IN(N'GRS',N'GROSS') BEGIN SET @Yard=@Quantity*144; SET @Met=ROUND(@Yard*0.9144,4); END;
@@ -210,10 +210,10 @@ BEGIN
   IF @InputUnit IS NOT NULL
   BEGIN
    IF @InputUnit NOT IN(N'YDS',N'M') THROW 50122,N'Đơn vị nhập chỉ được là yard hoặc mét.',1;
-   IF @Unit NOT IN(N'YDS',N'YRD',N'YARD',N'YARDS',N'M',N'MTR',N'MTRS',N'MET',N'MÉT',N'METRE',N'METRES',N'METER',N'METERS')
+   IF @Unit NOT IN(N'YD',N'YDS',N'YRD',N'YARD',N'YARDS',N'M',N'MTR',N'MTRS',N'MET',N'MÉT',N'METRE',N'METRES',N'METER',N'METERS')
     THROW 50122,N'Vật tư không có đơn vị chiều dài, không thể nhập yard/mét.',1;
    IF @InputUnit=N'YDS' AND @Unit IN(N'M',N'MTR',N'MTRS',N'MET',N'MÉT',N'METRE',N'METRES',N'METER',N'METERS') SET @Quantity=ROUND(@Quantity*0.9144,4);
-   ELSE IF @InputUnit=N'M' AND @Unit IN(N'YDS',N'YRD',N'YARD',N'YARDS')
+   ELSE IF @InputUnit=N'M' AND @Unit IN(N'YD',N'YDS',N'YRD',N'YARD',N'YARDS')
    BEGIN
     IF @Quantity/0.9144>9999999999.9999 THROW 50103,N'Số lượng quy đổi vượt giới hạn.',1;
     SET @Quantity=ROUND(@Quantity/0.9144,4);
@@ -222,7 +222,7 @@ BEGIN
   END;
 
   DECLARE @Met decimal(18,4)=0,@Yard decimal(18,4)=0;
-  IF @Unit IN(N'YDS',N'YRD',N'YARD',N'YARDS') BEGIN SET @Yard=@Quantity; SET @Met=ROUND(@Quantity*0.9144,4); END;
+  IF @Unit IN(N'YD',N'YDS',N'YRD',N'YARD',N'YARDS') BEGIN SET @Yard=@Quantity; SET @Met=ROUND(@Quantity*0.9144,4); END;
   IF @Unit IN(N'M',N'MTR',N'MTRS',N'MET',N'MÉT',N'METRE',N'METRES',N'METER',N'METERS') BEGIN SET @Met=@Quantity; SET @Yard=ROUND(@Quantity/0.9144,4); END;
   IF @Unit IN(N'GRS',N'GROSS') BEGIN SET @Yard=@Quantity*144; SET @Met=ROUND(@Yard*0.9144,4); END;
   UPDATE dbo.WH_ChiTietPhieuGiamDinh_Cay SET SL=@Quantity,SoRoll=@SoRoll,SoMet=@Met,SoYard=@Yard,SoGross=ROUND(@Yard/144,4) WHERE CayId=@CayId;
