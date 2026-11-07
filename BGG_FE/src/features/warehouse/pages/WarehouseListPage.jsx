@@ -1,14 +1,10 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  Warehouse,
-  Boxes,
   Search,
   X,
   RefreshCw,
   AlertCircle,
   PackageOpen,
-  ChevronRight,
 } from "lucide-react";
 
 import { getWarehousesByAccountId } from "../api/warehouseApi";
@@ -18,8 +14,6 @@ import { getAccountId } from "../../../shared/auth/session";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 
 export default function WarehouseList() {
-  const navigate = useNavigate();
-
   const [listKho, setListKho] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -97,58 +91,13 @@ export default function WarehouseList() {
           onBack={() => setSelectedWarehouse(null)}
         />
       ) : (
-        <div className="mx-auto w-full max-w-[1300px] px-4 py-5 sm:px-6 sm:py-7 md:px-8">
-          <section aria-label="Danh sách kho" className="space-y-5">
-            {/* HEADER */}
-            <div
-              className="relative overflow-hidden rounded-2xl p-4 text-white sm:p-6"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--egmf-primary) 0%, var(--egmf-primary-deep) 100%)",
-              }}
-            >
-              <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10" />
-
-              <div className="relative flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="m-0 text-xs font-bold uppercase tracking-wider text-white/80">
-                    QUẢN LÝ KHO
-                  </p>
-
-                  <h1 className="m-0 mt-2 text-[24px] font-extrabold leading-tight text-white sm:text-[28px]">
-                    Danh sách kho
-                  </h1>
-
-                  <p className="m-0 mt-2 text-[14px] font-medium leading-6 text-white/85 sm:text-[15px]">
-                    Chọn kho để xem thông tin và tra cứu tồn kho.
-                  </p>
-                </div>
-
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 sm:h-14 sm:w-14">
-                  <Warehouse size={27} strokeWidth={2} />
-                </div>
-              </div>
-
-              {/* THỐNG KÊ */}
-              <div className="relative mt-5 flex items-center justify-between rounded-xl border border-white/15 bg-white/15 px-4 py-3">
-                <div className="flex items-center gap-2.5">
-                  <Boxes size={20} className="text-white/90" />
-
-                  <span className="text-[15px] font-semibold text-white">
-                    Tổng số kho
-                  </span>
-                </div>
-
-                <span className="text-[24px] font-extrabold text-white">
-                  {loading ? "—" : listKho.length}
-                </span>
-              </div>
-            </div>
+        <div className="mx-auto w-full max-w-[1300px] px-4 py-3 sm:px-6 sm:py-4 md:px-8">
+          <section aria-label="Danh sách kho" className="space-y-3 sm:space-y-4">
 
             {/* SEARCH */}
             {!error && !loading && listKho.length > 0 && (
-              <div className="flex h-14 items-center gap-3 rounded-xl border border-egmf-primary-border-soft bg-white px-4 transition-colors focus-within:border-egmf-primary focus-within:ring-[3px] focus-within:ring-egmf-primary/10">
-                <Search size={22} className="shrink-0 text-egmf-primary" />
+              <div className="flex h-12 items-center gap-2.5 rounded-lg border border-egmf-primary-border-soft bg-white px-3 transition-colors focus-within:border-egmf-primary focus-within:ring-[3px] focus-within:ring-egmf-primary/10">
+                <Search size={19} className="shrink-0 text-egmf-primary" />
 
                 <input
                   type="search"
@@ -157,7 +106,7 @@ export default function WarehouseList() {
                   placeholder="Tìm mã kho, tên kho, thủ kho..."
                   aria-label="Tìm kiếm kho"
                   autoComplete="off"
-                  className="h-full min-w-0 flex-1 bg-transparent text-[16px] font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                  className="h-full min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 sm:text-[15px]"
                 />
 
                 {keyword && (
@@ -165,7 +114,7 @@ export default function WarehouseList() {
                     type="button"
                     onClick={() => setKeyword("")}
                     aria-label="Xóa tìm kiếm"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-egmf-primary-soft text-egmf-primary transition-colors hover:bg-egmf-primary-hover"
+                    className="flex size-8 shrink-0 items-center justify-center rounded-full bg-egmf-primary-soft text-egmf-primary transition-colors hover:bg-egmf-primary-hover"
                   >
                     <X size={19} />
                   </button>
@@ -176,11 +125,11 @@ export default function WarehouseList() {
             {/* SECTION TITLE */}
             {!error && !loading && listKho.length > 0 && (
               <div className="flex items-center justify-between gap-3">
-                <h2 className="m-0 text-[17px] font-bold text-slate-900">
+                <h2 className="m-0 text-sm font-extrabold text-slate-900 sm:text-[15px]">
                   Kho đang quản lý
                 </h2>
 
-                <span className="shrink-0 rounded-lg bg-egmf-primary-soft px-3 py-1.5 text-sm font-bold text-egmf-primary-strong">
+                <span className="shrink-0 rounded-full bg-egmf-primary-soft px-2.5 py-1 text-xs font-bold text-egmf-primary-strong">
                   {filteredWarehouses.length} kho
                 </span>
               </div>
@@ -188,7 +137,7 @@ export default function WarehouseList() {
 
             {/* CONTENT */}
             {loading ? (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
                 {[0, 1, 2, 3].map((item) => (
                   <WarehouseSkeleton key={item} />
                 ))}
@@ -232,7 +181,7 @@ export default function WarehouseList() {
                 }
               />
             ) : (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
                 {filteredWarehouses.map((item) => (
                   <WarehouseCard
                     key={item.KId ?? item.MaKho}

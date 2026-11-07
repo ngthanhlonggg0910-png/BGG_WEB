@@ -1,8 +1,8 @@
 import {
-  CalendarDays,
   ClipboardList,
   FileSearch,
   ChevronRight,
+  ScanBarcode,
   SlidersHorizontal,
   Search,
 } from "lucide-react";
@@ -78,12 +78,13 @@ const statusSelectStyles = {
     "&:hover": { borderColor: "#93c5fd" },
     backgroundColor: "#fff",
     borderColor: state.isFocused ? "#2563eb" : "#e1e1ec",
-    borderRadius: 12,
+    borderRadius: 10,
     boxShadow: state.isFocused ? "0 0 0 3px rgba(37, 99, 235, 0.12)" : "none",
     cursor: "pointer",
-    minHeight: 44,
+    height: 40,
+    minHeight: 40,
   }),
-  dropdownIndicator: (base) => ({ ...base, color: "#2563eb", padding: 9 }),
+  dropdownIndicator: (base) => ({ ...base, color: "#2563eb", padding: 7 }),
   indicatorSeparator: () => ({ display: "none" }),
   menu: (base) => ({
     ...base,
@@ -225,53 +226,35 @@ export default function MappingQrListPage({
           token: {
             borderRadius: 12,
             colorPrimary: "#2563eb",
-            controlHeight: 44,
+            controlHeight: 40,
           },
         }}
       >
-        <main className="min-h-full bg-egmf-surface px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+        <main className="min-h-full bg-egmf-surface px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           <section className="mx-auto w-full max-w-7xl">
             <nav
               aria-label="Kiểu tra cứu"
-              className="mb-4 grid w-full grid-cols-2 rounded-xl border border-egmf-border bg-egmf-surface-raised p-1 shadow-sm sm:mb-5 sm:w-fit sm:min-w-[440px]"
+              className="mb-3 grid w-full max-w-md grid-cols-2 rounded-xl border border-egmf-primary-border-soft bg-white p-1.5 shadow-[0_3px_10px_rgba(37,99,235,0.07)] sm:w-fit sm:min-w-[400px]"
             >
-              <span className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-egmf-primary px-3 text-center text-sm font-bold text-white shadow-egmf-primary-compact">
-                <SlidersHorizontal size={17} strokeWidth={2.3} />
-                Theo thời gian
+              <span className="flex min-h-10 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-egmf-primary to-blue-500 px-2.5 text-center text-xs font-bold text-white shadow-[0_4px_10px_rgba(37,99,235,0.22)] sm:text-sm">
+                <SlidersHorizontal size={17} strokeWidth={2.4} />
+                <span>Theo thời gian</span>
               </span>
               <Link
                 to="/mapping-qr-barcode"
-                className="flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-center text-sm font-bold text-egmf-ink-soft transition-colors hover:bg-egmf-primary-tint hover:text-egmf-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
+                className="group flex min-h-10 items-center justify-center gap-2 rounded-lg px-2.5 text-center text-xs font-bold text-egmf-ink-soft transition-all duration-200 hover:bg-egmf-primary-tint hover:text-egmf-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 sm:text-sm"
               >
-                <Search size={17} strokeWidth={2.3} />
-                Theo barcode kiện
+                <ScanBarcode size={17} strokeWidth={2.3} className="transition-transform duration-200 group-hover:scale-110" />
+                <span>Theo barcode kiện</span>
               </Link>
             </nav>
-            <section className="overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-egmf-card">
-              <div className="flex items-center gap-3 border-b border-egmf-border-subtle bg-egmf-surface-subtle px-4 py-3.5 sm:px-5 sm:py-4">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
-                  <SlidersHorizontal size={19} strokeWidth={2.3} />
-                </span>
-                <div>
-                  <h3 className="m-0 text-[15px] font-extrabold text-egmf-ink">
-                    Bộ lọc tìm kiếm
-                  </h3>
-                  <p className="m-0 text-xs text-egmf-muted">
-                    Chọn điều kiện trước khi tra cứu.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 sm:p-5">
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+            <section className="rounded-xl border border-egmf-border bg-egmf-surface-raised p-3 shadow-sm sm:p-4">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                   <div className="min-w-0">
-                    <label className="mb-2 flex items-center gap-1.5 text-sm font-bold text-egmf-ink-secondary">
-                      <CalendarDays size={16} className="text-egmf-primary" />
-                      Từ ngày
-                    </label>
+                    <label className="mb-1 block text-xs font-bold text-egmf-ink-secondary">Từ ngày</label>
                     <DatePicker
                       allowClear={false}
-                      className="!flex !h-12 !w-full !items-center !rounded-xl [&_.ant-picker-input>input]:!text-[15px] [&_.ant-picker-input>input]:!font-medium"
+                      className="!flex !h-10 !w-full !items-center !rounded-lg [&_.ant-picker-input>input]:!text-sm [&_.ant-picker-input>input]:!font-medium"
                       format="DD/MM/YYYY"
                       onChange={(date) =>
                         setDateRange((previous) => [
@@ -284,13 +267,10 @@ export default function MappingQrListPage({
                   </div>
 
                   <div className="min-w-0">
-                    <label className="mb-2 flex items-center gap-1.5 text-sm font-bold text-egmf-ink-secondary">
-                      <CalendarDays size={16} className="text-egmf-primary" />
-                      Đến ngày
-                    </label>
+                    <label className="mb-1 block text-xs font-bold text-egmf-ink-secondary">Đến ngày</label>
                     <DatePicker
                       allowClear={false}
-                      className="!flex !h-12 !w-full !items-center !rounded-xl [&_.ant-picker-input>input]:!text-[15px] [&_.ant-picker-input>input]:!font-medium"
+                      className="!flex !h-10 !w-full !items-center !rounded-lg [&_.ant-picker-input>input]:!text-sm [&_.ant-picker-input>input]:!font-medium"
                       format="DD/MM/YYYY"
                       onChange={(date) =>
                         setDateRange((previous) => [
@@ -303,11 +283,9 @@ export default function MappingQrListPage({
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-3 border-t border-egmf-border-subtle pt-4 sm:grid-cols-[minmax(0,1fr)_152px] sm:items-end">
+                <div className="mt-2.5 grid grid-cols-[minmax(0,1fr)_96px] items-end gap-2.5 border-t border-egmf-border-subtle pt-2.5 sm:grid-cols-[minmax(0,1fr)_112px] sm:gap-3">
                   <div>
-                    <label className="mb-2 block text-sm font-bold text-egmf-ink-secondary">
-                      Trạng thái
-                    </label>
+                    <label className="mb-1 block text-xs font-bold text-egmf-ink-secondary">Trạng thái</label>
                     <ReactSelect
                       aria-label="Trạng thái phiếu"
                       isSearchable={false}
@@ -325,7 +303,7 @@ export default function MappingQrListPage({
                   </div>
 
                   <Button
-                    className="!h-12 !w-full !rounded-xl !bg-egmf-primary !px-5 !text-[15px] !font-bold !shadow-egmf-primary-compact hover:!bg-egmf-primary-strong sm:self-end"
+                    className="!h-[40px] !w-full !rounded-lg !bg-egmf-primary !px-3 !text-sm !font-bold !shadow-egmf-primary-compact hover:!bg-egmf-primary-strong"
                     loading={loading}
                     onClick={handleFilter}
                     type="primary"
@@ -333,35 +311,32 @@ export default function MappingQrListPage({
                     Lọc
                   </Button>
                 </div>
-              </div>
             </section>
 
-            <section className="mt-4 overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-egmf-card sm:mt-5">
-              <div className="flex items-center justify-between gap-3 border-b border-egmf-border-subtle px-4 py-3.5 sm:px-5 sm:py-4">
+            <section className="mt-3 overflow-hidden rounded-xl border border-egmf-border bg-egmf-surface-raised shadow-sm sm:mt-4">
+              <div className="flex items-center justify-between gap-3 border-b border-egmf-border-subtle px-3.5 py-2.5 sm:px-4 sm:py-3">
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
-                    <ClipboardList size={18} strokeWidth={2.2} />
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-egmf-primary-soft text-egmf-primary">
+                    <ClipboardList size={16} strokeWidth={2.2} />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="m-0 text-[15px] font-extrabold text-egmf-ink">
+                    <h3 className="m-0 text-sm font-extrabold text-egmf-ink">
                       Kết quả tìm kiếm
                     </h3>
-                    <p className="m-0 text-xs text-egmf-muted">
-                      {listFilter.length} phiếu được tìm thấy
-                    </p>
                   </div>
                 </div>
+                <span className="shrink-0 rounded-full bg-egmf-primary-tint px-2 py-1 text-[11px] font-bold text-egmf-primary">{listFilter.length} phiếu</span>
               </div>
 
-              <div className="border-b border-egmf-border-subtle bg-egmf-surface-subtle p-4 sm:px-5">
-                <div className="flex h-12 items-center gap-3 rounded-xl border border-egmf-border bg-white px-3.5 transition-colors focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
+              <div className="border-b border-egmf-border-subtle bg-egmf-surface-subtle p-3 sm:px-4">
+                <div className="flex h-10 items-center gap-2.5 rounded-lg border border-egmf-border bg-white px-3 transition-colors focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
                   <Search
-                    size={20}
+                    size={18}
                     className="shrink-0 text-egmf-primary"
                     strokeWidth={2.25}
                   />
                   <input
-                    className="h-full min-w-0 flex-1 bg-transparent text-[15px] font-medium text-egmf-ink outline-none placeholder:text-egmf-placeholder sm:text-base"
+                    className="h-full min-w-0 flex-1 bg-transparent text-sm font-medium text-egmf-ink outline-none placeholder:text-egmf-placeholder"
                     onChange={(event) => setKeyword(event.target.value)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter") handleFilter();
@@ -373,21 +348,21 @@ export default function MappingQrListPage({
                 </div>
               </div>
 
-              <div className="p-4 sm:p-5">
+              <div className="p-3 sm:p-4">
                 {listFilter.length === 0 ? (
-                  <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-egmf-primary-border-soft bg-egmf-surface-subtle px-4 py-8 text-center">
-                    <span className="grid size-14 place-items-center rounded-2xl bg-egmf-primary-soft text-egmf-primary">
-                      <FileSearch size={27} strokeWidth={1.9} />
+                  <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-egmf-primary-border-soft bg-egmf-surface-subtle px-4 py-6 text-center">
+                    <span className="grid size-11 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
+                      <FileSearch size={22} strokeWidth={1.9} />
                     </span>
-                    <p className="m-0 mt-3 text-[15px] font-bold text-egmf-ink-secondary">
+                    <p className="m-0 mt-2.5 text-sm font-bold text-egmf-ink-secondary">
                       Chưa có dữ liệu phiếu giám định
                     </p>
-                    <p className="m-0 mt-1 max-w-sm text-sm leading-5 text-egmf-muted">
+                    <p className="m-0 mt-1 max-w-sm text-xs leading-5 text-egmf-muted">
                       Điều chỉnh bộ lọc và nhấn “Lọc kết quả” để xem danh sách.
                     </p>
                   </div>
                 ) : (
-                  <div className="grid gap-3 lg:grid-cols-2 xl:gap-4">
+                  <div className="grid gap-2.5 lg:grid-cols-2 lg:gap-3">
                     {listFilter.map((item, index) => {
                       return (
                         <article
@@ -402,53 +377,47 @@ export default function MappingQrListPage({
                             })
                           }
                           key={item.pGDId ?? index}
-                          className="group flex cursor-pointer items-start justify-between gap-3 rounded-2xl border border-egmf-border bg-white p-4 shadow-sm transition-all duration-200 hover:border-egmf-primary-border hover:shadow-egmf-card"
+                          className="group flex cursor-pointer items-start justify-between gap-2.5 rounded-xl border border-egmf-border bg-white p-3 shadow-sm transition-all duration-200 hover:border-egmf-primary-border hover:shadow-egmf-card"
                         >
-                          <div className="min-w-0 flex-1 divide-y divide-egmf-border-subtle text-sm text-egmf-ink [&>p]:py-2.5 [&>p:first-child]:pt-0 [&>p:last-child]:pb-0 sm:text-[15px]">
-                            <p className="m-0">
-                              Ngày giám định:{" "}
-                              {formatDateTime(item.ngayGiamDinh)}
-                            </p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2 border-b border-egmf-border-subtle pb-2">
+                              <div className="min-w-0">
+                                <p className="m-0 text-[10px] font-bold uppercase tracking-[0.08em] text-egmf-muted">Số phiếu</p>
+                                <p className="m-0 mt-0.5 truncate text-sm font-extrabold text-egmf-ink">{item.maPhieu ?? ""}</p>
+                              </div>
+                              <span className="shrink-0 text-[11px] font-medium text-egmf-muted">{formatDateTime(item.ngayGiamDinh)}</span>
+                            </div>
 
-                            <p className="m-0">
-                              Số phiếu: {item.maPhieu ?? ""}
-                            </p>
-
-                            <p className="m-0">Mã hàng: {item.maHang ?? ""}</p>
-                            <p className="m-0">
-                              Loại giám định:{" "}
-                              {item.loaiGiamDinh?.trim().toLowerCase() === "pl"
-                                ? "Phụ liệu"
-                                : "Nguyên liệu"}
-                            </p>
-
-                            <p className="m-0">
-                              Lô:{" "}
-                              {Array.isArray(item?.Lo) ? item.Lo[0] : item?.Lo}
-                            </p>
-
-                            {/* <p className="m-0">Mã rọ: {item.MaRo}</p> */}
-
-                            <p className="m-0">
-                              Trạng thái:{" "}
-                              {item.trangThai === "MOITAO"
-                                ? "Mới tạo"
-                                : item.trangThai === "DAXACNHAN"
-                                  ? "Đã xác nhận"
-                                  : "Hủy"}
-                            </p>
-
-                            <p className="m-0">
-                              Người tạo: {item.tenNguoiTao ?? ""}
-                            </p>
-
-                            <p className="m-0">
-                              Người giám định: {item.TenNguoiGiamDinh ?? ""}
-                            </p>
+                            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                              <div className="min-w-0">
+                                <dt className="text-[10px] font-bold uppercase tracking-[0.06em] text-egmf-muted">Mã hàng</dt>
+                                <dd className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary">{item.maHang ?? "—"}</dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[10px] font-bold uppercase tracking-[0.06em] text-egmf-muted">Loại giám định</dt>
+                                <dd className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary">{item.loaiGiamDinh?.trim().toLowerCase() === "pl" ? "Phụ liệu" : "Nguyên liệu"}</dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[10px] font-bold uppercase tracking-[0.06em] text-egmf-muted">Lô</dt>
+                                <dd className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary">{(Array.isArray(item?.Lo) ? item.Lo[0] : item?.Lo) || "—"}</dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[10px] font-bold uppercase tracking-[0.06em] text-egmf-muted">Trạng thái</dt>
+                                <dd className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary">{item.trangThai === "MOITAO" ? "Mới tạo" : item.trangThai === "DAXACNHAN" ? "Đã xác nhận" : "Hủy"}</dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[10px] font-bold uppercase tracking-[0.06em] text-egmf-muted">Người tạo</dt>
+                                <dd className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary">{item.tenNguoiTao ?? "—"}</dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[10px] font-bold uppercase tracking-[0.06em] text-egmf-muted">Người giám định</dt>
+                                <dd className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary">{item.TenNguoiGiamDinh ?? "—"}</dd>
+                              </div>
+                            </dl>
                           </div>
 
                           <ChevronRight
-                            size={22}
+                            size={18}
                             strokeWidth={2.5}
                             className="mt-1 shrink-0 text-egmf-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-egmf-primary"
                           />

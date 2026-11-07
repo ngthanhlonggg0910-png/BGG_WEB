@@ -1,8 +1,6 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
-  ArrowLeft,
   Barcode,
   Check,
   Clock3,
@@ -16,7 +14,6 @@ import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { updateMaterialLocation } from "../api/materialLocationApi";
 
 export default function MaterialLocationUpdate() {
-  const navigate = useNavigate();
   const [maRo, setMaRo] = useState("");
   const [maNPL, setMaNPL] = useState("");
   const [scannedLabels, setScannedLabels] = useState([]);
@@ -107,29 +104,30 @@ export default function MaterialLocationUpdate() {
 
   return (
     <MainLayout screenTitle="Cập nhật vị trí nguyên liệu">
-      <div className="mx-auto w-full max-w-[1000px] space-y-4 px-4 py-5 sm:px-6 md:px-8">
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
-              <MapPin aria-hidden="true" size={21} />
+      <div className="min-h-full bg-egmf-surface">
+        <div className="mx-auto w-full max-w-[1000px] space-y-3 px-4 py-3 sm:px-6 sm:py-4 md:px-8">
+        <section className="overflow-hidden rounded-xl border border-egmf-border bg-white shadow-sm">
+          <div className="flex items-center gap-2.5 border-b border-egmf-border-subtle bg-egmf-surface-subtle px-3.5 py-2.5 sm:px-4">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-egmf-primary-soft text-egmf-primary">
+              <MapPin aria-hidden="true" size={17} />
             </span>
-            <h2 className="text-[19px] font-bold text-slate-900">
+            <h2 className="text-sm font-extrabold text-egmf-ink sm:text-[15px]">
               Cập nhật vị trí
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 md:grid-cols-2">
+          <form onSubmit={handleSubmit} className="p-3.5 sm:p-4">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label
-                  className="mb-2 block text-[15px] font-bold text-slate-800"
+                  className="mb-1 block text-xs font-bold text-egmf-ink-secondary"
                   htmlFor="maRo"
                 >
                   Mã rọ
                 </label>
                 <input
                   autoComplete="off"
-                  className="h-14 w-full rounded-xl border border-slate-200 px-3 text-base font-semibold outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
+                  className="h-12 w-full rounded-lg border border-egmf-border bg-white px-3 text-sm font-semibold text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
                   id="maRo"
                   name="maRo"
                   onChange={(e) => setMaRo(e.target.value)}
@@ -141,14 +139,14 @@ export default function MaterialLocationUpdate() {
 
               <div>
                 <label
-                  className="mb-2 block text-[15px] font-bold text-slate-800"
+                  className="mb-1 block text-xs font-bold text-egmf-ink-secondary"
                   htmlFor="maNPL"
                 >
                   Mã nguyên phụ liệu
                 </label>
                 <input
                   autoComplete="off"
-                  className="h-14 w-full rounded-xl border border-slate-200 px-3 text-base font-semibold outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
+                  className="h-12 w-full rounded-lg border border-egmf-border bg-white px-3 text-sm font-semibold text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
                   id="maNPL"
                   name="maNPL"
                   data-submit-on-scan="true"
@@ -162,7 +160,7 @@ export default function MaterialLocationUpdate() {
             </div>
 
             <button
-              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-egmf-primary text-[16px] font-bold text-white transition-colors hover:bg-egmf-primary-strong active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-egmf-primary text-sm font-extrabold text-white shadow-egmf-primary-compact transition-colors hover:bg-egmf-primary-strong active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 sm:ml-auto sm:w-[220px]"
               disabled={loading || !maRo.trim() || !maNPL.trim()}
               type="submit"
             >
@@ -181,61 +179,62 @@ export default function MaterialLocationUpdate() {
           </form>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 className="m-0 text-[17px] font-bold text-slate-900">
+        <section className="overflow-hidden rounded-xl border border-egmf-border bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-egmf-border-subtle px-3.5 py-2.5 sm:px-4">
+            <h3 className="m-0 text-sm font-extrabold text-egmf-ink">
               Tem đã cập nhật
             </h3>
-            <span className="rounded-lg bg-egmf-primary-soft px-3 py-1.5 text-sm font-bold text-egmf-primary-strong">
+            <span className="rounded-full bg-egmf-primary-tint px-2.5 py-1 text-xs font-bold text-egmf-primary">
               {scannedLabels.length} tem
             </span>
           </div>
 
+          <div className="p-3.5 sm:p-4">
           {scannedLabels.length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-slate-400">
-              <Barcode size={30} />
-              <p className="mt-2 text-sm">Chưa có tem nào</p>
+            <div className="flex min-h-40 flex-col items-center justify-center rounded-lg border border-dashed border-egmf-primary-border-soft bg-egmf-surface-subtle text-egmf-muted">
+              <span className="grid size-10 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary"><Barcode size={21} /></span>
+              <p className="mt-2 text-sm font-medium">Chưa có tem nào</p>
             </div>
           ) : (
             <div className="space-y-2.5">
               {scannedLabels.map((item) => (
                 <article
-                  className="rounded-xl border border-slate-200 p-3.5"
+                  className="rounded-xl border border-egmf-border bg-white p-3 shadow-sm"
                   key={item.id}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-xs text-slate-500">Mã NPL</p>
-                      <p className="mt-1 break-all text-[16px] font-bold text-slate-900">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-egmf-muted">Mã NPL</p>
+                      <p className="mt-0.5 break-all text-base font-extrabold text-egmf-ink">
                         {item.maNPL}
                       </p>
                     </div>
-                    <Check className="shrink-0 text-emerald-600" size={20} />
+                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-egmf-success-soft text-egmf-success"><Check size={17} strokeWidth={2.8} /></span>
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3 text-sm">
+                  <div className="mt-2.5 grid grid-cols-2 gap-2.5 rounded-lg bg-egmf-surface-subtle p-2.5 text-sm">
                     <div>
-                      <p className="text-slate-500">Mã rọ</p>
-                      <p className="mt-1 break-all font-semibold text-egmf-primary-strong">
+                      <p className="text-[11px] font-bold text-egmf-muted">Mã rọ</p>
+                      <p className="mt-0.5 break-all font-bold text-egmf-primary-strong">
                         {item.maRo || "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-slate-500">Số lượng</p>
-                      <p className="mt-1 font-bold text-slate-800">
+                      <p className="text-[11px] font-bold text-egmf-muted">Số lượng</p>
+                      <p className="mt-0.5 font-bold text-egmf-ink-secondary">
                         {item.slTrongRo ?? "—"}
                       </p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-slate-500">Vị trí</p>
-                      <p className="mt-1 font-semibold text-slate-800">
+                      <p className="text-[11px] font-bold text-egmf-muted">Vị trí</p>
+                      <p className="mt-0.5 font-semibold text-egmf-ink-secondary">
                         {item.tenViTri || "—"}
                       </p>
                     </div>
                   </div>
 
                   {item.time && (
-                    <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">
+                    <p className="mt-2.5 flex items-center gap-1.5 text-xs text-egmf-muted">
                       <Clock3 size={14} />
                       {item.time}
                     </p>
@@ -244,7 +243,9 @@ export default function MaterialLocationUpdate() {
               ))}
             </div>
           )}
+          </div>
         </section>
+        </div>
       </div>
     </MainLayout>
   );

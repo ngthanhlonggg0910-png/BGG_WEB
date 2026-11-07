@@ -31,6 +31,7 @@ import MappingQrMaterialDetailPage from "../features/mapping-qr/pages/MappingQrM
 import AccessoryPickingPage from "../features/picking-order/pages/AccessoryPickingPage";
 import AccessoryInspectionListPage from "../features/accessory-inspection/page/AccessoryInspectionListPage";
 import AccessoryQualityInspectionPage from "../features/accessory-inspection/page/AccessoryQualityInspectionPage";
+import CuttingManagementPage from "../features/cutting-management/pages/CuttingManagementPage";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -231,7 +232,11 @@ export default function AppRouter() {
 
         <Route
           path="/mapping-qr-raw-material"
-          element={<PrivateRoute><RawMaterialRollQrPage /></PrivateRoute>}
+          element={
+            <PrivateRoute>
+              <RawMaterialRollQrPage />
+            </PrivateRoute>
+          }
         />
         <Route
           path="/mapping-qr-list"

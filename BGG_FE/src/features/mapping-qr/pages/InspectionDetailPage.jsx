@@ -347,24 +347,23 @@ export default function InspectionDetailPage() {
         {/* HEADER */}
         <header className="sr-only">Thông tin chi tiết phiếu giám định</header>
 
-        <main className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+        <main className="mx-auto w-full max-w-4xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           {sourcePage === "accessory-inspection" && (
-            <section className="mb-4 overflow-hidden rounded-2xl border border-egmf-border bg-white sm:mb-5">
-              <div className="flex items-center gap-3 border-b border-egmf-border-subtle bg-egmf-surface-subtle px-4 py-3 sm:px-5">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
-                  <ClipboardList size={20} strokeWidth={2.2} />
+            <section className="relative mb-3 overflow-hidden rounded-xl border border-egmf-primary-border-soft bg-white px-3.5 py-3 shadow-[0_3px_12px_rgba(37,99,235,0.06)] sm:mb-4 sm:px-4">
+              <div className="relative flex items-center gap-2.5">
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-egmf-primary-soft text-egmf-primary">
+                  <ClipboardList size={16} strokeWidth={2.3} />
                 </span>
-                <div className="min-w-0">
-                  <h2 className="m-0 text-[15px] font-extrabold text-egmf-ink">
+                <div>
+                  <h2 className="m-0 text-sm font-extrabold text-egmf-ink">
                     Thông tin phiếu giám định
                   </h2>
-                  <p className="m-0 mt-0.5 text-xs text-egmf-muted">
-                    Thông tin tổng quan của phiếu đang xử lý
+                  <p className="m-0 mt-0.5 text-[11px] font-medium text-egmf-muted">
+                    Tổng quan phiếu đang xử lý
                   </p>
                 </div>
               </div>
-
-              <dl className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4 sm:p-5">
+              <dl className="relative mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5 border-t border-egmf-border-subtle pt-2.5">
                 {[
                   ["Số phiếu", inforPGD.maPhieu],
                   ["Ngày giám định", formatDateTime(inforPGD.ngayGiamDinh)],
@@ -373,12 +372,12 @@ export default function InspectionDetailPage() {
                 ].map(([label, value]) => (
                   <div
                     key={label}
-                    className="min-w-0 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5"
+                    className="inline-flex min-w-0 items-baseline gap-1.5 text-egmf-ink-secondary"
                   >
-                    <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-egmf-muted">
+                    <dt className="shrink-0 text-[11px] font-medium text-egmf-muted">
                       {label}
                     </dt>
-                    <dd className="m-0 mt-1 break-words text-sm font-bold leading-5 text-egmf-ink">
+                    <dd className="m-0 break-words text-sm font-bold text-egmf-ink">
                       {value || "—"}
                     </dd>
                   </div>
@@ -387,15 +386,13 @@ export default function InspectionDetailPage() {
             </section>
           )}
 
-          <div className="mb-4 sm:mb-5">
-            <label className="mb-2 flex items-center gap-1.5 px-1 text-xs font-bold text-egmf-ink-secondary">
-              <Search size={14} className="text-egmf-primary" />
-              Tìm nhanh vật tư
-            </label>
-            <div className="flex h-12 items-center gap-3 rounded-xl border border-egmf-border bg-white px-3.5 shadow-xs transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-egmf-primary-soft text-egmf-primary">
-                <Search size={18} strokeWidth={2.4} />
-              </span>
+          <div className="mb-3 sm:mb-4">
+            <div className="flex h-12 items-center gap-3 rounded-lg border border-egmf-border bg-white px-3.5 shadow-sm transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
+              <Search
+                size={17}
+                className="shrink-0 text-egmf-primary"
+                strokeWidth={2.4}
+              />
               <input
                 aria-label="Tìm nhanh vật tư"
                 type="search"
@@ -420,8 +417,8 @@ export default function InspectionDetailPage() {
 
           {/* SEARCH AREA */}
           {sourcePage !== "accessory-inspection" && (
-            <div className="sticky top-[calc(80px+env(safe-area-inset-top))] z-10 -mx-1 mb-4 overflow-hidden rounded-xl border border-egmf-border bg-egmf-surface-raised/95 shadow-egmf-card backdrop-blur-md sm:top-[88px] sm:mx-0 sm:mb-5">
-              <div className="flex items-center justify-between gap-3 bg-egmf-surface-subtle/95 px-3.5 py-2.5 sm:px-4">
+            <div className="sticky top-[calc(80px+env(safe-area-inset-top))] z-10 -mx-1 mb-3 overflow-hidden rounded-lg border border-egmf-border bg-egmf-surface-raised/95 shadow-sm backdrop-blur-md sm:top-[88px] sm:mx-0 sm:mb-4">
+              <div className="flex items-center justify-between gap-3 bg-egmf-surface-subtle/95 px-3 py-2 sm:px-3.5">
                 <div className="min-w-0 flex-1">
                   <h2 className="m-0 text-sm font-extrabold text-egmf-ink">
                     Tra cứu &amp; xác nhận
@@ -441,7 +438,7 @@ export default function InspectionDetailPage() {
                       : "Mở khu tra cứu và xác nhận"
                   }
                   aria-expanded={isSearchPanelOpen}
-                  className="grid size-8 shrink-0 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-primary-soft hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
+                  className="grid size-7 shrink-0 place-items-center rounded-md text-egmf-muted transition hover:bg-egmf-primary-soft hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
                 >
                   <ChevronRight
                     size={20}
@@ -456,7 +453,7 @@ export default function InspectionDetailPage() {
               </div>
 
               {isSearchPanelOpen && (
-                <div className="grid grid-cols-2 gap-2 border-t border-egmf-border-subtle p-2.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_132px] sm:items-center sm:gap-3 sm:p-3">
+                <div className="grid grid-cols-2 gap-2 border-t border-egmf-border-subtle p-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_116px] sm:items-center sm:gap-2.5 sm:p-2.5">
                   <div className="min-w-0">
                     <input
                       aria-label="Mã QR trắng"
@@ -464,7 +461,7 @@ export default function InspectionDetailPage() {
                       value={qrTemTrang}
                       onChange={(e) => setQrTemTrang(e.target.value)}
                       placeholder="Mã QR trắng"
-                      className="h-10 w-full rounded-lg border border-egmf-border bg-white px-3 text-sm font-medium text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
+                      className="h-9 w-full rounded-md border border-egmf-border bg-white px-2.5 text-sm font-medium text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
                     />
                   </div>
 
@@ -475,7 +472,7 @@ export default function InspectionDetailPage() {
                       value={maSoKien}
                       onChange={(e) => setMaSoKien(e.target.value)}
                       placeholder="Mã kiện"
-                      className="h-10 w-full rounded-lg border border-egmf-border bg-white px-3 text-sm font-medium text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
+                      className="h-9 w-full rounded-md border border-egmf-border bg-white px-2.5 text-sm font-medium text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"
                     />
                   </div>
 
@@ -483,7 +480,7 @@ export default function InspectionDetailPage() {
                     type="button"
                     onClick={handleConfirmMapping}
                     disabled={saving}
-                    className="col-span-2 h-10 w-full rounded-lg bg-egmf-primary px-4 text-sm font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-1"
+                    className="col-span-2 h-9 w-full rounded-md bg-egmf-primary px-3 text-xs font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-1 sm:text-sm"
                   >
                     {saving ? "Đang lưu..." : "XÁC NHẬN"}
                   </button>
@@ -493,8 +490,8 @@ export default function InspectionDetailPage() {
           )}
 
           {/* LIST TITLE */}
-          <div className="mt-5 flex items-baseline justify-between gap-3 px-1 sm:mt-6">
-            <h2 className="text-base font-extrabold text-egmf-ink">
+          <div className="mt-4 flex items-baseline justify-between gap-3 px-0.5 sm:mt-5">
+            <h2 className="text-sm font-extrabold text-egmf-ink sm:text-base">
               Danh sách vật tư
             </h2>
             <span className="text-xs font-semibold text-egmf-muted">
@@ -505,7 +502,7 @@ export default function InspectionDetailPage() {
           </div>
 
           {/* MATERIAL CARDS */}
-          <div className="mt-4 flex flex-col gap-4 sm:mt-5 sm:gap-5">
+          <div className="mt-3 flex flex-col gap-3 sm:mt-4 sm:gap-3.5">
             {listFilter.map((item) => {
               const isSelected = selected.includes(item.CTPGDId);
               const enteredQuantity = Number(
@@ -529,9 +526,9 @@ export default function InspectionDetailPage() {
                     }`}
                   >
                     <div
-                      className={`border-l-4 ${quantityBorderClass} px-4 py-4 sm:px-5 sm:py-5`}
+                      className={`border-l-4 ${quantityBorderClass} px-3 py-3 sm:px-3.5 sm:py-3.5`}
                     >
-                      <div className="relative flex items-start gap-3">
+                      <div className="relative flex items-start gap-2.5">
                         {/* CHECKBOX */}
                         {sourcePage !== "accessory-inspection" && (
                           <input
@@ -540,145 +537,150 @@ export default function InspectionDetailPage() {
                             onClick={(event) => event.stopPropagation()}
                             onChange={() => toggleSelected(item.CTPGDId)}
                             aria-label={`Chọn vật tư ${item.MaHang || item.CTPGDId}`}
-                            className="mt-1 size-5 shrink-0 rounded accent-egmf-primary"
+                            className="mt-0.5 size-4 shrink-0 rounded accent-egmf-primary"
                           />
                         )}
 
                         {/* MATERIAL INFORMATION */}
-                        <div className="min-w-0 flex-1 pr-14 sm:pr-16">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <span className="inline-flex rounded-md bg-egmf-primary-soft px-2 py-1 text-xs font-extrabold text-egmf-primary">
+                        <div className="min-w-0 flex-1 pr-11 sm:pr-12">
+                          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                            <span className="inline-flex rounded-md bg-egmf-primary-soft px-1.5 py-0.5 text-[11px] font-extrabold text-egmf-primary">
                               ID: {item.CTPGDId ?? "—"}
                             </span>
-                            <p className="m-0 break-words text-base font-extrabold text-egmf-ink">
+                            <p className="m-0 break-words text-base font-extrabold text-egmf-ink sm:text-lg">
                               {item.MaHang || "—"}
                             </p>
                             <span className="text-sm font-semibold text-egmf-ink-secondary">
                               Size: {item.Size || "—"}
                             </span>
                           </div>
-                          <p className="m-0 mt-1 break-words text-sm font-medium text-egmf-ink-secondary">
+                          <p className="m-0 mt-1 break-words text-sm font-medium leading-5 text-egmf-ink-secondary">
                             {item.DienGiai || "Chưa có tên nguyên phụ liệu"}
                           </p>
 
-                          <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 border-t border-egmf-border-subtle pt-4 text-sm sm:grid-cols-3">
+                          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-egmf-border-subtle pt-3 text-sm sm:grid-cols-3 xl:grid-cols-4">
                             <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              <dt className="text-[11px] font-bold text-egmf-muted">
                                 Mã NPL
                               </dt>
                               <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary"
                                 title={item.MaChungLoai}
                               >
                                 {item.MaChungLoai || "—"}
                               </dd>
                             </div>
                             <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              <dt className="text-[11px] font-bold text-egmf-muted">
                                 Art
                               </dt>
                               <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary"
                                 title={item.ArtCode}
                               >
                                 {item.ArtCode || "—"}
                               </dd>
                             </div>
                             <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
-                                Item
-                              </dt>
-                              <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
-                                title={item.Item}
-                              >
-                                {item.Item || "—"}
-                              </dd>
-                            </div>
-                            <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              <dt className="text-[11px] font-bold text-egmf-muted">
                                 Màu
                               </dt>
                               <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary"
                                 title={item.ColorCode}
                               >
                                 {item.ColorCode || "—"}
                               </dd>
                             </div>
                             <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
-                                Code màu vải
-                              </dt>
-                              <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
-                                title={item.CodeMauVai}
-                              >
-                                {item.CodeMauVai || "—"}
-                              </dd>
-                            </div>
-                            <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                              <dt className="text-[11px] font-bold text-egmf-muted">
                                 Lot
                               </dt>
                               <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary"
                                 title={item.Lot}
                               >
                                 {item.Lot || "—"}
                               </dd>
                             </div>
-                            <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
-                                HĐ mua
-                              </dt>
-                              <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
-                                title={item.SoPO}
-                              >
-                                {item.SoPO || "—"}
-                              </dd>
-                            </div>
-                            <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
-                                Chứng từ
-                              </dt>
-                              <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
-                                title={item.ChungTu}
-                              >
-                                {item.ChungTu || "—"}
-                              </dd>
-                            </div>
-                            <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
-                                Ngày giám định
-                              </dt>
-                              <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
-                                title={item.NgayGiamDinh ?? item.ngayGiamDinh}
-                              >
-                                {formatDateTime(
-                                  item.NgayGiamDinh ?? item.ngayGiamDinh,
-                                ) || "—"}
-                              </dd>
-                            </div>
-                            <div className="min-w-0">
-                              <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
-                                Người tạo
-                              </dt>
-                              <dd
-                                className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
-                                title={item.TenNguoiTao}
-                              >
-                                {item.TenNguoiTao || "—"}
-                              </dd>
-                            </div>
                           </dl>
 
-                          <div className="mt-4 grid grid-cols-3 divide-x divide-egmf-border-subtle rounded-lg border border-egmf-border-subtle bg-white py-2.5 text-center">
+                          <div className="mt-3">
+                            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm [&_dd]:leading-5 [&_dt]:text-[11px] sm:grid-cols-3 xl:grid-cols-4">
+                              <div className="min-w-0">
+                                <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                                  Item
+                                </dt>
+                                <dd
+                                  className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                  title={item.Item}
+                                >
+                                  {item.Item || "—"}
+                                </dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                                  Code màu vải
+                                </dt>
+                                <dd
+                                  className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                  title={item.CodeMauVai}
+                                >
+                                  {item.CodeMauVai || "—"}
+                                </dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                                  HĐ mua
+                                </dt>
+                                <dd
+                                  className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                  title={item.SoPO}
+                                >
+                                  {item.SoPO || "—"}
+                                </dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                                  Chứng từ
+                                </dt>
+                                <dd
+                                  className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                  title={item.ChungTu}
+                                >
+                                  {item.ChungTu || "—"}
+                                </dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                                  Ngày giám định
+                                </dt>
+                                <dd
+                                  className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                  title={item.NgayGiamDinh ?? item.ngayGiamDinh}
+                                >
+                                  {formatDateTime(
+                                    item.NgayGiamDinh ?? item.ngayGiamDinh,
+                                  ) || "—"}
+                                </dd>
+                              </div>
+                              <div className="min-w-0">
+                                <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
+                                  Người tạo
+                                </dt>
+                                <dd
+                                  className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
+                                  title={item.TenNguoiTao}
+                                >
+                                  {item.TenNguoiTao || "—"}
+                                </dd>
+                              </div>
+                            </dl>
+                          </div>
+
+                          <div className="mt-2.5 grid grid-cols-3 divide-x divide-egmf-border-subtle rounded-lg border border-egmf-border-subtle bg-white py-2 text-center">
                             <div className="px-1.5">
-                              <p className="m-0 text-[11px] font-bold text-egmf-muted">
+                              <p className="m-0 text-[10px] font-bold text-egmf-muted">
                                 SL chứng từ
                               </p>
                               <p className="m-0 mt-0.5 text-sm font-extrabold text-egmf-ink">
@@ -707,7 +709,7 @@ export default function InspectionDetailPage() {
 
                           {/* QUANTITY INPUT */}
                           {isSelected && (
-                            <div className="mt-3 space-y-2 border-t border-egmf-border-subtle pt-3">
+                            <div className="mt-2.5 space-y-2 border-t border-egmf-border-subtle pt-2.5">
                               <p className="m-0 text-xs font-bold text-egmf-primary">
                                 Số lượng tem cần mapping
                               </p>
@@ -717,7 +719,7 @@ export default function InspectionDetailPage() {
                                     key={tem.id}
                                     className="flex items-center gap-2"
                                   >
-                                    <label className="flex h-10 min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-egmf-border bg-white transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
+                                    <label className="flex h-9 min-w-0 flex-1 items-center overflow-hidden rounded-md border border-egmf-border bg-white transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
                                       <span className="shrink-0 border-r border-egmf-border bg-egmf-surface-subtle px-2.5 text-xs font-bold text-egmf-muted">
                                         Tem {index + 1}
                                       </span>
@@ -746,7 +748,7 @@ export default function InspectionDetailPage() {
                                         onClick={() =>
                                           handleRemoveTem(item.CTPGDId, tem.id)
                                         }
-                                        className="flex size-10 shrink-0 items-center justify-center rounded-lg text-egmf-ink-soft transition hover:bg-red-50 hover:text-red-600 active:scale-95"
+                                        className="flex size-9 shrink-0 items-center justify-center rounded-md text-egmf-ink-soft transition hover:bg-red-50 hover:text-red-600 active:scale-95"
                                         title="Xóa tem"
                                         aria-label={`Xóa Tem ${index + 1}`}
                                       >
@@ -759,7 +761,7 @@ export default function InspectionDetailPage() {
                                         onClick={() =>
                                           handleAddTem(item.CTPGDId)
                                         }
-                                        className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-egmf-primary text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-95"
+                                        className="flex size-9 shrink-0 items-center justify-center rounded-md bg-egmf-primary text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-95"
                                         title="Thêm tem"
                                         aria-label="Thêm tem"
                                       >
@@ -800,10 +802,10 @@ export default function InspectionDetailPage() {
                           }}
                           aria-label="Xem chi tiết vật tư"
                           title="Xem chi tiết vật tư"
-                          className="group absolute right-1 top-1/2 grid size-14 shrink-0 -translate-y-1/2 touch-manipulation place-items-center rounded-xl text-egmf-muted transition-all duration-200 hover:bg-slate-100 hover:text-egmf-ink active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
+                          className="group absolute right-0 top-0 grid size-9 shrink-0 touch-manipulation place-items-center rounded-lg text-egmf-muted transition-all duration-200 hover:bg-slate-100 hover:text-egmf-ink active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
                         >
                           <ChevronRight
-                            size={30}
+                            size={20}
                             strokeWidth={2.6}
                             className="transition-transform duration-200 group-hover:translate-x-0.5"
                           />
