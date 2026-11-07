@@ -80,23 +80,23 @@ export default function WarehouseDetail({ warehouse, onBack }) {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
+    <div className="mx-auto flex min-h-[calc(100dvh_-_192px_-_env(safe-area-inset-bottom))] w-full max-w-6xl flex-col px-4 py-3 sm:px-6 sm:py-4 md:min-h-[calc(100dvh_-_104px)] lg:px-8">
       {/* Nội dung chính */}
-      <section className="overflow-hidden rounded-[20px] border border-egmf-border bg-white shadow-[0_8px_24px_rgba(47,45,105,0.055)]">
+      <section className="flex flex-1 flex-col overflow-hidden rounded-xl border border-egmf-border bg-white shadow-sm">
         {/* Thanh màu */}
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-egmf-border-muted bg-egmf-surface-subtle px-4 py-4 sm:px-6 sm:py-5">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-egmf-primary text-white shadow-egmf-primary">
-              <Icon name="warehouse" size={21} />
+        <div className="flex items-center gap-2.5 border-b border-egmf-border-muted bg-egmf-surface-subtle px-3.5 py-2.5 sm:px-4 sm:py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-egmf-primary text-white shadow-egmf-primary-compact">
+              <Icon name="warehouse" size={18} />
             </span>
 
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-egmf-muted-soft">
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-egmf-muted-soft">
                 Kho hàng
               </p>
 
-              <h2 className="mt-0.5 break-words text-lg font-bold tracking-[-0.02em] text-egmf-ink sm:text-xl">
+              <h2 className="mt-0.5 break-words text-base font-extrabold tracking-[-0.02em] text-egmf-ink sm:text-lg">
                 {warehouseName}
               </h2>
             </div>
@@ -104,122 +104,113 @@ export default function WarehouseDetail({ warehouse, onBack }) {
         </div>
 
         {/* Khu vực tìm kiếm */}
-        <div className="px-4 py-5 sm:px-6 sm:py-6">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-            <div>
-              <p className="text-xl font-bold tracking-[-0.03em] text-egmf-ink">
-                Tìm kiếm tồn kho
-              </p>
-
-              <p className="mt-1 text-[15px] leading-6 text-egmf-muted">
-                Chọn thông tin cần tra cứu, sau đó nhập từ khóa.
-              </p>
-            </div>
-          </div>
-
-          {/* Loại tìm kiếm */}
-          <div className="relative mt-5 w-full sm:max-w-md">
-            <button
-              aria-controls="warehouse-search-type-options"
-              aria-expanded={searchTypeOpen}
-              aria-haspopup="listbox"
-              className="flex min-h-[52px] w-full items-center gap-3 rounded-2xl border border-egmf-primary-border-soft bg-white px-3.5 text-left text-[15px] font-semibold text-egmf-ink-secondary transition hover:border-egmf-primary-border focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
-              onClick={() => setSearchTypeOpen((open) => !open)}
-              type="button"
-            >
-              <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-egmf-primary-soft text-egmf-primary">
-                <Icon name={selectedOption.icon} size={17} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-base font-bold text-egmf-ink">
-                  {selectedOption.label}
-                </span>
-              </span>
-              <Icon
-                className={`text-egmf-primary transition-transform ${
-                  searchTypeOpen ? "rotate-180" : ""
-                }`}
-                name="chevronDown"
-                size={18}
-              />
-            </button>
-            <div
-              id="warehouse-search-type-options"
-              role="listbox"
-              aria-label="Kiểu tìm kiếm"
-              className={`absolute inset-x-0 top-[calc(100%+8px)] z-20 grid gap-1.5 rounded-2xl border border-egmf-primary-border-soft bg-white p-1.5 shadow-[0_12px_28px_rgba(47,45,105,0.14)] ${
-                searchTypeOpen ? "grid" : "hidden"
-              }`}
-            >
-              {searchOptions.map((option) => (
-                <label
-                  key={option.value}
-                  className={`inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-[15px] font-bold leading-none transition ${
-                    searchType === option.value
-                      ? "border-egmf-primary-border bg-egmf-primary-soft text-egmf-primary-strong"
-                      : "border-egmf-border bg-white text-egmf-ink-soft hover:border-egmf-primary-border-hover hover:bg-egmf-surface-subtle"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="warehouse-search-type"
-                    value={option.value}
-                    checked={searchType === option.value}
-                    onChange={() => handleSearchTypeChange(option.value)}
-                    className="m-0 size-5 shrink-0 accent-egmf-primary"
-                  />
-                  <Icon
-                    className="text-egmf-primary"
-                    name={option.icon}
-                    size={17}
-                  />
-                  <span>{option.label}</span>
-                </label>
-              ))}
-            </div>
-
-            {/* Form tìm kiếm */}
-          </div>
-
-          <form
-            data-submit-on-scan="true"
-            onSubmit={handleSearch}
-            className="mt-4"
-          >
-            <div className="relative">
-              <div className="flex h-[56px] min-w-0 items-center gap-2 rounded-2xl border border-egmf-border bg-white py-1.5 pl-3.5 pr-[76px] transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
-                <input
-                  name="keyword"
-                  type="search"
-                  value={keyword}
-                  onChange={(e) => handleKeywordChange(e.target.value)}
-                  aria-label={`Tìm theo ${selectedOption.label}`}
-                  placeholder={`Nhập ${selectedOption.label.toLocaleLowerCase("vi-VN")}`}
-                  className="min-w-0 flex-1 bg-transparent text-base text-egmf-ink outline-none placeholder:text-egmf-placeholder"
-                />
-              </div>
-
+        <div className="px-3.5 py-3 sm:px-4 sm:py-4">
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:items-end">
+            {/* Loại tìm kiếm */}
+            <div className="relative w-full">
               <button
-                type="submit"
-                disabled={loading || !keyword.trim()}
-                aria-label={loading ? "Đang tìm kiếm" : "Tìm kiếm"}
-                className="absolute right-1.5 top-1/2 grid h-11 w-14 -translate-y-1/2 place-items-center rounded-xl bg-egmf-primary text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-controls="warehouse-search-type-options"
+                aria-expanded={searchTypeOpen}
+                aria-haspopup="listbox"
+                className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-egmf-primary-border-soft bg-white px-3.5 text-left text-sm font-semibold text-egmf-ink-secondary transition hover:border-egmf-primary-border focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
+                onClick={() => setSearchTypeOpen((open) => !open)}
+                type="button"
               >
-                {loading ? (
-                  <span className="size-4 animate-spin rounded-full border-2 border-white/35 border-t-white" />
-                ) : (
-                  <Icon name="search" size={19} />
-                )}
+                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-egmf-primary-soft text-egmf-primary">
+                  <Icon name={selectedOption.icon} size={17} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold text-egmf-ink">
+                    {selectedOption.label}
+                  </span>
+                </span>
+                <Icon
+                  className={`text-egmf-primary transition-transform ${
+                    searchTypeOpen ? "rotate-180" : ""
+                  }`}
+                  name="chevronDown"
+                  size={18}
+                />
               </button>
+              <div
+                id="warehouse-search-type-options"
+                role="listbox"
+                aria-label="Kiểu tìm kiếm"
+                className={`absolute inset-x-0 top-[calc(100%+6px)] z-20 grid gap-1 rounded-xl border border-egmf-primary-border-soft bg-white p-1.5 shadow-[0_12px_28px_rgba(47,45,105,0.14)] ${
+                  searchTypeOpen ? "grid" : "hidden"
+                }`}
+              >
+                {searchOptions.map((option) => (
+                  <label
+                    key={option.value}
+                    className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold leading-none transition ${
+                      searchType === option.value
+                        ? "border-egmf-primary-border bg-egmf-primary-soft text-egmf-primary-strong"
+                        : "border-egmf-border bg-white text-egmf-ink-soft hover:border-egmf-primary-border-hover hover:bg-egmf-surface-subtle"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="warehouse-search-type"
+                      value={option.value}
+                      checked={searchType === option.value}
+                      onChange={() => handleSearchTypeChange(option.value)}
+                      className="m-0 size-5 shrink-0 accent-egmf-primary"
+                    />
+                    <Icon
+                      className="text-egmf-primary"
+                      name={option.icon}
+                      size={17}
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </form>
+
+            <form
+              data-submit-on-scan="true"
+              onSubmit={handleSearch}
+              className="mt-0"
+            >
+              <div className="relative">
+              <div className="flex h-12 min-w-0 items-center gap-2 rounded-xl border border-egmf-border bg-white py-1 pl-3.5 pr-[76px] transition focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
+                  <input
+                    name="keyword"
+                    type="search"
+                    value={keyword}
+                    onChange={(e) => handleKeywordChange(e.target.value)}
+                    aria-label={`Tìm theo ${selectedOption.label}`}
+                    placeholder={`Nhập ${selectedOption.label.toLocaleLowerCase("vi-VN")}`}
+                    className="min-w-0 flex-1 bg-transparent text-sm text-egmf-ink outline-none placeholder:text-egmf-placeholder"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !keyword.trim()}
+                  aria-label={loading ? "Đang tìm kiếm" : "Tìm kiếm"}
+                className="absolute right-1 top-1/2 inline-flex h-10 min-w-16 -translate-y-1/2 items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-egmf-primary to-blue-500 px-2.5 text-xs font-extrabold text-white shadow-[0_4px_10px_rgba(37,99,235,0.24)] transition hover:from-egmf-primary-strong hover:to-egmf-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading ? (
+                    <span className="size-4 animate-spin rounded-full border-2 border-white/35 border-t-white" />
+                  ) : (
+                  <>
+                    <Icon name="search" size={16} />
+                    <span>Tìm</span>
+                  </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
         {/* Kết quả tìm kiếm */}
-        <div className="border-t border-egmf-border-muted bg-egmf-surface-soft px-4 py-5 sm:px-6 sm:py-6">
+        <div className="flex flex-1 flex-col border-t border-egmf-border-muted bg-egmf-surface-soft p-4">
           {loading ? (
             // Đang tải
-            <div className="flex flex-1 flex-col items-center justify-center gap-3">
+            <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-3">
               <span className="size-8 animate-spin rounded-full border-4 border-egmf-primary-soft border-t-egmf-primary" />
 
               <p className="text-sm text-egmf-muted">
@@ -228,7 +219,7 @@ export default function WarehouseDetail({ warehouse, onBack }) {
             </div>
           ) : error ? (
             // Lỗi API
-            <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <div className="flex min-h-[280px] w-full flex-col items-center justify-center text-center">
               <p className="text-sm font-medium text-red-500">{error}</p>
             </div>
           ) : data.length > 0 ? (
@@ -264,19 +255,36 @@ export default function WarehouseDetail({ warehouse, onBack }) {
             </div>
           ) : (
             // Không có dữ liệu
-            <div className="flex flex-1 items-center justify-center">
-              <div className="flex max-w-sm flex-col items-center px-3 text-center">
-                <span className="grid size-12 place-items-center rounded-2xl bg-egmf-primary-soft text-egmf-primary">
-                  <Icon name="package" size={22} />
+            <div className="relative flex min-h-[280px] w-full flex-1">
+              <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-egmf-primary-border-soft bg-white px-5 py-8 text-center shadow-sm sm:px-8 sm:py-10">
+                <span aria-hidden="true" className="absolute -right-12 -top-12 size-40 rounded-full bg-egmf-primary-soft/60 blur-2xl" />
+                <span aria-hidden="true" className="absolute -bottom-16 -left-12 size-36 rounded-full bg-cyan-100/60 blur-2xl" />
+
+                <span className="relative grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-egmf-primary to-blue-500 text-white shadow-egmf-primary">
+                  <Icon name="package" size={25} />
                 </span>
 
-                <h3 className="mt-4 text-base font-bold text-egmf-ink">
+                <h3 className="relative mt-3 text-base font-extrabold text-egmf-ink sm:text-lg">
                   Chưa có dữ liệu tồn kho
                 </h3>
 
-                <p className="mt-1 text-sm leading-relaxed text-egmf-muted">
-                  Nhập mã hàng, vật tư hoặc vị trí để bắt đầu tra cứu tồn kho.
+                <p className="relative mt-1 max-w-md text-sm leading-5 text-egmf-muted">
+                  Chọn loại tra cứu và nhập từ khóa để xem vị trí, số lượng tồn kho.
                 </p>
+
+                <div className="relative mt-5 grid w-full max-w-md grid-cols-2 gap-2 text-left">
+                  {searchOptions.map((option) => (
+                    <span
+                      key={option.value}
+                      className="inline-flex items-center gap-2 rounded-lg border border-egmf-border-subtle bg-egmf-surface-subtle px-2.5 py-2 text-xs font-bold text-egmf-ink-secondary"
+                    >
+                      <span className="grid size-6 shrink-0 place-items-center rounded-md bg-egmf-primary-soft text-egmf-primary">
+                        <Icon name={option.icon} size={14} />
+                      </span>
+                      <span className="truncate">{option.label}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           )}

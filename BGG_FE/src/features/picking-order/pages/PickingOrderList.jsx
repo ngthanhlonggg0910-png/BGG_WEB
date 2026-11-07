@@ -1,10 +1,8 @@
 import {
-  CalendarDays,
   CheckCircle2,
   Clock3,
   ClipboardList,
   Search,
-  Warehouse,
 } from "lucide-react";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -215,43 +213,36 @@ export default function PickingOrderList() {
           components: {
             DatePicker: {
               fontSize: 16,
-              controlHeight: 48,
+              controlHeight: 44,
             },
           },
         }}
       >
-        <div className="picking-order-page min-h-full bg-egmf-surface p-3 sm:p-5">
-          <div className="mx-auto max-w-6xl space-y-4">
+        <div className="picking-order-page min-h-full bg-egmf-surface p-3 sm:p-4">
+          <div className="mx-auto max-w-6xl space-y-3 sm:space-y-4">
             {/* BỘ LỌC */}
-            <section className="overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-egmf-card">
+            <section className="overflow-hidden rounded-xl border border-egmf-border bg-egmf-surface-raised shadow-sm">
               {/* HEADER */}
-              <div className="border-b border-egmf-border px-4 py-3.5 sm:px-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-egmf-primary-tint text-egmf-primary-strong">
-                    <ClipboardList size={21} />
+              <div className="border-b border-egmf-border-subtle bg-egmf-surface-subtle px-3.5 py-2.5 sm:px-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-egmf-primary-soft text-egmf-primary">
+                    <ClipboardList size={17} />
                   </div>
 
                   <div className="min-w-0">
-                    <h2 className="text-[17px] font-bold leading-tight text-egmf-ink sm:text-lg">
+                    <h2 className="text-sm font-extrabold leading-tight text-egmf-ink sm:text-[15px]">
                       Danh sách soạn hàng
                     </h2>
-
-                    <p className="mt-1 text-sm leading-snug text-egmf-muted">
-                      Lọc phiếu theo ngày, kho và trạng thái
-                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-5 p-4 sm:p-5">
+              <div className="space-y-3 p-3.5 sm:p-4">
                 {/* NGÀY + KHO */}
-                <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                   {/* NGÀY SOẠN */}
                   <div className="min-w-0">
-                    <label className="mb-2 flex items-center gap-1.5 text-sm font-semibold leading-none text-egmf-ink-secondary">
-                      <CalendarDays size={17} className="shrink-0" />
-                      Ngày soạn
-                    </label>
+                    <label className="mb-1 block text-xs font-bold leading-none text-egmf-ink-secondary">Ngày soạn</label>
 
                     <DatePicker
                       format="DD/MM/YYYY"
@@ -260,7 +251,7 @@ export default function PickingOrderList() {
                       allowClear={false}
                       inputReadOnly
                       placeholder="Chọn ngày"
-                      className="picking-order-date-picker !h-[52px] !w-full !rounded-xl"
+                      className="picking-order-date-picker !h-11 !w-full !rounded-lg"
                       style={{
                         fontSize: 16,
                       }}
@@ -269,10 +260,7 @@ export default function PickingOrderList() {
 
                   {/* KHO SOẠN HÀNG */}
                   <div className="min-w-0">
-                    <label className="mb-2 flex items-center gap-1.5 text-sm font-semibold leading-none text-egmf-ink-secondary">
-                      <Warehouse size={17} className="shrink-0" />
-                      Kho soạn hàng
-                    </label>
+                    <label className="mb-1 block text-xs font-bold leading-none text-egmf-ink-secondary">Kho soạn hàng</label>
 
                     <AppSelect
                       placeholder="Chọn kho"
@@ -280,14 +268,14 @@ export default function PickingOrderList() {
                       onChange={handleWarehouseChange}
                       options={warehouses}
                       allowClear
-                      minHeight={52}
+                      minHeight={44}
                     />
                   </div>
                 </div>
 
                 {/* TRẠNG THÁI */}
                 <div>
-                  <p className="mb-2.5 text-sm font-semibold text-egmf-ink-secondary">
+                  <p className="mb-1.5 text-xs font-bold text-egmf-ink-secondary">
                     Trạng thái phiếu
                   </p>
 
@@ -297,13 +285,13 @@ export default function PickingOrderList() {
                       type="button"
                       onClick={() => handleStatusChange("chuahoanthanh")}
                       aria-pressed={statusPick === "chuahoanthanh"}
-                      className={`flex min-h-[52px] items-center justify-center gap-2 rounded-xl border px-2.5 py-2.5 text-sm font-semibold leading-tight transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 ${
+                      className={`flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-2 text-xs font-bold leading-tight transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 sm:text-sm ${
                         statusPick === "chuahoanthanh"
                           ? "border-amber-400 bg-amber-50 text-amber-700 shadow-sm"
                           : "border-egmf-border bg-egmf-surface text-egmf-ink-secondary hover:border-amber-300"
                       }`}
                     >
-                      <Clock3 size={19} className="shrink-0" />
+                      <Clock3 size={17} className="shrink-0" />
                       <span>Chưa hoàn thành</span>
                     </button>
 
@@ -312,13 +300,13 @@ export default function PickingOrderList() {
                       type="button"
                       onClick={() => handleStatusChange("hoanthanh")}
                       aria-pressed={statusPick === "hoanthanh"}
-                      className={`flex min-h-[52px] items-center justify-center gap-2 rounded-xl border px-2.5 py-2.5 text-sm font-semibold leading-tight transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 ${
+                      className={`flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-2 text-xs font-bold leading-tight transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 sm:text-sm ${
                         statusPick === "hoanthanh"
                           ? "border-emerald-400 bg-emerald-50 text-emerald-700 shadow-sm"
                           : "border-egmf-border bg-egmf-surface text-egmf-ink-secondary hover:border-emerald-300"
                       }`}
                     >
-                      <CheckCircle2 size={19} className="shrink-0" />
+                      <CheckCircle2 size={17} className="shrink-0" />
                       <span>Hoàn thành</span>
                     </button>
                   </div>
@@ -327,39 +315,39 @@ export default function PickingOrderList() {
             </section>
 
             {/* DANH SÁCH PHIẾU */}
-            <section className="flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-egmf-card">
+            <section className="flex min-h-[360px] flex-col overflow-hidden rounded-xl border border-egmf-border bg-egmf-surface-raised shadow-sm">
               {/* HEADER + TÌM KIẾM */}
-              <div className="border-b border-egmf-border p-4 sm:p-5">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h2 className="flex items-center gap-2 text-[17px] font-bold text-egmf-ink sm:text-lg">
-                    <ClipboardList size={21} className="text-egmf-primary" />
+              <div className="border-b border-egmf-border-subtle p-3.5 sm:p-4">
+                <div className="mb-2.5 flex items-center justify-between gap-3">
+                  <h2 className="flex items-center gap-2 text-sm font-extrabold text-egmf-ink sm:text-[15px]">
+                    <ClipboardList size={17} className="text-egmf-primary" />
                     Danh sách phiếu
                   </h2>
 
                   {hasLoaded && (
-                    <span className="shrink-0 rounded-full bg-egmf-surface-tint px-3 py-1 text-sm font-semibold text-egmf-ink-secondary">
+                    <span className="shrink-0 rounded-full bg-egmf-primary-tint px-2 py-1 text-[11px] font-bold text-egmf-primary">
                       {filteredOrders.length} phiếu
                     </span>
                   )}
                 </div>
 
                 {/* Ô TÌM KIẾM */}
-                <div className="flex h-[52px] items-center gap-3 rounded-xl border border-egmf-border bg-egmf-surface px-3.5 transition-colors focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
-                  <Search size={20} className="shrink-0 text-egmf-muted" />
+                <div className="flex h-11 items-center gap-2.5 rounded-lg border border-egmf-border bg-egmf-surface px-3 transition-colors focus-within:border-egmf-primary focus-within:ring-4 focus-within:ring-egmf-primary/10">
+                  <Search size={18} className="shrink-0 text-egmf-primary" />
 
                   <input
                     type="text"
                     placeholder="Tìm hoặc quét mã phiếu..."
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
-                    className="h-full w-full min-w-0 bg-transparent text-base font-medium text-egmf-ink outline-none placeholder:font-normal placeholder:text-egmf-muted"
+                    className="h-full w-full min-w-0 bg-transparent text-sm font-medium text-egmf-ink outline-none placeholder:font-normal placeholder:text-egmf-muted"
                   />
 
                   {keyword && (
                     <button
                       type="button"
                       onClick={() => setKeyword("")}
-                      className="min-h-10 min-w-12 shrink-0 rounded-lg px-2.5 text-base font-bold text-egmf-muted transition-colors hover:bg-egmf-surface-tint hover:text-egmf-ink sm:min-h-0 sm:min-w-0 sm:bg-transparent sm:px-0 sm:text-sm"
+                      className="min-h-9 min-w-10 shrink-0 rounded-md px-2 text-sm font-bold text-egmf-muted transition-colors hover:bg-egmf-surface-tint hover:text-egmf-ink sm:min-h-0 sm:min-w-0 sm:bg-transparent sm:px-0"
                     >
                       Xóa
                     </button>
@@ -388,27 +376,24 @@ export default function PickingOrderList() {
                     />
                   </div>
                 ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {/* SAU NÀY RENDER COMPONENT PHIẾU TẠI ĐÂY */}
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {filteredOrders.map((item, index) => (
-                        <PickingOrderCard
-                          key={index}
-                          item={item}
-                          onClick={() => {
-                            navigate(
-                              `/picking-order-detail?phieuSoanHangId=${encodeURIComponent(item.PhieuSoanHangId)}`,
-                              {
-                                state: {
-                                  order: item,
-                                  kho: selectedWarehouse,
-                                },
+                  <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
+                    {filteredOrders.map((item, index) => (
+                      <PickingOrderCard
+                        key={index}
+                        item={item}
+                        onClick={() => {
+                          navigate(
+                            `/picking-order-detail?phieuSoanHangId=${encodeURIComponent(item.PhieuSoanHangId)}`,
+                            {
+                              state: {
+                                order: item,
+                                kho: selectedWarehouse,
                               },
-                            );
-                          }}
-                        />
-                      ))}
-                    </div>
+                            },
+                          );
+                        }}
+                      />
+                    ))}
                   </div>
                 )}
               </div>

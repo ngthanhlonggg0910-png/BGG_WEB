@@ -88,6 +88,7 @@ export default function AccessoryQualityInspectionPage() {
   const [dsKhaiBaoLoi, setDsKhaiBaoLoi] = useState([]);
   const location = useLocation();
   const user = getCurrentUser();
+  const TKId = user?.data?.TKId;
   const processingOption = PROCESSING_ACTIONS[processingAction];
   const tenNguoiTao = [user?.data?.HoVaTenLot, user?.data?.Ten]
     .filter(Boolean)
@@ -328,8 +329,8 @@ export default function AccessoryQualityInspectionPage() {
         TrangThai: "DAXACNHAN",
         NoiDung:
           "Cập nhật Đã xác nhận PGD phụ liệu từ ứng dụng WebApp (Kiểm PL)",
-        NguoiThayDoi: "",
-        TaiKhoanThayDoi: "",
+        NguoiThayDoi: tenNguoiTao,
+        TaiKhoanThayDoi: TKId,
         MACAddress: "",
         ComputerName: getComputerName(),
       };
