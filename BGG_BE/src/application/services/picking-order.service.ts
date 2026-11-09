@@ -145,10 +145,6 @@ export class PickingOrderService implements IPickingOrderService {
           dto.MaCay,
         );
 
-      if (!result || result.length === 0) {
-        throw new NotFoundException('Không tìm thấy danh sách vật tư');
-      }
-
       return {
         success: true,
         message: 'Lấy danh sách thành công',
@@ -248,7 +244,9 @@ export class PickingOrderService implements IPickingOrderService {
       if (error instanceof HttpException) throw error;
 
       throw new InternalServerErrorException(
-        error instanceof Error ? error.message : 'Kiểm tra tiến độ soạn hàng thất bại',
+        error instanceof Error
+          ? error.message
+          : 'Kiểm tra tiến độ soạn hàng thất bại',
       );
     }
   }

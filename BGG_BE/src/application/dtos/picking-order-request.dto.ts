@@ -75,16 +75,8 @@ export class wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHang_RequestDTO {
 }
 
 export class wh_LayDanhSachVatTuTheoMaRoVaPhieuSoanHangVaQrTrang_RequestDTO {
-  @IsInt()
-  @Min(1)
   PhieuSoanHangId: number;
-
-  // Stored procedure hiện chưa sử dụng giá trị này, nhưng vẫn yêu cầu tham số.
-  @IsString()
   SoRo: string;
-
-  @IsString()
-  @IsNotEmpty()
   MaCay: string;
 }
 

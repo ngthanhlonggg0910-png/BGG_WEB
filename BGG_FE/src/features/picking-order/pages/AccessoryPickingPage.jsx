@@ -12,7 +12,10 @@ import {
 } from "lucide-react";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { useLocation } from "react-router-dom";
-import { layDanhSachVatTuTheoMaQrTrang, pickFabricRoll } from "../api/pickingOrderAPI";
+import {
+  layDanhSachVatTuTheoMaQrTrang,
+  pickFabricRoll,
+} from "../api/pickingOrderAPI";
 import {
   showErrorToast,
   showSuccessToast,
@@ -24,10 +27,13 @@ import ConfirmPickingModal from "../components/ConfirmPickingModal";
 export default function AccessoryPickingPage() {
   const user = getCurrentUser();
   const TKId = user?.data?.TKId;
-  const tenNguoiQuetXuat = `${user?.data?.HoVaTenLot || ""} ${user?.data?.Ten || ""}`.trim() || "Thủ kho";
+  const tenNguoiQuetXuat =
+    `${user?.data?.HoVaTenLot || ""} ${user?.data?.Ten || ""}`.trim() ||
+    "Thủ kho";
   const location = useLocation();
   const qrTrangMapping = location?.state?.MaRo;
   const phieuSoanHangId = Number(location?.state?.PhieuSoanHangId);
+  console.log(phieuSoanHangId);
 
   const [submitting, setSubmitting] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -41,7 +47,11 @@ export default function AccessoryPickingPage() {
         if (item.CayId !== id) return item;
         const updated = { ...item, [field]: value };
         // Tự động gợi ý điền SLTX = tồn rổ khi người dùng tick chọn
-        if (field === "checked" && value === true && (!item.SLTX || item.SLTX === "")) {
+        if (
+          field === "checked" &&
+          value === true &&
+          (!item.SLTX || item.SLTX === "")
+        ) {
           const soTon = Number(item.SoLuong ?? item.SLBD ?? 0);
           if (soTon > 0) {
             updated.SLTX = String(soTon);
@@ -285,7 +295,9 @@ export default function AccessoryPickingPage() {
               <div className="col-span-full flex min-h-[360px] items-center justify-center">
                 <div className="text-center">
                   <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-                  <p className="mt-3 text-sm font-semibold text-slate-600">Đang tải danh sách phụ liệu trong rổ...</p>
+                  <p className="mt-3 text-sm font-semibold text-slate-600">
+                    Đang tải danh sách phụ liệu trong rổ...
+                  </p>
                 </div>
               </div>
             ) : items.length === 0 ? (
@@ -298,7 +310,8 @@ export default function AccessoryPickingPage() {
                     Chưa có cây phụ liệu cần xuất
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-egmf-muted">
-                    Không tìm thấy cây phụ liệu còn tồn với mã rổ/QR: <b>{qrTrangMapping || "—"}</b>
+                    Không tìm thấy cây phụ liệu còn tồn với mã rổ/QR:{" "}
+                    <b>{qrTrangMapping || "—"}</b>
                   </p>
                 </div>
               </section>
@@ -321,7 +334,11 @@ export default function AccessoryPickingPage() {
                             type="checkbox"
                             checked={item.checked}
                             onChange={(e) =>
-                              updateItem(item.CayId, "checked", e.target.checked)
+                              updateItem(
+                                item.CayId,
+                                "checked",
+                                e.target.checked,
+                              )
                             }
                             className="size-5 rounded border-slate-300 text-egmf-primary focus:ring-egmf-primary"
                           />
@@ -337,7 +354,9 @@ export default function AccessoryPickingPage() {
 
                       <div className="mt-3 space-y-2">
                         <div className="flex items-start justify-between gap-2">
-                          <span className="text-xs text-slate-500">Tên vật tư:</span>
+                          <span className="text-xs text-slate-500">
+                            Tên vật tư:
+                          </span>
                           <span className="text-right text-xs font-bold text-slate-800">
                             {item.TenNPL || item.MaVatTu || "—"}
                           </span>
@@ -345,7 +364,9 @@ export default function AccessoryPickingPage() {
 
                         {item.MaVatTu && (
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs text-slate-500">Mã vật tư:</span>
+                            <span className="text-xs text-slate-500">
+                              Mã vật tư:
+                            </span>
                             <span className="text-right text-xs font-semibold text-slate-700">
                               {item.MaVatTu}
                             </span>
@@ -353,14 +374,18 @@ export default function AccessoryPickingPage() {
                         )}
 
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-slate-500">Màu / Quy cách:</span>
+                          <span className="text-xs text-slate-500">
+                            Màu / Quy cách:
+                          </span>
                           <span className="text-right text-xs font-semibold text-slate-700">
                             {item.Mau || "—"} / {item.QuyCach || "—"}
                           </span>
                         </div>
 
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-slate-500 font-semibold">Tồn rổ:</span>
+                          <span className="text-xs text-slate-500 font-semibold">
+                            Tồn rổ:
+                          </span>
                           <span className="text-sm font-extrabold text-blue-600">
                             {soTon.toLocaleString()} {item.DVT || ""}
                           </span>
@@ -404,7 +429,8 @@ export default function AccessoryPickingPage() {
 
                 {visibleItems.length === 0 && (
                   <div className="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center text-sm text-egmf-muted">
-                    Không tìm thấy cây phụ liệu phù hợp với từ khóa “{searchValue}”.
+                    Không tìm thấy cây phụ liệu phù hợp với từ khóa “
+                    {searchValue}”.
                   </div>
                 )}
               </>
