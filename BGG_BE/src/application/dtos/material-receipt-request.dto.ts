@@ -80,8 +80,13 @@ export class wh_XacNhanNhanHang_RequestDTO {
   @Min(1)
   PhieuSoanHangId: number;
 
+  @IsOptional()
   @IsBoolean()
-  nhanTatCa: boolean;
+  nhanTatCa?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  huyNhanTatCa?: boolean;
 
   @IsOptional()
   @IsBoolean()

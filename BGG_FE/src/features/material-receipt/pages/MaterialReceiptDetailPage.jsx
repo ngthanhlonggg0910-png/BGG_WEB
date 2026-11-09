@@ -89,6 +89,7 @@ export default function MaterialReceiptDetailPage() {
 
   // Batch confirming loading
   const [batchLoading, setBatchLoading] = useState(false);
+  const [scanMode, setScanMode] = useState("nhan"); // 'nhan' | 'huy'
 
   const tenNguoiNhan =
     `${profile?.HoVaTenLot || ""} ${profile?.Ten || ""}`.trim() ||
@@ -130,11 +131,12 @@ export default function MaterialReceiptDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phieuSoanHangId]);
 
-  // Xử lý quét mã barcode cây
-  const handleScanRoll = async (barcodeToScan) => {
+  // Xử lý quét mã barcode cây (hỗ trợ cả nhận và hủy nhận)
+  const handleScanRoll = async (barcodeToScan, forcedAction) => {
     const code = (barcodeToScan || barcodeInput).trim();
     if (!code) return;
 
+    const actionToUse = forcedAction || (scanMode === "huy" ? "huy_nhan" : "xac_nhan");
     setScanning(true);
     try {
       const res = await quetNhanCay({
@@ -143,13 +145,14 @@ export default function MaterialReceiptDetailPage() {
         tkId: profile?.TKId || 1,
         tenNguoiNhan,
         xiNghiepNhan,
-        action: "xac_nhan",
+        action: actionToUse,
       });
 
       if (res && res.success) {
         playBeep("success");
         setLastScanAlert({
           type: "success",
+          action: actionToUse,
           message: res.message,
           maCay: code,
           time: new Date(),
@@ -165,9 +168,10 @@ export default function MaterialReceiptDetailPage() {
       const errMsg =
         err?.response?.data?.message ||
         err?.message ||
-        `Lỗi khi quét nhận mã [${code}]`;
+        `Lỗi khi ${actionToUse === "huy_nhan" ? "hủy nhận" : "quét nhận"} mã [${code}]`;
       setLastScanAlert({
         type: "error",
+        action: actionToUse,
         message: errMsg,
         maCay: code,
         time: new Date(),
@@ -247,8 +251,42 @@ export default function MaterialReceiptDetailPage() {
         SoLuongDaNhan: newSummary.SoLuongDaNhan,
         TrangThaiNhan: newSummary.TrangThaiNhan,
         TiLeNhan: newSummary.TiLeNhan,
-        TrangThaiDDH: newSummary.isHoanThanh ? "DaNhanHang" : prev.TrangThaiDDH,
+        TrangThaiDDH: newSummary.isHoanThanh
+          ? "DaNhanHang"
+          : prev.TrangThaiDDH === "DaNhanHang"
+            ? "DangNhan"
+            : prev.TrangThaiDDH,
       }));
+    }
+  };
+
+  // Xử lý hủy nhận tất cả đơn
+  const handleBatchCancelAll = async () => {
+    setBatchLoading(true);
+    try {
+      const res = await xacNhanNhanHang({
+        PhieuSoanHangId: Number(phieuSoanHangId),
+        nhanTatCa: false,
+        huyNhanTatCa: true,
+        tkId: profile?.TKId || 1,
+        tenNguoiNhan,
+        xiNghiepNhan,
+      });
+
+      if (res && res.success) {
+        playBeep("success");
+        showSuccessToast(res.message || "Đã hủy nhận toàn bộ đơn hàng!");
+        await loadDetail();
+      }
+    } catch (err) {
+      playBeep("error");
+      showErrorToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Không thể hủy nhận đơn hàng",
+      );
+    } finally {
+      setBatchLoading(false);
     }
   };
 
@@ -414,6 +452,32 @@ export default function MaterialReceiptDetailPage() {
                 </button>
               </Popconfirm>
             )}
+
+            {/* Nút Hủy nhận tất cả */}
+            {header && header.SoCayDaNhan > 0 && (
+              <Popconfirm
+                title="Hủy nhận toàn bộ đơn hàng?"
+                description={
+                  <div className="max-w-[280px] text-xs text-slate-600">
+                    Bạn có chắc chắn muốn hủy nhận toàn bộ{" "}
+                    <strong>{header.SoCayDaNhan}</strong> cây đã nhận của đơn này để hoàn nguyên về trạng thái chờ nhận không?
+                  </div>
+                }
+                onConfirm={handleBatchCancelAll}
+                okText="Đồng ý hủy nhận"
+                cancelText="Đóng"
+                okButtonProps={{ danger: true, loading: batchLoading }}
+              >
+                <button
+                  type="button"
+                  disabled={batchLoading}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-300 bg-rose-50 px-3.5 py-2 text-xs font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 active:scale-95"
+                >
+                  <RotateCcw className="size-3.5" />
+                  <span>Hủy nhận tất cả</span>
+                </button>
+              </Popconfirm>
+            )}
           </div>
         </div>
 
@@ -484,12 +548,46 @@ export default function MaterialReceiptDetailPage() {
         </div>
 
         {/* Khung quét barcode */}
-        <div className="rounded-2xl border-2 border-blue-200 bg-gradient-to-b from-blue-50/60 to-white p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-blue-900 sm:text-sm">
-              <Barcode className="size-5 text-blue-600" />
-              <span>Quét mã barcode cây / cuộn (Máy quét hoặc gõ mã)</span>
+        <div className={`rounded-2xl border-2 transition-colors p-4 shadow-sm ${
+          scanMode === "huy"
+            ? "border-rose-300 bg-gradient-to-b from-rose-50/70 to-white"
+            : "border-blue-200 bg-gradient-to-b from-blue-50/60 to-white"
+        }`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Barcode className={`size-5 ${scanMode === "huy" ? "text-rose-600" : "text-blue-600"}`} />
+              <div className="flex items-center gap-1.5 rounded-xl bg-white p-1 border border-slate-200 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScanMode("nhan");
+                    inputRef.current?.focus();
+                  }}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                    scanMode === "nhan"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Quét để Nhận
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScanMode("huy");
+                    inputRef.current?.focus();
+                  }}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                    scanMode === "huy"
+                      ? "bg-rose-600 text-white shadow-sm"
+                      : "text-slate-600 hover:text-rose-700"
+                  }`}
+                >
+                  Quét để Hủy nhận
+                </button>
+              </div>
             </div>
+
             <span className="text-[11px] text-slate-500">
               Nhấn <strong>Enter</strong> sau khi nhập mã
             </span>
@@ -508,9 +606,17 @@ export default function MaterialReceiptDetailPage() {
                 type="text"
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
-                placeholder="Quét mã cây (Ví dụ: NAH2611..., PAH2610...)"
+                placeholder={
+                  scanMode === "huy"
+                    ? "Quét hoặc nhập mã cây để HỦY NHẬN..."
+                    : "Quét hoặc nhập mã cây để NHẬN (Ví dụ: NAH2611..., PAH2610...)"
+                }
                 disabled={scanning}
-                className="w-full rounded-xl border-2 border-blue-300 bg-white px-3.5 py-2.5 text-sm font-semibold tracking-wide text-slate-900 placeholder-slate-400 shadow-inner transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                className={`w-full rounded-xl border-2 bg-white px-3.5 py-2.5 text-sm font-semibold tracking-wide text-slate-900 placeholder-slate-400 shadow-inner transition focus:outline-none focus:ring-2 ${
+                  scanMode === "huy"
+                    ? "border-rose-300 focus:border-rose-600 focus:ring-rose-100"
+                    : "border-blue-300 focus:border-blue-600 focus:ring-blue-100"
+                }`}
               />
               {barcodeInput && (
                 <button
@@ -529,14 +635,20 @@ export default function MaterialReceiptDetailPage() {
             <button
               type="submit"
               disabled={scanning || !barcodeInput.trim()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-blue-700 active:scale-95 disabled:bg-slate-300 disabled:shadow-none sm:text-sm"
+              className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md transition active:scale-95 disabled:bg-slate-300 disabled:shadow-none sm:text-sm ${
+                scanMode === "huy"
+                  ? "bg-rose-600 hover:bg-rose-700 shadow-rose-200"
+                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
+              }`}
             >
               {scanning ? (
                 <RefreshCw className="size-4 animate-spin" />
+              ) : scanMode === "huy" ? (
+                <RotateCcw className="size-4" />
               ) : (
                 <Check className="size-4" />
               )}
-              <span>Xác nhận</span>
+              <span>{scanMode === "huy" ? "Xác nhận hủy" : "Xác nhận nhận"}</span>
             </button>
           </form>
 

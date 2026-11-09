@@ -68,9 +68,11 @@ export class MaterialReceiptService implements IMaterialReceiptService {
     dto: wh_XacNhanNhanHang_RequestDTO,
   ): Promise<wh_XacNhanNhanHang_ResponseDTO> {
     const summary = await this.materialReceiptRepository.xacNhanNhanHang(dto);
-    const msg = dto.nhanTatCa
-      ? `Đã xác nhận nhận tất cả (${summary.soCayVuaCapNhat} cây mới)!`
-      : `Đã lưu trạng thái nhận hàng!`;
+    const msg = dto.huyNhanTatCa
+      ? `Đã hủy nhận toàn bộ (${summary.soCayVuaCapNhat} cây) thành công!`
+      : dto.nhanTatCa
+        ? `Đã xác nhận nhận tất cả (${summary.soCayVuaCapNhat} cây mới)!`
+        : `Đã lưu trạng thái nhận hàng!`;
     return {
       success: true,
       message: msg,

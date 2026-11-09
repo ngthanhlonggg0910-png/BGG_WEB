@@ -486,7 +486,7 @@ export class MaterialReceiptRepository implements IMaterialReceiptRepository {
       revertReq.input('id', sql.BigInt, dto.PhieuSoanHangId);
       await revertReq.query(`
         UPDATE d
-        SET TrangThai = 'HoanThanh'
+        SET TrangThai = CASE WHEN psh.TinhTrang = 'hoanthanh' THEN 'HoanThanh' ELSE 'DaTaoPSH' END
         FROM dbo.OMM_DonDatHang_LSX d
         INNER JOIN dbo.WH_PhieuSoanHang psh ON (psh.LoaiLenh = 'DonDatHang' AND psh.LenhId = d.DonDatHangId) OR (d.PhieuSoanHangId = psh.PhieuSoanHangId)
         WHERE psh.PhieuSoanHangId = @id AND d.TrangThai = 'DaNhanHang';
@@ -537,7 +537,34 @@ export class MaterialReceiptRepository implements IMaterialReceiptRepository {
     try {
       let soCayVuaCapNhat = 0;
 
-      if (dto.nhanTatCa) {
+      if (dto.huyNhanTatCa) {
+        // Hủy nhận toàn bộ các cây đã nhận trong phiếu
+        const batchHuyReq = new sql.Request(transaction);
+        batchHuyReq.input('id', sql.BigInt, dto.PhieuSoanHangId);
+
+        const updateRes = await batchHuyReq.query(`
+          UPDATE c
+          SET isXacNhan = 0,
+              SoLuongThucNhan = NULL,
+              ThoiGianXacNhan = NULL,
+              TKId = NULL,
+              NguoiXacNhan = NULL,
+              TenNguoiXacNhan = NULL,
+              XiNghiepXacNhan = NULL
+          FROM dbo.WH_ChiTietPhieuSoanHang_ChiTietCay c
+          INNER JOIN dbo.WH_ChiTietPhieuSoanHang s ON s.ChiTietPhieuSoanHangId = c.ChiTietPhieuSoanHangId
+          WHERE s.PhieuSoanHangId = @id
+            AND ISNULL(c.isXacNhan, 0) = 1;
+
+          UPDATE d
+          SET TrangThai = CASE WHEN psh.TinhTrang = 'hoanthanh' THEN 'HoanThanh' ELSE 'DaTaoPSH' END
+          FROM dbo.OMM_DonDatHang_LSX d
+          INNER JOIN dbo.WH_PhieuSoanHang psh ON (psh.LoaiLenh = 'DonDatHang' AND psh.LenhId = d.DonDatHangId) OR (d.PhieuSoanHangId = psh.PhieuSoanHangId)
+          WHERE psh.PhieuSoanHangId = @id AND d.TrangThai = 'DaNhanHang';
+        `);
+
+        soCayVuaCapNhat = updateRes.rowsAffected?.[0] || 0;
+      } else if (dto.nhanTatCa) {
         // Nhận tất cả các cây chưa được nhận
         const batchReq = new sql.Request(transaction);
         batchReq.input('id', sql.BigInt, dto.PhieuSoanHangId);
@@ -593,7 +620,7 @@ export class MaterialReceiptRepository implements IMaterialReceiptRepository {
       else trangThaiNhan = 'DaNhanDu';
 
       const isHoanThanh =
-        dto.chotHoanTat || (tongSoCay > 0 && soCayDaNhan >= tongSoCay);
+        !dto.huyNhanTatCa && (dto.chotHoanTat || (tongSoCay > 0 && soCayDaNhan >= tongSoCay));
 
       if (isHoanThanh) {
         const ddhReq = new sql.Request(transaction);
