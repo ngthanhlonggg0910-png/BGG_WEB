@@ -51,9 +51,6 @@ export class PickingOrderService implements IPickingOrderService {
           dto.tinhTrang,
         );
 
-      if (!result || result.length === 0)
-        throw new NotFoundException('Không tìm thấy danh sách phiếu soạn hàng');
-
       return {
         success: true,
         message: 'Lấy danh sách thành công',

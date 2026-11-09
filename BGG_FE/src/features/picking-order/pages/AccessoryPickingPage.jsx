@@ -275,18 +275,6 @@ export default function AccessoryPickingPage() {
                   )}
                 </button>
               )}
-
-              {/* NÚT XÁC NHẬN XUẤT KHO */}
-              {phieuSoanHangId > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setConfirmModalOpen(true)}
-                  className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
-                >
-                  <ShieldCheck size={18} />
-                  <span>Xác nhận xuất kho</span>
-                </button>
-              )}
             </div>
           </section>
 

@@ -94,7 +94,9 @@ export default function PickingOrderMaterialList() {
                   <h1 className="text-xl font-bold text-gray-900">
                     Soạn nguyên vật liệu
                   </h1>
-                  <p className="text-xs text-gray-500">Mã rổ: <b>{MaRo || "—"}</b></p>
+                  <p className="text-xs text-gray-500">
+                    Mã rổ: <b>{MaRo || "—"}</b>
+                  </p>
                 </div>
               </div>
 
