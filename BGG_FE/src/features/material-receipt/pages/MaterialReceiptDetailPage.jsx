@@ -565,7 +565,7 @@ export default function MaterialReceiptDetailPage() {
                   }}
                   className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
                     scanMode === "nhan"
-                      ? "bg-blue-600 text-white shadow-sm"
+                    ? "border border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
@@ -579,7 +579,7 @@ export default function MaterialReceiptDetailPage() {
                   }}
                   className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
                     scanMode === "huy"
-                      ? "bg-rose-600 text-white shadow-sm"
+                      ? "border border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
                       : "text-slate-600 hover:text-rose-700"
                   }`}
                 >
@@ -694,7 +694,7 @@ export default function MaterialReceiptDetailPage() {
               onClick={() => setRollFilter("ALL")}
               className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
                 rollFilter === "ALL"
-                  ? "bg-slate-900 text-white"
+                  ? "border border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
               }`}
             >
@@ -705,7 +705,7 @@ export default function MaterialReceiptDetailPage() {
               onClick={() => setRollFilter("UNCONFIRMED")}
               className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
                 rollFilter === "UNCONFIRMED"
-                  ? "bg-amber-600 text-white"
+                  ? "border border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
               }`}
             >
@@ -716,7 +716,7 @@ export default function MaterialReceiptDetailPage() {
               onClick={() => setRollFilter("CONFIRMED")}
               className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
                 rollFilter === "CONFIRMED"
-                  ? "bg-emerald-600 text-white"
+                  ? "border border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
               }`}
             >

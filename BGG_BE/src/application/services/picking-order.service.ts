@@ -82,10 +82,6 @@ export class PickingOrderService implements IPickingOrderService {
           dto.PhieuSoanHangId,
         );
 
-      if (!result || result.length === 0) {
-        throw new NotFoundException('Không tìm thấy danh sách ctpsh');
-      }
-
       return {
         success: true,
         message: 'Lấy danh sách thành công',
