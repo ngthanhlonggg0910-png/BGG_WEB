@@ -1,30 +1,32 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import {
-  AlertCircle,
+  Archive,
   ArrowLeft,
   Barcode,
   Check,
   CheckCircle2,
+  CheckSquare,
   ChevronDown,
   ChevronUp,
   Clock,
+  Filter,
   Layers,
+  Package,
   PackageCheck,
-  PackageOpen,
-  Printer,
   RefreshCw,
   RotateCcw,
   Scissors,
   Search,
   Shirt,
   Sparkles,
+  Square,
   Trash2,
   User,
   X,
 } from "lucide-react";
 import { App as AntApp, Modal, Popconfirm, Spin, message } from "antd";
 import dayjs from "dayjs";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { getCurrentProfile } from "../../../shared/auth/session";
@@ -32,6 +34,7 @@ import {
   getChiTietDonNhanHang,
   quetNhanCay,
   xacNhanNhanHang,
+  xacNhanNhanThungGPA,
 } from "../api/materialReceiptApi";
 import {
   showErrorToast,
@@ -63,7 +66,7 @@ function playBeep(type = "success") {
       osc.stop(ctx.currentTime + 0.25);
     }
   } catch (e) {
-    // Ignore audio autoplay restrictions
+    // Ignore audio restrictions
   }
 }
 
@@ -86,6 +89,19 @@ export default function MaterialReceiptDetailPage() {
   const [rollFilter, setRollFilter] = useState("ALL"); // 'ALL' | 'UNCONFIRMED' | 'CONFIRMED'
   const [itemSearch, setItemSearch] = useState("");
   const [collapsedItems, setCollapsedItems] = useState({});
+  const [collapsedThungs, setCollapsedThungs] = useState({});
+
+  // View mode for Phụ liệu: 'thung' (Xem theo thùng GPA) | 'item' (Xem theo mặt hàng)
+  const [viewMode, setViewMode] = useState("thung");
+
+  // Modal nhận hàng theo Thùng GPA
+  const [thungModalOpen, setThungModalOpen] = useState(false);
+  const [modalThung, setModalThung] = useState(null);
+  const [modalMode, setModalMode] = useState("nhan"); // 'nhan' | 'huy'
+  const [modalCheckedMap, setModalCheckedMap] = useState({}); // { [cayId]: boolean }
+  const [modalQtyMap, setModalQtyMap] = useState({}); // { [cayId]: number }
+  const [modalSearch, setModalSearch] = useState("");
+  const [modalSubmitting, setModalSubmitting] = useState(false);
 
   // Batch confirming loading
   const [batchLoading, setBatchLoading] = useState(false);
@@ -101,6 +117,10 @@ export default function MaterialReceiptDetailPage() {
       ? `Nhà cắt ${header?.NhaCat || ""}`.trim()
       : `Tổ may ${header?.ToMay || ""}`.trim());
 
+  const isFabric =
+    header?.LoaiDatHang === "NguyenLieu" ||
+    (!header?.LoaiDatHang && (header?.MaSoPhieuSoan || "").startsWith("NA"));
+
   const loadDetail = async () => {
     if (!phieuSoanHangId) return;
     setLoading(true);
@@ -109,6 +129,15 @@ export default function MaterialReceiptDetailPage() {
       if (res && res.success) {
         setHeader(res.header);
         setItems(res.items || []);
+        // Nếu là phụ liệu thì mặc định xem theo thùng
+        if (
+          res.header?.LoaiDatHang === "PhuLieu" ||
+          (res.header?.MaSoPhieuSoan || "").startsWith("PA")
+        ) {
+          setViewMode("thung");
+        } else {
+          setViewMode("item");
+        }
       } else {
         showErrorToast("Không thể tải chi tiết phiếu nhận hàng");
       }
@@ -121,7 +150,6 @@ export default function MaterialReceiptDetailPage() {
       );
     } finally {
       setLoading(false);
-      // Auto focus input
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
@@ -131,12 +159,189 @@ export default function MaterialReceiptDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phieuSoanHangId]);
 
-  // Xử lý quét mã barcode cây (hỗ trợ cả nhận và hủy nhận)
+  // Nhóm thùng GPA tự động tính toán từ items để luôn đồng bộ 100%
+  const derivedThungs = useMemo(() => {
+    const map = new Map();
+    items.forEach((item) => {
+      item.cays?.forEach((cay) => {
+        const gpa = (cay.MaGPA || "").trim();
+        if (!map.has(gpa)) {
+          map.set(gpa, {
+            MaGPA: gpa,
+            TenThung: gpa ? `Thùng ${gpa}` : "Phụ liệu lẻ (Chưa đóng thùng)",
+            cays: [],
+            TongSoCay: 0,
+            SoCayDaNhan: 0,
+            TongSoLuongXuat: 0,
+            SoLuongDaNhan: 0,
+          });
+        }
+        const thung = map.get(gpa);
+        thung.TongSoCay += 1;
+        const slXuat = Number(cay.SoLuongXuat) || 0;
+        const slNhan =
+          cay.SoLuongThucNhan !== null && cay.SoLuongThucNhan !== undefined
+            ? Number(cay.SoLuongThucNhan)
+            : cay.isXacNhan
+              ? slXuat
+              : 0;
+
+        thung.TongSoLuongXuat += slXuat;
+        if (cay.isXacNhan) {
+          thung.SoCayDaNhan += 1;
+          thung.SoLuongDaNhan += slNhan;
+        }
+
+        thung.cays.push({
+          ...cay,
+          MaVatTu: item.MaVatTu,
+          TenVatTu: item.TenVatTu,
+          MaMau: item.MaMau,
+          QuyCach: item.QuyCach,
+          DVT: item.DVT,
+        });
+      });
+    });
+
+    return Array.from(map.values())
+      .map((t) => {
+        let TrangThaiNhan = "ChoNhan";
+        if (t.SoCayDaNhan === 0) TrangThaiNhan = "ChoNhan";
+        else if (t.SoCayDaNhan < t.TongSoCay) TrangThaiNhan = "NhanMotPhan";
+        else TrangThaiNhan = "DaNhanDu";
+        return { ...t, TrangThaiNhan };
+      })
+      .sort((a, b) => {
+        if (!a.MaGPA) return 1;
+        if (!b.MaGPA) return -1;
+        return a.MaGPA.localeCompare(b.MaGPA);
+      });
+  }, [items]);
+
+  // Mở modal nhận hàng theo thùng GPA
+  const handleOpenThungModal = (thung, mode = "nhan") => {
+    setModalThung(thung);
+    setModalMode(mode);
+    setModalSearch("");
+
+    const checkedMap = {};
+    const qtyMap = {};
+
+    thung.cays.forEach((c) => {
+      if (mode === "huy") {
+        checkedMap[c.CayId] = Boolean(c.isXacNhan);
+      } else {
+        checkedMap[c.CayId] = !c.isXacNhan;
+      }
+      qtyMap[c.CayId] =
+        c.SoLuongThucNhan !== null && c.SoLuongThucNhan !== undefined
+          ? c.SoLuongThucNhan
+          : c.SoLuongXuat;
+    });
+
+    setModalCheckedMap(checkedMap);
+    setModalQtyMap(qtyMap);
+    setThungModalOpen(true);
+  };
+
+  // Xác nhận trong modal nhận thùng GPA
+  const handleConfirmThungModal = async () => {
+    if (!modalThung) return;
+
+    const selectedCays = modalThung.cays.filter(
+      (c) => modalCheckedMap[c.CayId],
+    );
+
+    if (selectedCays.length === 0) {
+      showWarningToast("Vui lòng tick chọn ít nhất một vật tư để thao tác!");
+      return;
+    }
+
+    setModalSubmitting(true);
+    try {
+      const payload = {
+        PhieuSoanHangId: Number(phieuSoanHangId),
+        MaGPA: modalThung.MaGPA,
+        action: modalMode === "huy" ? "huy_nhan" : "xac_nhan",
+        tkId: profile?.TKId || 1,
+        tenNguoiNhan,
+        xiNghiepNhan,
+        selectedCays: selectedCays.map((c) => ({
+          CayId: c.CayId,
+          ChiTietPhieuSoanHangId: c.ChiTietPhieuSoanHangId,
+          SoLuongThucNhan:
+            modalQtyMap[c.CayId] !== undefined
+              ? Number(modalQtyMap[c.CayId])
+              : Number(c.SoLuongXuat),
+        })),
+      };
+
+      const res = await xacNhanNhanThungGPA(payload);
+      if (res && res.success) {
+        playBeep("success");
+        showSuccessToast(res.message);
+        setThungModalOpen(false);
+        await loadDetail();
+      }
+    } catch (err) {
+      playBeep("error");
+      showErrorToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Lỗi khi xử lý nhận thùng",
+      );
+    } finally {
+      setModalSubmitting(false);
+    }
+  };
+
+  // Hủy nhận toàn bộ một thùng GPA
+  const handleHuyThung = async (thung) => {
+    try {
+      const res = await xacNhanNhanThungGPA({
+        PhieuSoanHangId: Number(phieuSoanHangId),
+        MaGPA: thung.MaGPA,
+        action: "huy_nhan",
+        tkId: profile?.TKId || 1,
+        tenNguoiNhan,
+        xiNghiepNhan,
+      });
+      if (res && res.success) {
+        playBeep("success");
+        showSuccessToast(res.message);
+        await loadDetail();
+      }
+    } catch (err) {
+      playBeep("error");
+      showErrorToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Không thể hủy nhận thùng này",
+      );
+    }
+  };
+
+  // Quét mã barcode (Hỗ trợ cả Mã Thùng GPA và Mã Cây)
   const handleScanRoll = async (barcodeToScan, forcedAction) => {
     const code = (barcodeToScan || barcodeInput).trim();
     if (!code) return;
 
-    const actionToUse = forcedAction || (scanMode === "huy" ? "huy_nhan" : "xac_nhan");
+    // 1. Kiểm tra xem có khớp với Mã Thùng GPA nào trong đơn không
+    const matchedThung = derivedThungs.find(
+      (t) => t.MaGPA && t.MaGPA.toUpperCase() === code.toUpperCase(),
+    );
+
+    if (matchedThung) {
+      playBeep("success");
+      setBarcodeInput("");
+      const actionToUse = forcedAction || (scanMode === "huy" ? "huy" : "nhan");
+      handleOpenThungModal(matchedThung, actionToUse);
+      return;
+    }
+
+    // 2. Nếu không khớp mã thùng GPA, xử lý quét nhận/hủy nhận mã cây lẻ
+    const actionToUse =
+      forcedAction || (scanMode === "huy" ? "huy_nhan" : "xac_nhan");
     setScanning(true);
     try {
       const res = await quetNhanCay({
@@ -159,7 +364,6 @@ export default function MaterialReceiptDetailPage() {
         });
         showSuccessToast(res.message);
 
-        // Cập nhật state nội bộ ngay lập tức để UI mượt mà
         updateRollInState(res.cay, res.summary);
         setBarcodeInput("");
       }
@@ -230,7 +434,10 @@ export default function MaterialReceiptDetailPage() {
           const soCayDaNhan = newCays.filter((c) => c.isXacNhan).length;
           const soLuongDaNhan = newCays
             .filter((c) => c.isXacNhan)
-            .reduce((sum, c) => sum + (c.SoLuongThucNhan || c.SoLuongXuat || 0), 0);
+            .reduce(
+              (sum, c) => sum + (c.SoLuongThucNhan || c.SoLuongXuat || 0),
+              0,
+            );
           return {
             ...item,
             cays: newCays,
@@ -322,7 +529,6 @@ export default function MaterialReceiptDetailPage() {
     }
   };
 
-  // Toggle collapse từng vật tư
   const toggleCollapse = (id) => {
     setCollapsedItems((prev) => ({
       ...prev,
@@ -330,7 +536,14 @@ export default function MaterialReceiptDetailPage() {
     }));
   };
 
-  // Lọc vật tư & cây theo bộ lọc
+  const toggleCollapseThung = (gpa) => {
+    setCollapsedThungs((prev) => ({
+      ...prev,
+      [gpa]: !prev[gpa],
+    }));
+  };
+
+  // Lọc vật tư theo bộ lọc
   const filteredItems = useMemo(() => {
     const term = itemSearch.trim().toLowerCase();
 
@@ -348,6 +561,7 @@ export default function MaterialReceiptDetailPage() {
           matchingCays = matchingCays.filter(
             (c) =>
               (c.MaCay || "").toLowerCase().includes(term) ||
+              (c.MaGPA || "").toLowerCase().includes(term) ||
               (item.MaVatTu || "").toLowerCase().includes(term) ||
               (item.TenVatTu || "").toLowerCase().includes(term),
           );
@@ -369,10 +583,45 @@ export default function MaterialReceiptDetailPage() {
       });
   }, [items, rollFilter, itemSearch]);
 
+  // Lọc danh sách thùng theo bộ lọc
+  const filteredThungs = useMemo(() => {
+    const term = itemSearch.trim().toLowerCase();
+
+    return derivedThungs
+      .map((thung) => {
+        let matchingCays = thung.cays;
+
+        if (rollFilter === "UNCONFIRMED") {
+          matchingCays = matchingCays.filter((c) => !c.isXacNhan);
+        } else if (rollFilter === "CONFIRMED") {
+          matchingCays = matchingCays.filter((c) => c.isXacNhan);
+        }
+
+        if (term) {
+          matchingCays = matchingCays.filter(
+            (c) =>
+              (c.MaCay || "").toLowerCase().includes(term) ||
+              (c.MaGPA || "").toLowerCase().includes(term) ||
+              (c.MaVatTu || "").toLowerCase().includes(term) ||
+              (c.TenVatTu || "").toLowerCase().includes(term),
+          );
+        }
+
+        return {
+          ...thung,
+          filteredCays: matchingCays,
+        };
+      })
+      .filter((thung) => {
+        if (!term && rollFilter === "ALL") return true;
+        return (
+          thung.filteredCays.length > 0 ||
+          (term && (thung.MaGPA || "").toLowerCase().includes(term))
+        );
+      });
+  }, [derivedThungs, rollFilter, itemSearch]);
+
   const progress = Number(header?.TiLeNhan) || 0;
-  const isFabric =
-    header?.LoaiDatHang === "NguyenLieu" ||
-    (!header?.LoaiDatHang && (header?.MaSoPhieuSoan || "").startsWith("NA"));
 
   return (
     <MainLayout screenTitle="Chi tiết nhận hàng NPL">
@@ -390,7 +639,9 @@ export default function MaterialReceiptDetailPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-slate-900 sm:text-xl">
-                  {header?.SoDonDatHang || header?.MaSoPhieuSoan || "Chi tiết nhận hàng"}
+                  {header?.SoDonDatHang ||
+                    header?.MaSoPhieuSoan ||
+                    "Chi tiết nhận hàng"}
                 </h1>
                 <span
                   className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${
@@ -399,17 +650,32 @@ export default function MaterialReceiptDetailPage() {
                       : "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700"
                   }`}
                 >
-                  {isFabric ? <Scissors className="size-3" /> : <Shirt className="size-3" />}
+                  {isFabric ? (
+                    <Scissors className="size-3" />
+                  ) : (
+                    <Shirt className="size-3" />
+                  )}
                   {header?.BoPhanNhan || (isFabric ? "Nhà cắt" : "Tổ may")}
                 </span>
               </div>
               <div className="text-xs text-slate-500">
-                Phiếu soạn: <strong className="text-slate-700">{header?.MaSoPhieuSoan}</strong>
+                Phiếu soạn:{" "}
+                <strong className="text-slate-700">
+                  {header?.MaSoPhieuSoan}
+                </strong>
                 {header?.SoLSX && (
-                  <> • LSX: <strong className="text-slate-700">{header?.SoLSX}</strong></>
+                  <>
+                    {" "}
+                    • LSX:{" "}
+                    <strong className="text-slate-700">{header?.SoLSX}</strong>
+                  </>
                 )}
                 {header?.MaHang && (
-                  <> • Mã hàng: <strong className="text-slate-700">{header?.MaHang}</strong></>
+                  <>
+                    {" "}
+                    • Mã hàng:{" "}
+                    <strong className="text-slate-700">{header?.MaHang}</strong>
+                  </>
                 )}
               </div>
             </div>
@@ -422,7 +688,9 @@ export default function MaterialReceiptDetailPage() {
               disabled={loading}
               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95"
             >
-              <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`size-3.5 ${loading ? "animate-spin" : ""}`}
+              />
               Làm mới
             </button>
 
@@ -433,8 +701,8 @@ export default function MaterialReceiptDetailPage() {
                 description={
                   <div className="max-w-[280px] text-xs text-slate-600">
                     Xác nhận nhận đủ tất cả{" "}
-                    <strong>{header.TongSoCay - header.SoCayDaNhan}</strong> cây/cuộn
-                    còn lại theo đúng số lượng kho đã xuất?
+                    <strong>{header.TongSoCay - header.SoCayDaNhan}</strong>{" "}
+                    cây/mục còn lại theo đúng số lượng kho đã xuất?
                   </div>
                 }
                 onConfirm={handleBatchReceiveAll}
@@ -460,7 +728,8 @@ export default function MaterialReceiptDetailPage() {
                 description={
                   <div className="max-w-[280px] text-xs text-slate-600">
                     Bạn có chắc chắn muốn hủy nhận toàn bộ{" "}
-                    <strong>{header.SoCayDaNhan}</strong> cây đã nhận của đơn này để hoàn nguyên về trạng thái chờ nhận không?
+                    <strong>{header.SoCayDaNhan}</strong> mục đã nhận của đơn
+                    này để hoàn nguyên về trạng thái chờ nhận không?
                   </div>
                 }
                 onConfirm={handleBatchCancelAll}
@@ -490,7 +759,22 @@ export default function MaterialReceiptDetailPage() {
                 Tiến độ nhận hàng
               </span>
               <span className="text-sm font-bold text-slate-900">
-                {header?.SoCayDaNhan || 0} / {header?.TongSoCay || 0} cây ({progress}%)
+                {!isFabric && derivedThungs.length > 0 ? (
+                  <>
+                    {derivedThungs.filter((t) => t.TrangThaiNhan === "DaNhanDu")
+                      .length}
+                    /{derivedThungs.length} thùng{" "}
+                    <span className="text-xs font-normal text-slate-500">
+                      ({header?.SoCayDaNhan || 0}/{header?.TongSoCay || 0} mục •{" "}
+                      {progress}%)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {header?.SoCayDaNhan || 0} / {header?.TongSoCay || 0} cây (
+                    {progress}%)
+                  </>
+                )}
               </span>
             </div>
             <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -499,8 +783,8 @@ export default function MaterialReceiptDetailPage() {
                   progress >= 100
                     ? "bg-emerald-500"
                     : progress > 0
-                    ? "bg-blue-600"
-                    : "bg-slate-300"
+                      ? "bg-blue-600"
+                      : "bg-slate-300"
                 }`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
               />
@@ -515,7 +799,9 @@ export default function MaterialReceiptDetailPage() {
               </div>
               <div>
                 Kho xuất:{" "}
-                <strong className="text-slate-800">{header?.NguoiXuat || "—"}</strong>
+                <strong className="text-slate-800">
+                  {header?.NguoiXuat || "—"}
+                </strong>
                 {header?.NgayXuat && (
                   <span className="ml-1 text-slate-400">
                     ({dayjs(header.NgayXuat).format("DD/MM/YYYY HH:mm")})
@@ -528,18 +814,23 @@ export default function MaterialReceiptDetailPage() {
           <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
             <div className="text-xs text-slate-500">Người thực hiện nhận</div>
             <div className="mt-1 flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-blue-100 text-blue-700 font-bold text-xs">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-blue-100 text-xs font-bold text-blue-700">
                 <User className="size-4" />
               </div>
               <div className="truncate">
-                <div className="text-xs font-bold text-slate-900 truncate">{tenNguoiNhan}</div>
-                <div className="text-[11px] text-slate-500 truncate">{xiNghiepNhan}</div>
+                <div className="truncate text-xs font-bold text-slate-900">
+                  {tenNguoiNhan}
+                </div>
+                <div className="truncate text-[11px] text-slate-500">
+                  {xiNghiepNhan}
+                </div>
               </div>
             </div>
-            <div className="mt-2 pt-2 border-t border-slate-200 text-[11px] text-slate-500">
+            <div className="mt-2 border-t border-slate-200 pt-2 text-[11px] text-slate-500">
               Trạng thái đơn:{" "}
               <strong className="text-slate-700">
-                {header?.TrangThaiDDH === "DaNhanHang" || header?.TrangThaiNhan === "DaNhanDu"
+                {header?.TrangThaiDDH === "DaNhanHang" ||
+                header?.TrangThaiNhan === "DaNhanDu"
                   ? "Đã nhận hoàn tất"
                   : "Đang kiểm nhận"}
               </strong>
@@ -547,16 +838,20 @@ export default function MaterialReceiptDetailPage() {
           </div>
         </div>
 
-        {/* Khung quét barcode */}
-        <div className={`rounded-2xl border-2 transition-colors p-4 shadow-sm ${
-          scanMode === "huy"
-            ? "border-rose-300 bg-gradient-to-b from-rose-50/70 to-white"
-            : "border-blue-200 bg-gradient-to-b from-blue-50/60 to-white"
-        }`}>
+        {/* Khung quét barcode (Máy quét / Nhập tay) */}
+        <div
+          className={`rounded-2xl border-2 p-4 shadow-sm transition-colors ${
+            scanMode === "huy"
+              ? "border-rose-300 bg-gradient-to-b from-rose-50/70 to-white"
+              : "border-blue-200 bg-gradient-to-b from-blue-50/60 to-white"
+          }`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Barcode className={`size-5 ${scanMode === "huy" ? "text-rose-600" : "text-blue-600"}`} />
-              <div className="flex items-center gap-1.5 rounded-xl bg-white p-1 border border-slate-200 shadow-inner">
+              <Barcode
+                className={`size-5 ${scanMode === "huy" ? "text-rose-600" : "text-blue-600"}`}
+              />
+              <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-1 shadow-inner">
                 <button
                   type="button"
                   onClick={() => {
@@ -594,6 +889,7 @@ export default function MaterialReceiptDetailPage() {
           </div>
 
           <form
+            data-submit-on-scan="true"
             onSubmit={(e) => {
               e.preventDefault();
               handleScanRoll();
@@ -607,9 +903,13 @@ export default function MaterialReceiptDetailPage() {
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
                 placeholder={
-                  scanMode === "huy"
-                    ? "Quét hoặc nhập mã cây để HỦY NHẬN..."
-                    : "Quét hoặc nhập mã cây để NHẬN (Ví dụ: NAH2611..., PAH2610...)"
+                  !isFabric
+                    ? scanMode === "huy"
+                      ? "Quét mã tem thùng GPA (GPA...) hoặc mã cây để HỦY NHẬN..."
+                      : "Quét mã tem thùng GPA (GPA...) hoặc mã cây để NHẬN..."
+                    : scanMode === "huy"
+                      ? "Quét hoặc nhập mã cây để HỦY NHẬN..."
+                      : "Quét hoặc nhập mã cây để NHẬN (Ví dụ: NAH2611...)"
                 }
                 disabled={scanning}
                 className={`w-full rounded-xl border-2 bg-white px-3.5 py-2.5 text-sm font-semibold tracking-wide text-slate-900 placeholder-slate-400 shadow-inner transition focus:outline-none focus:ring-2 ${
@@ -637,8 +937,8 @@ export default function MaterialReceiptDetailPage() {
               disabled={scanning || !barcodeInput.trim()}
               className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md transition active:scale-95 disabled:bg-slate-300 disabled:shadow-none sm:text-sm ${
                 scanMode === "huy"
-                  ? "bg-rose-600 hover:bg-rose-700 shadow-rose-200"
-                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-200"
+                  ? "bg-rose-600 shadow-rose-200 hover:bg-rose-700"
+                  : "bg-blue-600 shadow-blue-200 hover:bg-blue-700"
               }`}
             >
               {scanning ? (
@@ -648,284 +948,821 @@ export default function MaterialReceiptDetailPage() {
               ) : (
                 <Check className="size-4" />
               )}
-              <span>{scanMode === "huy" ? "Xác nhận hủy" : "Xác nhận nhận"}</span>
+              <span>
+                {scanMode === "huy" ? "Xác nhận hủy" : "Xác nhận nhận"}
+              </span>
             </button>
           </form>
 
           {/* Banner thông báo kết quả quét gần nhất */}
           {lastScanAlert && (
             <div
-              className={`mt-3 flex items-start justify-between gap-2 rounded-xl p-3 text-xs ${
+              className={`mt-3 flex items-center justify-between rounded-xl border p-3 text-xs animate-in fade-in slide-in-from-top-1 ${
                 lastScanAlert.type === "success"
-                  ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
-                  : "border border-rose-200 bg-rose-50 text-rose-800"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : "border-rose-200 bg-rose-50 text-rose-800"
               }`}
             >
-              <div className="flex items-start gap-2">
+              <div className="flex items-center gap-2">
                 {lastScanAlert.type === "success" ? (
-                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
                 ) : (
-                  <AlertCircle className="size-4 text-rose-600 shrink-0 mt-0.5" />
+                  <Trash2 className="size-4 shrink-0 text-rose-600" />
                 )}
-                <div>
-                  <div className="font-bold">{lastScanAlert.message}</div>
-                  <div className="mt-0.5 text-[11px] opacity-80">
-                    Mã cây: <strong>{lastScanAlert.maCay}</strong> •{" "}
-                    {dayjs(lastScanAlert.time).format("HH:mm:ss")}
-                  </div>
-                </div>
+                <span>
+                  <strong>[{lastScanAlert.maCay}]:</strong>{" "}
+                  {lastScanAlert.message}
+                </span>
               </div>
-              <button
-                type="button"
-                onClick={() => setLastScanAlert(null)}
-                className="opacity-60 hover:opacity-100"
-              >
-                <X className="size-3.5" />
-              </button>
+
+              {lastScanAlert.type === "success" &&
+                lastScanAlert.action !== "huy_nhan" && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleScanRoll(lastScanAlert.maCay, "huy_nhan")
+                    }
+                    className="ml-2 inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-white px-2 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50"
+                  >
+                    <RotateCcw className="size-3" />
+                    Hủy nhận
+                  </button>
+                )}
             </div>
           )}
         </div>
 
-        {/* Thanh công cụ danh sách: Lọc trạng thái & Tìm kiếm vật tư */}
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setRollFilter("ALL")}
-              className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                rollFilter === "ALL"
-                  ? "bg-slate-900 text-white"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              Tất cả cây ({header?.TongSoCay || 0})
-            </button>
-            <button
-              type="button"
-              onClick={() => setRollFilter("UNCONFIRMED")}
-              className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                rollFilter === "UNCONFIRMED"
-                  ? "bg-amber-600 text-white"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              Chờ nhận ({(header?.TongSoCay || 0) - (header?.SoCayDaNhan || 0)})
-            </button>
-            <button
-              type="button"
-              onClick={() => setRollFilter("CONFIRMED")}
-              className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                rollFilter === "CONFIRMED"
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              Đã nhận ({header?.SoCayDaNhan || 0})
-            </button>
+        {/* Thanh công cụ xem & Bộ lọc tìm kiếm */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View switcher cho Phụ Liệu */}
+            {!isFabric && (
+              <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("thung")}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    viewMode === "thung"
+                      ? "bg-white text-fuchsia-700 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Package className="size-3.5" />
+                  <span>Xem theo Thùng GPA ({derivedThungs.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("item")}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    viewMode === "item"
+                      ? "bg-white text-fuchsia-700 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Layers className="size-3.5" />
+                  <span>Xem theo Mặt hàng ({items.length})</span>
+                </button>
+              </div>
+            )}
+
+            {/* Filter trạng thái nhận */}
+            <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                onClick={() => setRollFilter("ALL")}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                  rollFilter === "ALL"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Tất cả
+              </button>
+              <button
+                type="button"
+                onClick={() => setRollFilter("UNCONFIRMED")}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                  rollFilter === "UNCONFIRMED"
+                    ? "bg-white text-amber-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Chưa nhận
+              </button>
+              <button
+                type="button"
+                onClick={() => setRollFilter("CONFIRMED")}
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                  rollFilter === "CONFIRMED"
+                    ? "bg-white text-emerald-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Đã nhận
+              </button>
+            </div>
           </div>
 
-          <div className="relative min-w-[240px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+          {/* Ô tìm kiếm mặt hàng / mã cây / mã GPA */}
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={itemSearch}
               onChange={(e) => setItemSearch(e.target.value)}
-              placeholder="Tìm theo mã cây, tên vật tư..."
-              className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-7 text-xs text-slate-800 placeholder-slate-400 shadow-sm focus:border-blue-500 focus:outline-none"
+              placeholder="Tìm mã VT, tên, mã cây, GPA..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none"
             />
             {itemSearch && (
               <button
                 type="button"
                 onClick={() => setItemSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
-                <X className="size-3" />
+                <X className="size-3.5" />
               </button>
             )}
           </div>
         </div>
 
-        {/* Danh sách vật tư & danh sách cây/cuộn con */}
+        {/* ========================================================
+            DANH SÁCH CHI TIẾT
+            ======================================================== */}
         {loading ? (
-          <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-slate-100 bg-white p-8">
+          <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8">
             <Spin size="large" />
+            <span className="mt-3 text-xs text-slate-500">
+              Đang tải danh sách vật tư...
+            </span>
           </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-xs text-slate-500">
-            Không tìm thấy cây/vật tư nào phù hợp với bộ lọc
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredItems.map((item) => {
-              const isCollapsed = Boolean(collapsedItems[item.ChiTietPhieuSoanHangId]);
-              const itemProgress =
-                item.SoCay > 0 ? Math.round((item.SoCayDaNhan / item.SoCay) * 100) : 0;
+        ) : !isFabric && viewMode === "thung" ? (
+          /* ========================================================
+             CHẾ ĐỘ XEM THEO THÙNG GPA (DÀNH CHO PHỤ LIỆU)
+             ======================================================== */
+          filteredThungs.length === 0 ? (
+            <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
+              <Package className="size-8 text-slate-300" />
+              <span className="mt-2 text-xs text-slate-500">
+                Không tìm thấy thùng phụ liệu nào phù hợp với bộ lọc
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredThungs.map((thung) => {
+                const isExpanded = !collapsedThungs[thung.MaGPA || "LE"];
+                const isDaNhanDu = thung.TrangThaiNhan === "DaNhanDu";
+                const isNhanMotPhan = thung.TrangThaiNhan === "NhanMotPhan";
 
-              return (
-                <div
-                  key={item.ChiTietPhieuSoanHangId}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                >
-                  {/* Header thẻ vật tư */}
+                return (
                   <div
-                    onClick={() => toggleCollapse(item.ChiTietPhieuSoanHangId)}
-                    className="flex cursor-pointer flex-col gap-2 bg-slate-50/70 p-3.5 transition hover:bg-slate-100/70 sm:flex-row sm:items-center sm:justify-between"
+                    key={thung.MaGPA || "LE"}
+                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300"
                   >
-                    <div className="flex items-start gap-2.5">
-                      <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
-                        <Layers className="size-4" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-900 sm:text-sm">
-                          {item.TenVatTu || item.MaVatTu}
+                    {/* Header thùng */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex size-10 items-center justify-center rounded-xl font-bold ${
+                            isDaNhanDu
+                              ? "bg-emerald-100 text-emerald-700"
+                              : isNhanMotPhan
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-fuchsia-100 text-fuchsia-700"
+                          }`}
+                        >
+                          <Package className="size-5" />
                         </div>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                          <span>Mã: <strong className="text-slate-700">{item.MaVatTu}</strong></span>
-                          {item.MaMau && <span>• Màu: <strong>{item.MaMau}</strong></span>}
-                          {item.QuyCach && <span>• Quy cách: <strong>{item.QuyCach}</strong></span>}
-                          {item.DVT && <span>• ĐVT: <strong>{item.DVT}</strong></span>}
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center justify-between gap-3 sm:justify-end">
-                      <div className="text-right text-xs">
-                        <div className="font-bold text-slate-900">
-                          {item.SoCayDaNhan} / {item.SoCay} cây ({itemProgress}%)
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                          SL: {item.SoLuongDaNhan.toLocaleString()} /{" "}
-                          {item.SoLuongThucSoan.toLocaleString()} {item.DVT}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-slate-900 sm:text-base">
+                              {thung.MaGPA
+                                ? `Tem thùng GPA: ${thung.MaGPA}`
+                                : "Phụ liệu lẻ (Chưa đóng thùng)"}
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${
+                                isDaNhanDu
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                  : isNhanMotPhan
+                                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                                    : "border-slate-200 bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {isDaNhanDu ? (
+                                <>
+                                  <Check className="size-3 text-emerald-600" />
+                                  <span>Đã nhận đủ</span>
+                                </>
+                              ) : isNhanMotPhan ? (
+                                <>
+                                  <Clock className="size-3 text-amber-600" />
+                                  <span>Nhận một phần</span>
+                                </>
+                              ) : (
+                                <span>Chờ nhận</span>
+                              )}
+                            </span>
+                          </div>
+
+                          <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                            <span>
+                              Số lượng mục:{" "}
+                              <strong className="text-slate-800">
+                                {thung.SoCayDaNhan} / {thung.TongSoCay}
+                              </strong>
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Tổng xuất:{" "}
+                              <strong className="text-slate-800">
+                                {thung.TongSoLuongXuat.toLocaleString()}
+                              </strong>
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Đã nhận:{" "}
+                              <strong className="text-emerald-700">
+                                {thung.SoLuongDaNhan.toLocaleString()}
+                              </strong>
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex size-7 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500">
-                        {isCollapsed ? (
-                          <ChevronDown className="size-4" />
-                        ) : (
-                          <ChevronUp className="size-4" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bảng danh sách cây / cuộn của vật tư */}
-                  {!isCollapsed && (
-                    <div className="divide-y divide-slate-100">
-                      {item.filteredCays.length === 0 ? (
-                        <div className="p-4 text-center text-xs text-slate-400">
-                          Không có cây nào theo bộ lọc này
-                        </div>
-                      ) : (
-                        item.filteredCays.map((cay, idx) => (
-                          <div
-                            key={cay.MaCay}
-                            className={`flex flex-col gap-2 p-3 transition sm:flex-row sm:items-center sm:justify-between ${
-                              cay.isXacNhan
-                                ? "bg-emerald-50/20 hover:bg-emerald-50/40"
-                                : "hover:bg-slate-50/60"
-                            }`}
+                      <div className="flex items-center gap-2">
+                        {/* Nút Nhận thùng: Mở popup chọn vật tư */}
+                        {thung.SoCayDaNhan < thung.TongSoCay && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenThungModal(thung, "nhan")}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-95"
                           >
-                            <div className="flex items-center gap-3">
-                              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-600">
-                                {idx + 1}
-                              </span>
+                            <CheckSquare className="size-3.5" />
+                            <span>Nhận thùng</span>
+                          </button>
+                        )}
 
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-mono text-xs font-bold text-slate-900 sm:text-sm">
-                                    {cay.MaCay}
+                        {/* Nút Hủy nhận thùng */}
+                        {thung.SoCayDaNhan > 0 && (
+                          <Popconfirm
+                            title="Hủy nhận thùng phụ liệu?"
+                            description={
+                              <div className="max-w-[260px] text-xs text-slate-600">
+                                Bạn có chắc chắn muốn hủy nhận toàn bộ{" "}
+                                <strong>{thung.SoCayDaNhan}</strong> mục đã nhận
+                                trong {thung.TenThung}?
+                              </div>
+                            }
+                            onConfirm={() => handleHuyThung(thung)}
+                            okText="Đồng ý hủy"
+                            cancelText="Đóng"
+                            okButtonProps={{ danger: true }}
+                          >
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100 active:scale-95"
+                            >
+                              <RotateCcw className="size-3.5" />
+                              <span>Hủy nhận thùng</span>
+                            </button>
+                          </Popconfirm>
+                        )}
+
+                        {/* Nút Toggle mở xem chi tiết */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toggleCollapseThung(thung.MaGPA || "LE")
+                          }
+                          className="inline-flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="size-4" />
+                          ) : (
+                            <ChevronDown className="size-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Danh sách vật tư trong thùng */}
+                    {isExpanded && (
+                      <div className="divide-y divide-slate-100">
+                        {thung.filteredCays.map((cay) => {
+                          return (
+                            <div
+                              key={cay.CayId}
+                              className={`flex flex-wrap items-center justify-between gap-3 p-3 text-xs transition ${
+                                cay.isXacNhan ? "bg-emerald-50/30" : "bg-white"
+                              }`}
+                            >
+                              <div className="flex-1 space-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-bold text-slate-900">
+                                    {cay.TenVatTu || cay.MaVatTu}
                                   </span>
-                                  {cay.isXacNhan ? (
-                                    <span className="inline-flex items-center gap-0.5 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-                                      <CheckCircle2 className="size-3" />
-                                      Đã nhận
+                                  {cay.MaMau && (
+                                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                                      Màu: {cay.MaMau}
                                     </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-0.5 rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
-                                      <Clock className="size-3" />
-                                      Chờ nhận
+                                  )}
+                                  {cay.QuyCach && (
+                                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                                      Quy cách: {cay.QuyCach}
                                     </span>
                                   )}
                                 </div>
 
-                                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                                <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                                   <span>
-                                    Kho xuất:{" "}
-                                    <strong className="text-slate-700">
-                                      {cay.SoLuongXuat} {item.DVT}
+                                    Mã VT: <strong>{cay.MaVatTu}</strong>
+                                  </span>
+                                  <span>•</span>
+                                  <span>
+                                    Mã cây: <strong>{cay.MaCay}</strong>
+                                  </span>
+                                  <span>•</span>
+                                  <span>
+                                    SL xuất kho:{" "}
+                                    <strong className="text-slate-800">
+                                      {cay.SoLuongXuat} {cay.DVT}
                                     </strong>
                                   </span>
                                   {cay.isXacNhan && (
                                     <>
                                       <span>•</span>
-                                      <span>
-                                        Thực nhận:{" "}
-                                        <strong className="text-emerald-700">
-                                          {cay.SoLuongThucNhan || cay.SoLuongXuat} {item.DVT}
-                                        </strong>
+                                      <span className="font-bold text-emerald-700">
+                                        Đã nhận:{" "}
+                                        {cay.SoLuongThucNhan || cay.SoLuongXuat}{" "}
+                                        {cay.DVT}
                                       </span>
-                                      {cay.TenNguoiXacNhan && (
-                                        <>
-                                          <span>•</span>
-                                          <span>Bởi: {cay.TenNguoiXacNhan}</span>
-                                        </>
-                                      )}
-                                      {cay.ThoiGianXacNhan && (
-                                        <span>
-                                          (
-                                          {dayjs(cay.ThoiGianXacNhan).format(
-                                            "DD/MM HH:mm",
-                                          )}
-                                          )
-                                        </span>
-                                      )}
                                     </>
                                   )}
                                 </div>
                               </div>
-                            </div>
 
-                            {/* Nút thao tác trực tiếp trên cây */}
-                            <div className="flex items-center justify-end gap-2 pt-1 sm:pt-0">
-                              {cay.isXacNhan ? (
-                                <Popconfirm
-                                  title="Hủy nhận cây này?"
-                                  description={`Hủy nhận mã [${cay.MaCay}]?`}
-                                  onConfirm={() => handleHuyNhanRoll(cay)}
-                                  okText="Hủy nhận"
-                                  cancelText="Đóng"
-                                >
+                              <div className="flex items-center gap-2">
+                                {cay.isXacNhan ? (
+                                  <>
+                                    <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                                      <Check className="size-3 text-emerald-600" />
+                                      Đã nhận
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHuyNhanRoll(cay)}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100"
+                                    >
+                                      <RotateCcw className="size-3" />
+                                      Hủy nhận
+                                    </button>
+                                  </>
+                                ) : (
                                   <button
                                     type="button"
-                                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 active:scale-95"
+                                    onClick={() =>
+                                      handleScanRoll(cay.MaCay, "xac_nhan")
+                                    }
+                                    className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95"
                                   >
-                                    <RotateCcw className="size-3" />
-                                    <span>Hủy nhận</span>
+                                    <Check className="size-3" />
+                                    Xác nhận nhận
                                   </button>
-                                </Popconfirm>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleScanRoll(cay.MaCay)}
-                                  className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-95"
-                                >
-                                  <Check className="size-3.5" />
-                                  <span>Xác nhận nhận</span>
-                                </button>
-                              )}
+                                )}
+                              </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : filteredItems.length === 0 ? (
+            <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
+              <Scissors className="size-8 text-slate-300" />
+              <span className="mt-2 text-xs text-slate-500">
+                Không tìm thấy vật tư nào phù hợp với bộ lọc
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredItems.map((item) => {
+                const isCollapsed = collapsedItems[item.ChiTietPhieuSoanHangId];
+                const daNhanDu =
+                  item.SoCay > 0 && item.SoCayDaNhan >= item.SoCay;
+
+                return (
+                  <div
+                    key={item.ChiTietPhieuSoanHangId}
+                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300"
+                  >
+                    {/* Header vật tư */}
+                    <div
+                      onClick={() =>
+                        toggleCollapse(item.ChiTietPhieuSoanHangId)
+                      }
+                      className="flex cursor-pointer flex-wrap items-center justify-between gap-3 bg-slate-50/80 px-4 py-3 transition hover:bg-slate-100/70"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className={`flex size-9 items-center justify-center rounded-xl font-bold ${
+                            daNhanDu
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
+                        >
+                          {isFabric ? (
+                            <Scissors className="size-4" />
+                          ) : (
+                            <Shirt className="size-4" />
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-slate-900">
+                              {item.TenVatTu || item.MaVatTu}
+                            </span>
+                            {item.MaMau && (
+                              <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-700">
+                                Màu: {item.MaMau}
+                              </span>
+                            )}
+                            {item.QuyCach && (
+                              <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-700">
+                                Quy cách: {item.QuyCach}
+                              </span>
+                            )}
                           </div>
-                        ))
-                      )}
+                          <div className="text-xs text-slate-500">
+                            Mã VT: <strong>{item.MaVatTu}</strong> • Yêu cầu:{" "}
+                            <strong>
+                              {item.SoLuongYeuCau} {item.DVT}
+                            </strong>{" "}
+                            • Thực soạn:{" "}
+                            <strong>
+                              {item.SoLuongThucSoan} {item.DVT}
+                            </strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold ${
+                            daNhanDu
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : item.SoCayDaNhan > 0
+                                ? "border-amber-200 bg-amber-50 text-amber-700"
+                                : "border-slate-200 bg-white text-slate-600"
+                          }`}
+                        >
+                          {item.SoCayDaNhan} / {item.SoCay} cây
+                        </span>
+
+                        <button
+                          type="button"
+                          className="text-slate-400 hover:text-slate-600"
+                        >
+                          {isCollapsed ? (
+                            <ChevronDown className="size-4" />
+                          ) : (
+                            <ChevronUp className="size-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Danh sách cây vải / cuộn phụ liệu */}
+                    {!isCollapsed && (
+                      <div className="divide-y divide-slate-100 border-t border-slate-100">
+                        {item.filteredCays.map((cay) => {
+                          return (
+                            <div
+                              key={cay.CayId}
+                              className={`flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 text-xs transition ${
+                                cay.isXacNhan ? "bg-emerald-50/40" : "bg-white"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono text-xs font-bold text-slate-900">
+                                  {cay.MaCay}
+                                </span>
+                                {cay.MaGPA && (
+                                  <span className="rounded border border-fuchsia-200 bg-fuchsia-50 px-1.5 py-0.5 text-[10px] font-bold text-fuchsia-700">
+                                    Thùng {cay.MaGPA}
+                                  </span>
+                                )}
+                                <span className="text-slate-500">
+                                  SL xuất:{" "}
+                                  <strong className="text-slate-800">
+                                    {cay.SoLuongXuat} {item.DVT}
+                                  </strong>
+                                </span>
+                                {cay.isXacNhan && (
+                                  <span className="font-bold text-emerald-700">
+                                    Thực nhận:{" "}
+                                    {cay.SoLuongThucNhan || cay.SoLuongXuat}{" "}
+                                    {item.DVT}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {cay.isXacNhan ? (
+                                  <>
+                                    <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                                      <Check className="size-3 text-emerald-600" />
+                                      Đã nhận
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleHuyNhanRoll(cay)}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 hover:bg-rose-100"
+                                    >
+                                      <RotateCcw className="size-3" />
+                                      Hủy nhận
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleScanRoll(cay.MaCay, "xac_nhan")
+                                    }
+                                    className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95"
+                                  >
+                                    <Check className="size-3" />
+                                    Xác nhận nhận
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+      </div>
+
+      {/* ========================================================
+          MODAL NHẬN VẬT TƯ THEO THÙNG GPA
+          ======================================================== */}
+      <Modal
+        title={null}
+        open={thungModalOpen}
+        onCancel={() => setThungModalOpen(false)}
+        footer={null}
+        width={720}
+        centered
+        destroyOnClose
+      >
+        {modalThung && (
+          <div className="space-y-4">
+            {/* Modal Header */}
+            <div className="flex items-center gap-3 border-b border-slate-200 pb-3">
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-fuchsia-100 text-fuchsia-700">
+                <Package className="size-6" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900 sm:text-lg">
+                  {modalMode === "huy"
+                    ? "Hủy nhận Thùng Phụ Liệu"
+                    : "Xác nhận nhận Thùng Phụ Liệu"}
+                  :{" "}
+                  <span className="text-fuchsia-700">
+                    {modalThung.MaGPA || "Phụ liệu lẻ"}
+                  </span>
+                </h2>
+                <div className="text-xs text-slate-500">
+                  Phiếu soạn:{" "}
+                  <strong className="text-slate-700">
+                    {header?.MaSoPhieuSoan}
+                  </strong>{" "}
+                  • Bộ phận:{" "}
+                  <strong className="text-slate-700">
+                    {header?.BoPhanNhan}
+                  </strong>
                 </div>
-              );
-            })}
+              </div>
+            </div>
+
+            {/* Quick Actions & Search */}
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-2 text-xs">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allChecked = modalThung.cays.every(
+                      (c) => modalCheckedMap[c.CayId],
+                    );
+                    const next = {};
+                    modalThung.cays.forEach((c) => {
+                      next[c.CayId] = !allChecked;
+                    });
+                    setModalCheckedMap(next);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50"
+                >
+                  <CheckSquare className="size-3.5" />
+                  <span>
+                    {modalThung.cays.every((c) => modalCheckedMap[c.CayId])
+                      ? "Bỏ chọn tất cả"
+                      : "Chọn tất cả"}
+                  </span>
+                </button>
+
+                <span className="text-slate-500">
+                  Đã chọn:{" "}
+                  <strong className="text-blue-700">
+                    {
+                      modalThung.cays.filter((c) => modalCheckedMap[c.CayId])
+                        .length
+                    }
+                  </strong>{" "}
+                  / {modalThung.cays.length} vật tư
+                </span>
+              </div>
+
+              {/* Ô lọc nhanh trong popup */}
+              <div className="relative w-48">
+                <Search className="absolute left-2.5 top-1/2 size-3 text-slate-400 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={modalSearch}
+                  onChange={(e) => setModalSearch(e.target.value)}
+                  placeholder="Lọc mã VT, tên..."
+                  className="w-full rounded-lg border border-slate-200 bg-white py-1 pl-7 pr-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Danh sách vật tư trong thùng */}
+            <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+              {modalThung.cays
+                .filter((c) => {
+                  if (!modalSearch.trim()) return true;
+                  const s = modalSearch.trim().toLowerCase();
+                  return (
+                    (c.MaCay || "").toLowerCase().includes(s) ||
+                    (c.MaVatTu || "").toLowerCase().includes(s) ||
+                    (c.TenVatTu || "").toLowerCase().includes(s)
+                  );
+                })
+                .map((cay) => {
+                  const isChecked = Boolean(modalCheckedMap[cay.CayId]);
+                  return (
+                    <div
+                      key={cay.CayId}
+                      onClick={() =>
+                        setModalCheckedMap((prev) => ({
+                          ...prev,
+                          [cay.CayId]: !prev[cay.CayId],
+                        }))
+                      }
+                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
+                        isChecked
+                          ? "border-blue-400 bg-blue-50/40 shadow-sm"
+                          : "border-slate-200 bg-white hover:bg-slate-50/50"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setModalCheckedMap((prev) => ({
+                            ...prev,
+                            [cay.CayId]: e.target.checked,
+                          }));
+                        }}
+                        className="mt-1 size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+
+                      <div className="flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-slate-900">
+                            {cay.TenVatTu || cay.MaVatTu}
+                          </span>
+                          {cay.isXacNhan && (
+                            <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                              Đã nhận trước đó
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                          <span>
+                            Mã VT: <strong>{cay.MaVatTu}</strong>
+                          </span>
+                          <span>•</span>
+                          <span>
+                            Mã cây: <strong>{cay.MaCay}</strong>
+                          </span>
+                          {cay.MaMau && (
+                            <>
+                              <span>•</span>
+                              <span>Màu: {cay.MaMau}</span>
+                            </>
+                          )}
+                          {cay.QuyCach && (
+                            <>
+                              <span>•</span>
+                              <span>Quy cách: {cay.QuyCach}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Số lượng */}
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-right"
+                      >
+                        <div className="text-[11px] text-slate-400">
+                          Xuất: {cay.SoLuongXuat} {cay.DVT}
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className="text-xs font-semibold text-slate-600">
+                            Nhận:
+                          </span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={cay.SoLuongXuat}
+                            value={modalQtyMap[cay.CayId] ?? cay.SoLuongXuat}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setModalQtyMap((prev) => ({
+                                ...prev,
+                                [cay.CayId]: val,
+                              }));
+                            }}
+                            className="w-16 rounded-lg border border-slate-300 px-2 py-0.5 text-right text-xs font-bold text-slate-900 focus:border-blue-500 focus:outline-none"
+                          />
+                          <span className="text-xs text-slate-500">
+                            {cay.DVT}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t border-slate-200 pt-3">
+              <button
+                type="button"
+                onClick={() => setThungModalOpen(false)}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Đóng
+              </button>
+
+              <div className="flex items-center gap-2">
+                {modalMode === "huy" ? (
+                  <button
+                    type="button"
+                    onClick={handleConfirmThungModal}
+                    disabled={modalSubmitting}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 active:scale-95 disabled:bg-slate-300"
+                  >
+                    {modalSubmitting ? (
+                      <RefreshCw className="size-3.5 animate-spin" />
+                    ) : (
+                      <RotateCcw className="size-3.5" />
+                    )}
+                    <span>Xác nhận HỦY các mục đã chọn</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleConfirmThungModal}
+                    disabled={modalSubmitting}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-blue-700 active:scale-95 disabled:bg-slate-300"
+                  >
+                    {modalSubmitting ? (
+                      <RefreshCw className="size-3.5 animate-spin" />
+                    ) : (
+                      <Check className="size-3.5" />
+                    )}
+                    <span>Xác nhận NHẬN các mục đã chọn</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
-      </div>
+      </Modal>
     </MainLayout>
   );
 }

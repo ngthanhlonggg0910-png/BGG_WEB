@@ -6,12 +6,14 @@ import {
   wh_ChiTietDonNhanHang_RequestDTO,
   wh_QuetNhanCay_RequestDTO,
   wh_XacNhanNhanHang_RequestDTO,
+  wh_XacNhanNhanThungGPA_RequestDTO,
 } from '../dtos/material-receipt-request.dto.js';
 import {
   wh_DanhSachDonNhanHang_ResponseDTO,
   wh_ChiTietDonNhanHang_ResponseDTO,
   wh_QuetNhanCay_ResponseDTO,
   wh_XacNhanNhanHang_ResponseDTO,
+  wh_XacNhanNhanThungGPA_ResponseDTO,
 } from '../dtos/material-receipt-response.dto.js';
 
 @Injectable()
@@ -36,7 +38,7 @@ export class MaterialReceiptService implements IMaterialReceiptService {
   async getChiTietDonNhanHang(
     dto: wh_ChiTietDonNhanHang_RequestDTO,
   ): Promise<wh_ChiTietDonNhanHang_ResponseDTO> {
-    const { header, items } =
+    const { header, items, thungs } =
       await this.materialReceiptRepository.getChiTietDonNhanHang(
         dto.PhieuSoanHangId,
         dto.DonDatHangId,
@@ -45,6 +47,7 @@ export class MaterialReceiptService implements IMaterialReceiptService {
       success: true,
       header,
       items,
+      thungs,
     };
   }
 
@@ -73,6 +76,23 @@ export class MaterialReceiptService implements IMaterialReceiptService {
       : dto.nhanTatCa
         ? `Đã xác nhận nhận tất cả (${summary.soCayVuaCapNhat} cây mới)!`
         : `Đã lưu trạng thái nhận hàng!`;
+    return {
+      success: true,
+      message: msg,
+      summary,
+    };
+  }
+
+  async xacNhanNhanThungGPA(
+    dto: wh_XacNhanNhanThungGPA_RequestDTO,
+  ): Promise<wh_XacNhanNhanThungGPA_ResponseDTO> {
+    const summary =
+      await this.materialReceiptRepository.xacNhanNhanThungGPA(dto);
+    const thungName = dto.MaGPA ? `Thùng [${dto.MaGPA}]` : 'hàng lẻ';
+    const msg =
+      dto.action === 'huy_nhan'
+        ? `Đã hủy nhận ${summary.soCayVuaCapNhat} vật tư trong ${thungName} thành công!`
+        : `Đã xác nhận nhận ${summary.soCayVuaCapNhat} vật tư trong ${thungName} thành công!`;
     return {
       success: true,
       message: msg,

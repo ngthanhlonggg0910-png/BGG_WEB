@@ -5,12 +5,14 @@ import {
   wh_ChiTietDonNhanHang_RequestDTO,
   wh_QuetNhanCay_RequestDTO,
   wh_XacNhanNhanHang_RequestDTO,
+  wh_XacNhanNhanThungGPA_RequestDTO,
 } from '../../application/dtos/material-receipt-request.dto.js';
 import {
   wh_DanhSachDonNhanHang_ResponseDTO,
   wh_ChiTietDonNhanHang_ResponseDTO,
   wh_QuetNhanCay_ResponseDTO,
   wh_XacNhanNhanHang_ResponseDTO,
+  wh_XacNhanNhanThungGPA_ResponseDTO,
 } from '../../application/dtos/material-receipt-response.dto.js';
 
 @Controller('material-receipt')
@@ -28,7 +30,7 @@ export class MaterialReceiptController {
     return this.materialReceiptService.getDanhSachDonNhanHang(dto);
   }
 
-  // Lấy chi tiết đơn nhận hàng kèm danh sách cây/vật tư
+  // Lấy chi tiết đơn nhận hàng kèm danh sách cây/vật tư & thùng GPA
   @Post('wh_ChiTietDonNhanHang')
   async getChiTietDonNhanHang(
     @Body() dto: wh_ChiTietDonNhanHang_RequestDTO,
@@ -50,5 +52,13 @@ export class MaterialReceiptController {
     @Body() dto: wh_XacNhanNhanHang_RequestDTO,
   ): Promise<wh_XacNhanNhanHang_ResponseDTO> {
     return this.materialReceiptService.xacNhanNhanHang(dto);
+  }
+
+  // Xác nhận nhận hoặc hủy nhận theo thùng GPA / chọn vật tư trong thùng
+  @Post('wh_XacNhanNhanThungGPA')
+  async xacNhanNhanThungGPA(
+    @Body() dto: wh_XacNhanNhanThungGPA_RequestDTO,
+  ): Promise<wh_XacNhanNhanThungGPA_ResponseDTO> {
+    return this.materialReceiptService.xacNhanNhanThungGPA(dto);
   }
 }
