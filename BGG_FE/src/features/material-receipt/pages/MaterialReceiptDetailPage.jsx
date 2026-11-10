@@ -1385,53 +1385,86 @@ export default function MaterialReceiptDetailPage() {
                                 }`}
                               >
                                 {/* Header vật tư chính */}
-                                <div className="flex flex-wrap items-start justify-between gap-2">
-                                  <div className="space-y-1">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div className="space-y-1.5 flex-1 min-w-[240px]">
                                     <div className="flex flex-wrap items-center gap-1.5">
-                                      <span className="text-sm font-bold text-slate-900">
+                                      <span className="text-base font-bold text-slate-900">
                                         {mainTitle}
                                       </span>
                                       {tags.map((t, idx) => (
                                         <span
                                           key={idx}
-                                          className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${t.colorClass}`}
+                                          className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold ${t.colorClass}`}
                                         >
                                           {t.label ? `${t.label}: ` : ""}{t.val}
                                         </span>
                                       ))}
                                       {isDaNhanDu ? (
-                                        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                                        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700">
                                           <Check className="size-3" /> Đã nhận đủ
                                         </span>
                                       ) : isNhanMotPhan ? (
-                                        <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                                        <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">
                                           <Clock className="size-3" /> Nhận {grp.soGoiDaNhan}/{grp.soGoi} gói
                                         </span>
                                       ) : null}
                                     </div>
+
+                                    {/* Mã VT rõ ràng, đậm, dễ đọc */}
                                     {subCode && (
-                                      <div className="text-[11px] text-slate-400 font-mono">
-                                        Mã VT: {subCode}
+                                      <div className="inline-flex flex-wrap items-baseline gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs">
+                                        <span className="font-bold text-slate-700 shrink-0">Mã VT:</span>
+                                        <span className="font-mono font-bold text-slate-900 break-all select-all">
+                                          {subCode}
+                                        </span>
                                       </div>
                                     )}
                                   </div>
 
-                                  <div className="text-right">
-                                    <div className="text-xs text-slate-500">
-                                      Xuất:{" "}
-                                      <strong className="text-slate-800">
-                                        {grp.tongXuat.toLocaleString()} {grp.sample.DVT}
-                                      </strong>
-                                      {grp.soGoi > 1 && (
-                                        <span className="text-slate-400"> ({grp.soGoi} gói)</span>
-                                      )}
+                                  {/* Khối số lượng nổi bật, to rõ */}
+                                  <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/90 px-3.5 py-2 shrink-0">
+                                    <div className="text-right">
+                                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                        Số lượng xuất
+                                      </div>
+                                      <div className="flex items-baseline gap-1">
+                                        <span className="text-base font-extrabold text-blue-700 sm:text-lg">
+                                          {grp.tongXuat.toLocaleString()}
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-700">
+                                          {grp.sample.DVT}
+                                        </span>
+                                        {grp.soGoi > 1 && (
+                                          <span className="text-[11px] font-semibold text-slate-500">
+                                            ({grp.soGoi} gói)
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
+
                                     {grp.daNhan > 0 ? (
-                                      <div className="text-[11px] font-bold text-emerald-700">
-                                        Đã nhận: {grp.daNhan.toLocaleString()} {grp.sample.DVT}
+                                      <div className="border-l border-slate-200 pl-3 text-right">
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+                                          Đã nhận
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                          <span className="text-base font-extrabold text-emerald-700 sm:text-lg">
+                                            {grp.daNhan.toLocaleString()}
+                                          </span>
+                                          <span className="text-xs font-bold text-emerald-700">
+                                            {grp.sample.DVT}
+                                          </span>
+                                        </div>
                                       </div>
                                     ) : (
-                                      <div className="text-[11px] text-slate-400">Chờ nhận</div>
+                                      <div className="border-l border-slate-200 pl-3 text-right">
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                          Trạng thái
+                                        </div>
+                                        <span className="text-xs font-semibold text-slate-500">
+                                          Chờ nhận
+                                        </span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -1441,27 +1474,33 @@ export default function MaterialReceiptDetailPage() {
                                   (() => {
                                     const cay = grp.cays[0];
                                     return (
-                                      <div className="flex items-center justify-between rounded-xl bg-slate-50/80 px-3 py-2 text-xs">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-mono text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+                                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-xs">
+                                        <div className="flex items-center gap-3">
+                                          <span className="font-mono text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded px-2 py-0.5 shadow-2xs">
                                             {cay.MaCay}
                                           </span>
-                                          <span className="text-slate-500">
-                                            {cay.SoLuongXuat} {cay.DVT}
-                                          </span>
+                                          <div className="flex items-baseline gap-1.5">
+                                            <span className="text-xs text-slate-500">SL:</span>
+                                            <span className={`text-sm font-extrabold ${cay.isXacNhan ? "text-emerald-700" : "text-blue-700"}`}>
+                                              {cay.SoLuongXuat.toLocaleString()}
+                                            </span>
+                                            <span className="text-xs font-bold text-slate-600">
+                                              {cay.DVT}
+                                            </span>
+                                          </div>
                                         </div>
 
                                         <div className="flex items-center gap-2">
                                           {cay.isXacNhan ? (
                                             <>
-                                              <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                                              <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
                                                 <Check className="size-3 text-emerald-600" />
                                                 Đã nhận
                                               </span>
                                               <button
                                                 type="button"
                                                 onClick={() => handleHuyNhanRoll(cay)}
-                                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2 py-0.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50"
                                               >
                                                 <RotateCcw className="size-3" />
                                                 Hủy
@@ -1473,9 +1512,9 @@ export default function MaterialReceiptDetailPage() {
                                               onClick={() =>
                                                 handleScanRoll(cay.MaCay, "xac_nhan")
                                               }
-                                              className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95"
+                                              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95"
                                             >
-                                              <Check className="size-3" />
+                                              <Check className="size-3.5" />
                                               Nhận gói này
                                             </button>
                                           )}
@@ -1484,27 +1523,37 @@ export default function MaterialReceiptDetailPage() {
                                     );
                                   })()
                                 ) : (
-                                  <div className="space-y-1.5 rounded-xl border border-slate-200/80 bg-slate-50/50 p-2">
-                                    <div className="text-[11px] font-semibold text-slate-500 px-1">
-                                      Danh sách {grp.soGoi} gói ({grp.soGoiDaNhan}/{grp.soGoi} đã nhận):
+                                  <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5">
+                                    <div className="flex items-center justify-between px-1 text-xs">
+                                      <span className="font-bold text-slate-700">
+                                        Danh sách {grp.soGoi} gói tem lẻ:
+                                      </span>
+                                      <span className="font-semibold text-slate-500">
+                                        Đã nhận: <strong className="text-emerald-700">{grp.soGoiDaNhan}</strong>/{grp.soGoi} gói
+                                      </span>
                                     </div>
-                                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                                       {grp.cays.map((cay) => (
                                         <div
                                           key={cay.CayId}
-                                          className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs transition ${
+                                          className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs transition shadow-2xs ${
                                             cay.isXacNhan
-                                              ? "border-emerald-200 bg-emerald-50/70 text-emerald-800"
-                                              : "border-slate-200 bg-white text-slate-700"
+                                              ? "border-emerald-300 bg-emerald-50/80 text-emerald-900"
+                                              : "border-slate-200 bg-white text-slate-800 hover:border-slate-300"
                                           }`}
                                         >
-                                          <div className="flex items-center gap-1.5">
-                                            <span className="font-mono text-[11px] font-bold">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">
                                               {cay.MaCay}
                                             </span>
-                                            <span className="text-[11px] text-slate-500">
-                                              ({cay.SoLuongXuat} {cay.DVT})
-                                            </span>
+                                            <div className="flex items-baseline gap-1">
+                                              <span className={`text-sm font-extrabold ${cay.isXacNhan ? "text-emerald-800" : "text-slate-900"}`}>
+                                                {cay.SoLuongXuat.toLocaleString()}
+                                              </span>
+                                              <span className="text-[11px] font-semibold text-slate-500">
+                                                {cay.DVT}
+                                              </span>
+                                            </div>
                                           </div>
 
                                           <div>
@@ -1513,7 +1562,7 @@ export default function MaterialReceiptDetailPage() {
                                                 type="button"
                                                 onClick={() => handleHuyNhanRoll(cay)}
                                                 title="Nhấn để hủy nhận gói này"
-                                                className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 hover:bg-rose-100 hover:text-rose-700 transition"
+                                                className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-100/80 px-2 py-0.5 text-xs font-bold text-emerald-800 hover:bg-rose-100 hover:text-rose-700 hover:border-rose-300 transition"
                                               >
                                                 <Check className="size-3" />
                                                 <span>Đã nhận</span>
@@ -1524,8 +1573,9 @@ export default function MaterialReceiptDetailPage() {
                                                 onClick={() =>
                                                   handleScanRoll(cay.MaCay, "xac_nhan")
                                                 }
-                                                className="rounded bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95"
+                                                className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95"
                                               >
+                                                <Check className="size-3" />
                                                 Nhận
                                               </button>
                                             )}
@@ -1609,18 +1659,16 @@ export default function MaterialReceiptDetailPage() {
                                   </span>
                                 ))}
                               </div>
-                              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-600">
                                 {subCode && (
-                                  <>
-                                    <span className="font-mono text-[11px] text-slate-400">
-                                      Mã VT: {subCode}
-                                    </span>
-                                    <span>•</span>
-                                  </>
+                                  <div className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs">
+                                    <span className="font-bold text-slate-700">Mã VT:</span>
+                                    <span className="font-mono font-bold text-slate-900">{subCode}</span>
+                                  </div>
                                 )}
                                 <span>
                                   Yêu cầu:{" "}
-                                  <strong>
+                                  <strong className="font-extrabold text-slate-900">
                                     {item.SoLuongYeuCau} {item.DVT}
                                   </strong>
                                 </span>
@@ -1901,20 +1949,15 @@ export default function MaterialReceiptDetailPage() {
                               )}
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                              <span>
-                                Mã gói:{" "}
-                                <strong className="font-mono text-slate-800">
-                                  {cay.MaCay}
-                                </strong>
+                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                              <span className="font-mono font-bold text-slate-800 bg-slate-100 border border-slate-200 rounded px-2 py-0.5 text-xs">
+                                {cay.MaCay}
                               </span>
                               {subCode && (
-                                <>
-                                  <span>•</span>
-                                  <span className="font-mono text-[11px] text-slate-400">
-                                    Mã VT: {subCode}
-                                  </span>
-                                </>
+                                <span className="inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs">
+                                  <strong className="text-slate-600">Mã VT:</strong>
+                                  <strong className="font-mono text-slate-900">{subCode}</strong>
+                                </span>
                               )}
                             </div>
                           </div>
