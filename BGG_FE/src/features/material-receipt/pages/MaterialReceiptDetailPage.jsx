@@ -70,6 +70,95 @@ function playBeep(type = "success") {
   }
 }
 
+
+function cleanMaterialDisplay(tenVatTu, maVatTu, quyCach, maMau) {
+  const raw = String(tenVatTu || maVatTu || 'Vật tư')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (raw.includes('#')) {
+    const rawParts = raw
+      .split('#')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const mainTitle = rawParts[0] || raw;
+    const subCode =
+      rawParts[1] || (maVatTu && maVatTu !== mainTitle ? maVatTu : '');
+    const tags = [];
+    const seenTags = new Set();
+
+    function addTag(label, val, colorClass) {
+      if (!val) return;
+      const cleanVal = String(val)
+        .replace(/^\[cỡ:\s*/i, '')
+        .replace(/\]$/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (
+        !cleanVal ||
+        cleanVal === '#' ||
+        cleanVal === '##' ||
+        cleanVal.includes('VC: ABC')
+      )
+        return;
+      const key = `${label}:${cleanVal}`.toLowerCase();
+      if (seenTags.has(key)) return;
+      seenTags.add(key);
+      tags.push({ label, val: cleanVal, colorClass });
+    }
+
+    if (maMau) {
+      addTag('Màu', maMau, 'bg-purple-50 text-purple-700 border-purple-200');
+    }
+    if (quyCach && !quyCach.includes('VC: ABC')) {
+      addTag('Quy cách', quyCach, 'bg-slate-100 text-slate-700 border-slate-200');
+    }
+
+    for (let i = 2; i < rawParts.length; i++) {
+      const p = rawParts[i];
+      if (
+        /black|white|navy|mbo|grey|gray|red|blue|yellow|green|\(\s*\d+\s*\)/i.test(
+          p,
+        )
+      ) {
+        addTag('Màu', p, 'bg-purple-50 text-purple-700 border-purple-200');
+      } else if (
+        /cỡ|size/i.test(p) ||
+        /^\d+[A-Z]*(\([A-Z0-9]+\))?$/i.test(p)
+      ) {
+        addTag('Cỡ', p, 'bg-blue-50 text-blue-700 border-blue-200');
+      } else if (/\d+\s*(cm|mm|m|mtr|yds|inch|cone)/i.test(p)) {
+        addTag('Kích thước', p, 'bg-sky-50 text-sky-700 border-sky-200');
+      } else if (p && p !== subCode && p !== '#' && p !== '##') {
+        addTag('', p, 'bg-slate-100 text-slate-600 border-slate-200');
+      }
+    }
+
+    return { mainTitle, subCode, tags };
+  }
+
+  return {
+    mainTitle: raw,
+    subCode: maVatTu && maVatTu !== raw ? maVatTu : '',
+    tags: [
+      maMau
+        ? {
+            label: 'Màu',
+            val: maMau,
+            colorClass: 'bg-purple-50 text-purple-700 border-purple-200',
+          }
+        : null,
+      quyCach && !quyCach.includes('VC: ABC')
+        ? {
+            label: 'Quy cách',
+            val: quyCach,
+            colorClass: 'bg-slate-100 text-slate-700 border-slate-200',
+          }
+        : null,
+    ].filter(Boolean),
+  };
+}
+
 export default function MaterialReceiptDetailPage() {
   const { phieuSoanHangId } = useParams();
   const navigate = useNavigate();
@@ -1247,94 +1336,209 @@ export default function MaterialReceiptDetailPage() {
                       </div>
                     </div>
 
-                    {/* Danh sách vật tư trong thùng */}
+                    {/* Danh sách vật tư trong thùng (Gộp nhóm vật tư gọn gàng, chống rối mắt) */}
                     {isExpanded && (
                       <div className="divide-y divide-slate-100">
-                        {thung.filteredCays.map((cay) => {
-                          return (
-                            <div
-                              key={cay.CayId}
-                              className={`flex flex-wrap items-center justify-between gap-3 p-3 text-xs transition ${
-                                cay.isXacNhan ? "bg-emerald-50/30" : "bg-white"
-                              }`}
-                            >
-                              <div className="flex-1 space-y-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="font-bold text-slate-900">
-                                    {cay.TenVatTu || cay.MaVatTu}
-                                  </span>
-                                  {cay.MaMau && (
-                                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
-                                      Màu: {cay.MaMau}
-                                    </span>
-                                  )}
-                                  {cay.QuyCach && (
-                                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
-                                      Quy cách: {cay.QuyCach}
-                                    </span>
-                                  )}
-                                </div>
+                        {(() => {
+                          const matGroups = [];
+                          const map = new Map();
+                          thung.filteredCays.forEach((cay) => {
+                            const key = cay.ChiTietPhieuSoanHangId || cay.MaVatTu || cay.TenVatTu;
+                            if (!map.has(key)) {
+                              const newGrp = {
+                                key,
+                                sample: cay,
+                                cays: [],
+                                tongXuat: 0,
+                                daNhan: 0,
+                                soGoi: 0,
+                                soGoiDaNhan: 0,
+                              };
+                              map.set(key, newGrp);
+                              matGroups.push(newGrp);
+                            }
+                            const grp = map.get(key);
+                            grp.cays.push(cay);
+                            grp.soGoi += 1;
+                            grp.tongXuat += Number(cay.SoLuongXuat || 0);
+                            if (cay.isXacNhan) {
+                              grp.soGoiDaNhan += 1;
+                              grp.daNhan += Number(cay.SoLuongThucNhan || cay.SoLuongXuat || 0);
+                            }
+                          });
 
-                                <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                                  <span>
-                                    Mã VT: <strong>{cay.MaVatTu}</strong>
-                                  </span>
-                                  <span>•</span>
-                                  <span>
-                                    Mã cây: <strong>{cay.MaCay}</strong>
-                                  </span>
-                                  <span>•</span>
-                                  <span>
-                                    SL xuất kho:{" "}
-                                    <strong className="text-slate-800">
-                                      {cay.SoLuongXuat} {cay.DVT}
-                                    </strong>
-                                  </span>
-                                  {cay.isXacNhan && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="font-bold text-emerald-700">
-                                        Đã nhận:{" "}
-                                        {cay.SoLuongThucNhan || cay.SoLuongXuat}{" "}
-                                        {cay.DVT}
+                          return matGroups.map((grp) => {
+                            const { mainTitle, subCode, tags } = cleanMaterialDisplay(
+                              grp.sample.TenVatTu,
+                              grp.sample.MaVatTu,
+                              grp.sample.QuyCach,
+                              grp.sample.MaMau
+                            );
+                            const isDaNhanDu = grp.soGoiDaNhan === grp.soGoi;
+                            const isNhanMotPhan = grp.soGoiDaNhan > 0 && grp.soGoiDaNhan < grp.soGoi;
+
+                            return (
+                              <div
+                                key={grp.key}
+                                className={`p-3.5 space-y-2.5 transition ${
+                                  isDaNhanDu ? "bg-emerald-50/20" : "bg-white"
+                                }`}
+                              >
+                                {/* Header vật tư chính */}
+                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                  <div className="space-y-1">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <span className="text-sm font-bold text-slate-900">
+                                        {mainTitle}
                                       </span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
+                                      {tags.map((t, idx) => (
+                                        <span
+                                          key={idx}
+                                          className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${t.colorClass}`}
+                                        >
+                                          {t.label ? `${t.label}: ` : ""}{t.val}
+                                        </span>
+                                      ))}
+                                      {isDaNhanDu ? (
+                                        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                                          <Check className="size-3" /> Đã nhận đủ
+                                        </span>
+                                      ) : isNhanMotPhan ? (
+                                        <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                                          <Clock className="size-3" /> Nhận {grp.soGoiDaNhan}/{grp.soGoi} gói
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    {subCode && (
+                                      <div className="text-[11px] text-slate-400 font-mono">
+                                        Mã VT: {subCode}
+                                      </div>
+                                    )}
+                                  </div>
 
-                              <div className="flex items-center gap-2">
-                                {cay.isXacNhan ? (
-                                  <>
-                                    <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                                      <Check className="size-3 text-emerald-600" />
-                                      Đã nhận
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleHuyNhanRoll(cay)}
-                                      className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100"
-                                    >
-                                      <RotateCcw className="size-3" />
-                                      Hủy nhận
-                                    </button>
-                                  </>
+                                  <div className="text-right">
+                                    <div className="text-xs text-slate-500">
+                                      Xuất:{" "}
+                                      <strong className="text-slate-800">
+                                        {grp.tongXuat.toLocaleString()} {grp.sample.DVT}
+                                      </strong>
+                                      {grp.soGoi > 1 && (
+                                        <span className="text-slate-400"> ({grp.soGoi} gói)</span>
+                                      )}
+                                    </div>
+                                    {grp.daNhan > 0 ? (
+                                      <div className="text-[11px] font-bold text-emerald-700">
+                                        Đã nhận: {grp.daNhan.toLocaleString()} {grp.sample.DVT}
+                                      </div>
+                                    ) : (
+                                      <div className="text-[11px] text-slate-400">Chờ nhận</div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Chi tiết từng gói tem trong thùng */}
+                                {grp.soGoi === 1 ? (
+                                  (() => {
+                                    const cay = grp.cays[0];
+                                    return (
+                                      <div className="flex items-center justify-between rounded-xl bg-slate-50/80 px-3 py-2 text-xs">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-mono text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded px-1.5 py-0.5">
+                                            {cay.MaCay}
+                                          </span>
+                                          <span className="text-slate-500">
+                                            {cay.SoLuongXuat} {cay.DVT}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                          {cay.isXacNhan ? (
+                                            <>
+                                              <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                                                <Check className="size-3 text-emerald-600" />
+                                                Đã nhận
+                                              </span>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleHuyNhanRoll(cay)}
+                                                className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-white px-2 py-0.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                                              >
+                                                <RotateCcw className="size-3" />
+                                                Hủy
+                                              </button>
+                                            </>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                handleScanRoll(cay.MaCay, "xac_nhan")
+                                              }
+                                              className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-xs font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95"
+                                            >
+                                              <Check className="size-3" />
+                                              Nhận gói này
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })()
                                 ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleScanRoll(cay.MaCay, "xac_nhan")
-                                    }
-                                    className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95"
-                                  >
-                                    <Check className="size-3" />
-                                    Xác nhận nhận
-                                  </button>
+                                  <div className="space-y-1.5 rounded-xl border border-slate-200/80 bg-slate-50/50 p-2">
+                                    <div className="text-[11px] font-semibold text-slate-500 px-1">
+                                      Danh sách {grp.soGoi} gói ({grp.soGoiDaNhan}/{grp.soGoi} đã nhận):
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                                      {grp.cays.map((cay) => (
+                                        <div
+                                          key={cay.CayId}
+                                          className={`flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs transition ${
+                                            cay.isXacNhan
+                                              ? "border-emerald-200 bg-emerald-50/70 text-emerald-800"
+                                              : "border-slate-200 bg-white text-slate-700"
+                                          }`}
+                                        >
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="font-mono text-[11px] font-bold">
+                                              {cay.MaCay}
+                                            </span>
+                                            <span className="text-[11px] text-slate-500">
+                                              ({cay.SoLuongXuat} {cay.DVT})
+                                            </span>
+                                          </div>
+
+                                          <div>
+                                            {cay.isXacNhan ? (
+                                              <button
+                                                type="button"
+                                                onClick={() => handleHuyNhanRoll(cay)}
+                                                title="Nhấn để hủy nhận gói này"
+                                                className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 hover:bg-rose-100 hover:text-rose-700 transition"
+                                              >
+                                                <Check className="size-3" />
+                                                <span>Đã nhận</span>
+                                              </button>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                onClick={() =>
+                                                  handleScanRoll(cay.MaCay, "xac_nhan")
+                                                }
+                                                className="rounded bg-blue-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm hover:bg-blue-700 active:scale-95"
+                                              >
+                                                Nhận
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          });
+                        })()}
                       </div>
                     )}
                   </div>
@@ -1383,33 +1587,54 @@ export default function MaterialReceiptDetailPage() {
                           )}
                         </div>
 
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-slate-900">
-                              {item.TenVatTu || item.MaVatTu}
-                            </span>
-                            {item.MaMau && (
-                              <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-700">
-                                Màu: {item.MaMau}
-                              </span>
-                            )}
-                            {item.QuyCach && (
-                              <span className="rounded bg-slate-200/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-700">
-                                Quy cách: {item.QuyCach}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            Mã VT: <strong>{item.MaVatTu}</strong> • Yêu cầu:{" "}
-                            <strong>
-                              {item.SoLuongYeuCau} {item.DVT}
-                            </strong>{" "}
-                            • Thực soạn:{" "}
-                            <strong>
-                              {item.SoLuongThucSoan} {item.DVT}
-                            </strong>
-                          </div>
-                        </div>
+                        {(() => {
+                          const { mainTitle, subCode, tags } = cleanMaterialDisplay(
+                            item.TenVatTu,
+                            item.MaVatTu,
+                            item.QuyCach,
+                            item.MaMau
+                          );
+                          return (
+                            <div>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-sm font-bold text-slate-900">
+                                  {mainTitle}
+                                </span>
+                                {tags.map((t, idx) => (
+                                  <span
+                                    key={idx}
+                                    className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${t.colorClass}`}
+                                  >
+                                    {t.label ? `${t.label}: ` : ""}{t.val}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                {subCode && (
+                                  <>
+                                    <span className="font-mono text-[11px] text-slate-400">
+                                      Mã VT: {subCode}
+                                    </span>
+                                    <span>•</span>
+                                  </>
+                                )}
+                                <span>
+                                  Yêu cầu:{" "}
+                                  <strong>
+                                    {item.SoLuongYeuCau} {item.DVT}
+                                  </strong>
+                                </span>
+                                <span>•</span>
+                                <span>
+                                  Thực soạn:{" "}
+                                  <strong>
+                                    {item.SoLuongThucSoan} {item.DVT}
+                                  </strong>
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       <div className="flex items-center gap-3">
@@ -1524,7 +1749,7 @@ export default function MaterialReceiptDetailPage() {
         footer={null}
         width={720}
         centered
-        destroyOnClose
+        destroyOnHidden
       >
         {modalThung && (
           <div className="space-y-4">
@@ -1648,40 +1873,53 @@ export default function MaterialReceiptDetailPage() {
                         className="mt-1 size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                       />
 
-                      <div className="flex-1 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-bold text-slate-900">
-                            {cay.TenVatTu || cay.MaVatTu}
-                          </span>
-                          {cay.isXacNhan && (
-                            <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                              Đã nhận trước đó
-                            </span>
-                          )}
-                        </div>
+                      {(() => {
+                        const { mainTitle, subCode, tags } = cleanMaterialDisplay(
+                          cay.TenVatTu,
+                          cay.MaVatTu,
+                          cay.QuyCach,
+                          cay.MaMau
+                        );
+                        return (
+                          <div className="flex-1 space-y-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-sm font-bold text-slate-900">
+                                {mainTitle}
+                              </span>
+                              {tags.map((t, idx) => (
+                                <span
+                                  key={idx}
+                                  className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${t.colorClass}`}
+                                >
+                                  {t.label ? `${t.label}: ` : ""}{t.val}
+                                </span>
+                              ))}
+                              {cay.isXacNhan && (
+                                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                  Đã nhận trước đó
+                                </span>
+                              )}
+                            </div>
 
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                          <span>
-                            Mã VT: <strong>{cay.MaVatTu}</strong>
-                          </span>
-                          <span>•</span>
-                          <span>
-                            Mã cây: <strong>{cay.MaCay}</strong>
-                          </span>
-                          {cay.MaMau && (
-                            <>
-                              <span>•</span>
-                              <span>Màu: {cay.MaMau}</span>
-                            </>
-                          )}
-                          {cay.QuyCach && (
-                            <>
-                              <span>•</span>
-                              <span>Quy cách: {cay.QuyCach}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                              <span>
+                                Mã gói:{" "}
+                                <strong className="font-mono text-slate-800">
+                                  {cay.MaCay}
+                                </strong>
+                              </span>
+                              {subCode && (
+                                <>
+                                  <span>•</span>
+                                  <span className="font-mono text-[11px] text-slate-400">
+                                    Mã VT: {subCode}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* Số lượng */}
                       <div
