@@ -1,13 +1,17 @@
 import {
+  IsArray,
   IsBoolean,
   IsDateString,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class wh_DanhSachDonNhanHang_RequestDTO {
   @IsOptional()
@@ -107,4 +111,50 @@ export class wh_XacNhanNhanHang_RequestDTO {
   @IsOptional()
   @IsString()
   ghiChu?: string;
+}
+
+export class SelectedThungCayDTO {
+  @IsInt()
+  @Min(1)
+  CayId: number;
+
+  @IsInt()
+  @Min(1)
+  ChiTietPhieuSoanHangId: number;
+
+  @IsOptional()
+  @IsNumber()
+  SoLuongThucNhan?: number;
+}
+
+export class wh_XacNhanNhanThungGPA_RequestDTO {
+  @IsInt()
+  @Min(1)
+  PhieuSoanHangId: number;
+
+  @IsString()
+  @IsNotEmpty()
+  MaGPA: string;
+
+  @IsOptional()
+  @IsIn(['xac_nhan', 'huy_nhan'])
+  action?: 'xac_nhan' | 'huy_nhan';
+
+  @IsInt()
+  @Min(1)
+  tkId: number;
+
+  @IsString()
+  @IsNotEmpty()
+  tenNguoiNhan: string;
+
+  @IsOptional()
+  @IsString()
+  xiNghiepNhan?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SelectedThungCayDTO)
+  selectedCays?: SelectedThungCayDTO[];
 }

@@ -45,7 +45,8 @@ export async function quetNhanCay(payload) {
  * Xác nhận nhận tất cả hoặc chốt hoàn tất nhận hàng
  * @param {Object} payload
  * @param {number} payload.PhieuSoanHangId
- * @param {boolean} payload.nhanTatCa
+ * @param {boolean} [payload.nhanTatCa]
+ * @param {boolean} [payload.huyNhanTatCa]
  * @param {boolean} [payload.chotHoanTat]
  * @param {number} payload.tkId
  * @param {string} payload.tenNguoiNhan
@@ -54,4 +55,19 @@ export async function quetNhanCay(payload) {
  */
 export async function xacNhanNhanHang(payload) {
   return postJson("/api/material-receipt/wh_XacNhanNhanHang", payload);
+}
+
+/**
+ * Xác nhận nhận hoặc hủy nhận theo thùng GPA hoặc danh sách vật tư được chọn trong thùng
+ * @param {Object} payload
+ * @param {number} payload.PhieuSoanHangId
+ * @param {string} payload.MaGPA
+ * @param {'xac_nhan'|'huy_nhan'} [payload.action]
+ * @param {number} payload.tkId
+ * @param {string} payload.tenNguoiNhan
+ * @param {string} [payload.xiNghiepNhan]
+ * @param {Array<{CayId: number, ChiTietPhieuSoanHangId: number, SoLuongThucNhan?: number}>} [payload.selectedCays]
+ */
+export async function xacNhanNhanThungGPA(payload) {
+  return postJson("/api/material-receipt/wh_XacNhanNhanThungGPA", payload);
 }

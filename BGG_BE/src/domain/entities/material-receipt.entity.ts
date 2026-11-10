@@ -21,6 +21,8 @@ export class MaterialReceiptOrderEntity {
   TongSoLuongXuat: number;
   SoCayDaNhan: number;
   SoLuongDaNhan: number;
+  TongSoThung?: number;
+  SoThungDaNhan?: number;
   TrangThaiNhan: 'ChoNhan' | 'NhanMotPhan' | 'DaNhanDu';
   TiLeNhan: number;
   ThoiGianNhanMoiNhat?: Date;
@@ -48,6 +50,8 @@ export class MaterialReceiptRollEntity {
   CayId: number;
   MaCay: string;
   MaCayMoi?: string;
+  MaGPA?: string;
+  MaRo?: string;
   SoLuongXuat: number;
   isXacNhan: boolean;
   SoLuongThucNhan?: number;
@@ -58,4 +62,37 @@ export class MaterialReceiptRollEntity {
   XiNghiepXacNhan?: string;
   ThoiGianQuetXuat?: Date;
   TenNguoiQuetXuat?: string;
+}
+
+export interface MaterialReceiptThungItemEntity {
+  ChiTietPhieuSoanHangId: number;
+  CayId: number;
+  MaCay: string;
+  MaCayMoi?: string;
+  MaVatTu: string;
+  TenVatTu: string;
+  MaMau?: string;
+  QuyCach?: string;
+  DVT?: string;
+  SoLuongXuat: number;
+  isXacNhan: boolean;
+  SoLuongThucNhan?: number;
+  ThoiGianXacNhan?: Date;
+  TKId?: number;
+  NguoiXacNhan?: number;
+  TenNguoiXacNhan?: string;
+  XiNghiepXacNhan?: string;
+  ThoiGianQuetXuat?: Date;
+  TenNguoiQuetXuat?: string;
+}
+
+export interface MaterialReceiptThungEntity {
+  MaGPA: string; // e.g. "GPA26100107" hoặc "" (Hàng lẻ)
+  TenThung: string; // e.g. "Thùng GPA26100107" hoặc "Phụ liệu lẻ (Chưa đóng thùng)"
+  TongSoCay: number;
+  SoCayDaNhan: number;
+  TongSoLuongXuat: number;
+  SoLuongDaNhan: number;
+  TrangThaiNhan: 'ChoNhan' | 'NhanMotPhan' | 'DaNhanDu';
+  cays: MaterialReceiptThungItemEntity[];
 }

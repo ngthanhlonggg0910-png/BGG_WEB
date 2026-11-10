@@ -504,8 +504,19 @@ export default function MaterialReceiptListPage() {
                           Tiến độ nhận hàng
                         </span>
                         <span className="font-bold text-slate-900">
-                          {order.SoCayDaNhan} / {order.TongSoCay} cây (
-                          {progress}%)
+
+                          {order.TongSoThung > 0 ? (
+                            <>
+                              {order.SoThungDaNhan || 0}/{order.TongSoThung} thùng{' '}
+                              <span className="text-slate-500 font-normal">
+                                ({order.SoCayDaNhan}/{order.TongSoCay} mục • {progress}%)
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              {order.SoCayDaNhan} / {order.TongSoCay} cây ({progress}%)
+                            </>
+                          )}
                         </span>
                       </div>
                       <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
