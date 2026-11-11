@@ -323,8 +323,10 @@ export default function ScannedRollsManagerSection({
         const filteredData = qrTrangMapping
           ? response.data.filter(
               (r) =>
-                String(r.QrTrangMapping ?? "").trim() ===
-                String(qrTrangMapping).trim(),
+                String(r.QrTrangMapping ?? "")
+                  .trim()
+                  .toUpperCase() ===
+                String(qrTrangMapping).trim().toUpperCase(),
             )
           : response.data;
         setList(filteredData);

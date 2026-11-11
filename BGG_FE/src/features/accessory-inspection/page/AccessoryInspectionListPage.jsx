@@ -154,6 +154,12 @@ export default function AccessoryInspectionListPage() {
   }
 
   const firstItem = materials[0] || null;
+  const uniqueMaPhieus = [
+    ...new Set(materials.map((m) => m.MaPhieu).filter(Boolean)),
+  ].join(", ");
+  const uniqueMaHangs = [
+    ...new Set(materials.map((m) => m.MaHang).filter(Boolean)),
+  ].join(", ");
   const effectiveCartonQr =
     firstItem?.QrTrangMapping || barcode.trim().toUpperCase();
   const totalTemsInCarton = materials.reduce(
@@ -319,7 +325,7 @@ export default function AccessoryInspectionListPage() {
                       <p className="m-0 mt-0.5 text-xs font-medium text-slate-600">
                         Khi kiểm hoặc sửa/tách tem, dữ liệu sẽ tự động cập nhật vào Phiếu giám định{" "}
                         <strong className="text-slate-900">
-                          {firstItem?.MaPhieu || "—"}
+                          {uniqueMaPhieus || firstItem?.MaPhieu || "—"}
                         </strong>
                       </p>
                     </div>
@@ -338,13 +344,13 @@ export default function AccessoryInspectionListPage() {
                       Phiếu giám định
                     </dt>
                     <dd className="m-0 mt-0.5 font-extrabold text-slate-900">
-                      {firstItem?.MaPhieu || "—"}
+                      {uniqueMaPhieus || firstItem?.MaPhieu || "—"}
                     </dd>
                   </div>
                   <div>
                     <dt className="font-semibold text-slate-500">Mã hàng</dt>
                     <dd className="m-0 mt-0.5 truncate font-extrabold text-slate-900">
-                      {firstItem?.MaHang || "—"}
+                      {uniqueMaHangs || firstItem?.MaHang || "—"}
                     </dd>
                   </div>
                   <div>
@@ -430,6 +436,11 @@ export default function AccessoryInspectionListPage() {
                               <span className="inline-flex rounded-md bg-egmf-primary-soft px-2 py-0.5 text-[11px] font-extrabold text-egmf-primary">
                                 ID: {item.CTPGDId}
                               </span>
+                              {item.MaPhieu && (
+                                <span className="inline-flex rounded-md border border-blue-200 bg-blue-50/70 px-2 py-0.5 text-[11px] font-bold text-blue-800">
+                                  Phiếu: {item.MaPhieu}
+                                </span>
+                              )}
                               {item.Item && (
                                 <span className="inline-flex rounded-md border border-slate-300 bg-slate-100 px-2 py-0.5 font-mono text-xs font-extrabold text-slate-900">
                                   Mã VT: {item.Item}

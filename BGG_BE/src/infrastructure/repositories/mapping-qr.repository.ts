@@ -49,12 +49,66 @@ export class MappingQrRepository implements IMapingQrRepository {
   async getDanhSachVatTuTheoBarcodeKien(
     Barcode: string,
   ): Promise<WH_PhieuGiamDinh_GetData_ByBarcodeKien[]> {
+    const cleanBarcode = String(Barcode ?? '').trim();
+    if (!cleanBarcode) {
+      return [];
+    }
+
     const pool = await this.databaseService.getPool();
     const result = await pool
       .request()
-      .input('Barcode', sql.NVarChar(200), Barcode)
-      .execute('WH_PhieuGiamDinh_GetData_ByBarcodeKien');
-    return result.recordset;
+      .input('Barcode', sql.NVarChar(200), cleanBarcode).query(`
+      DECLARE @PgdIds TABLE (PGDId BIGINT);
+
+      INSERT INTO @PgdIds (PGDId)
+      SELECT DISTINCT PGDId
+      FROM dbo.Lib_BarcodeKien
+      WHERE LTRIM(RTRIM(Barcode)) = @Barcode
+        AND PGDId IS NOT NULL;
+
+      INSERT INTO @PgdIds (PGDId)
+      SELECT DISTINCT ct.PGDId
+      FROM dbo.WH_ChiTietPhieuGiamDinh_Cay c
+      INNER JOIN dbo.WH_ChiTietPhieuGiamDinh ct ON ct.CTPGDId = c.CTPGDId
+      WHERE (LTRIM(RTRIM(c.QrTrangMapping)) = @Barcode OR LTRIM(RTRIM(c.MaCay)) = @Barcode)
+        AND ct.PGDId IS NOT NULL
+        AND ct.PGDId NOT IN (SELECT PGDId FROM @PgdIds);
+
+      SELECT
+        CAST(1 AS BIT) AS isPhieuThuong,
+        pgd.PGDId AS pGDId,
+        pgd.NgayGiamDinh AS ngayGiamDinh,
+        pgd.MaPhieu AS maPhieu,
+        pgd.TrangThai AS trangThai,
+        pgd.MaHang AS maHang,
+        pgd.LoaiGiamDinh AS loaiGiamDinh,
+        pgd.MaRo,
+        pgd.Lo,
+        pgd.TenNguoiTao AS tenNguoiTao,
+        pgd.TenNguoiGiamDinh AS tenNguoiGiamDinh
+      FROM dbo.WH_PhieuGiamDinh AS pgd
+      WHERE pgd.PGDId IN (SELECT PGDId FROM @PgdIds)
+
+      UNION ALL
+
+      SELECT
+        CAST(0 AS BIT) AS isPhieuThuong,
+        pgdt.PGDId AS pGDId,
+        pgdt.NgayGiamDinh AS ngayGiamDinh,
+        pgdt.MaPhieu AS maPhieu,
+        pgdt.TrangThai AS trangThai,
+        pgdt.MaHang AS maHang,
+        pgdt.LoaiGiamDinh AS loaiGiamDinh,
+        pgdt.MaRo,
+        '' AS Lo,
+        pgdt.TenNguoiTao AS tenNguoiTao,
+        pgdt.TenNguoiGiamDinh AS tenNguoiGiamDinh
+      FROM dbo.WH_PhieuGiamDinhTong AS pgdt
+      WHERE pgdt.PGDId IN (SELECT PGDId FROM @PgdIds)
+        AND pgdt.PGDId NOT IN (SELECT PGDId FROM dbo.WH_PhieuGiamDinh)
+      ORDER BY ngayGiamDinh DESC, pGDId DESC;
+    `);
+    return result.recordset ?? [];
   }
 
   async getChiTietPhieuGiamDinh(
@@ -130,7 +184,7 @@ export class MappingQrRepository implements IMapingQrRepository {
       SELECT *
       FROM WH_ChiTietPhieuGiamDinh_Cay
       WHERE CTPGDId = @CTPGDId
-        AND (@QrTrangMapping = '' OR QrTrangMapping = @QrTrangMapping)
+        AND (@QrTrangMapping = '' OR LTRIM(RTRIM(ISNULL(QrTrangMapping, ''))) = @QrTrangMapping)
       ORDER BY CayId ASC;
     `);
 
@@ -151,23 +205,24 @@ export class MappingQrRepository implements IMapingQrRepository {
 
       -- Nếu người dùng quét mã tem con (PAH.../NAH...), tự động suy ra mã thùng QrTrangMapping của nó
       IF NOT EXISTS (
-        SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh_Cay WHERE QrTrangMapping = @Barcode
+        SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh_Cay WHERE LTRIM(RTRIM(QrTrangMapping)) = @Barcode
       )
       BEGIN
         SELECT TOP 1 @TargetQr = ISNULL(NULLIF(LTRIM(RTRIM(QrTrangMapping)), ''), @Barcode)
         FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
-        WHERE MaCay = @Barcode;
-      END
+        WHERE LTRIM(RTRIM(MaCay)) = @Barcode;
+      END;
 
-      WITH CartonPerCTPGD AS (
+      ;WITH CartonPerCTPGD AS (
         SELECT
           c.CTPGDId,
-          MAX(ISNULL(c.QrTrangMapping, @TargetQr)) AS QrTrangMapping,
+          UPPER(MAX(LTRIM(RTRIM(ISNULL(c.QrTrangMapping, @TargetQr))))) AS QrTrangMapping,
           MAX(ISNULL(c.MaSoKien, '')) AS MaSoKien,
           ROUND(SUM(ISNULL(c.SL, 0)), 4) AS SoLuongTrongThung,
           COUNT(*) AS SoTemTrongThung
         FROM dbo.WH_ChiTietPhieuGiamDinh_Cay c
-        WHERE c.QrTrangMapping = @TargetQr OR c.MaCay = @Barcode
+        WHERE LTRIM(RTRIM(c.QrTrangMapping)) = @TargetQr
+           OR LTRIM(RTRIM(c.MaCay)) = @Barcode
         GROUP BY c.CTPGDId
       ),
       TotalPerCTPGD AS (
@@ -198,14 +253,14 @@ export class MappingQrRepository implements IMapingQrRepository {
         ISNULL(tot.TongSoCayToanPhieu, 0) AS SoLuongCay,
         b.CTPGDId,
         b.PGDId,
-        pgd.MaPhieu,
-        pgd.NgayGiamDinh,
-        pgd.TrangThai AS TrangThaiPhieu,
-        pgd.MaHang,
-        pgd.LoaiGiamDinh,
+        ISNULL(pgd.MaPhieu, pgdt.MaPhieu) AS MaPhieu,
+        ISNULL(pgd.NgayGiamDinh, pgdt.NgayGiamDinh) AS NgayGiamDinh,
+        ISNULL(pgd.TrangThai, pgdt.TrangThai) AS TrangThaiPhieu,
+        ISNULL(pgd.MaHang, pgdt.MaHang) AS MaHang,
+        ISNULL(pgd.LoaiGiamDinh, pgdt.LoaiGiamDinh) AS LoaiGiamDinh,
         pgd.Lo AS LoPhieu,
-        pgd.TenNguoiTao AS TenNguoiTaoPhieu,
-        pgd.TenNguoiGiamDinh,
+        ISNULL(pgd.TenNguoiTao, pgdt.TenNguoiTao) AS TenNguoiTaoPhieu,
+        ISNULL(pgd.TenNguoiGiamDinh, pgdt.TenNguoiGiamDinh) AS TenNguoiGiamDinh,
         a.VTId,
         a.DHId,
         a.MaChungLoai,
@@ -243,11 +298,12 @@ export class MappingQrRepository implements IMapingQrRepository {
         b.SoLuongChungTuThucTe
       FROM CartonPerCTPGD carton
       INNER JOIN dbo.WH_ChiTietPhieuGiamDinh b ON b.CTPGDId = carton.CTPGDId
-      INNER JOIN dbo.WH_PhieuGiamDinh pgd ON pgd.PGDId = b.PGDId
-      INNER JOIN dbo.Lib_NguyenPhuLieu a ON a.VTId = b.VTId
+      LEFT JOIN dbo.WH_PhieuGiamDinh pgd ON pgd.PGDId = b.PGDId
+      LEFT JOIN dbo.WH_PhieuGiamDinhTong pgdt ON pgdt.PGDId = b.PGDId
+      LEFT JOIN dbo.Lib_NguyenPhuLieu a ON a.VTId = b.VTId
       LEFT JOIN BarvoInfo c ON c.VTId = a.VTId
       LEFT JOIN TotalPerCTPGD tot ON tot.CTPGDId = b.CTPGDId
-      ORDER BY b.CTPGDId ASC;
+      ORDER BY b.PGDId DESC, b.CTPGDId ASC;
     `);
 
     return result.recordset ?? [];

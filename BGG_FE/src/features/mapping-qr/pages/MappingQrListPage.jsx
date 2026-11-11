@@ -17,6 +17,7 @@ import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import {
   getDanhSachTrangThaiPhieuGiamDinh,
   getDanhSachPhieuGiamDinhTheoThoiGian,
+  getDanhSachVatTuTheoBarcodeKien,
 } from "../api/mappingQrApi";
 import { showErrorToast } from "../../../shared/components/ui/CustomToast";
 
@@ -130,9 +131,16 @@ export default function MappingQrListPage({
 
   const listFilter = list.filter((item) => {
     const search = keyword?.trim().toLowerCase() || "";
+    if (!search) return true;
+    if (
+      item._matchedBarcode &&
+      String(item._matchedBarcode).toLowerCase().includes(search)
+    ) {
+      return true;
+    }
 
     return (
-      String(item.maPhieu ?? "")
+      String(item.maPhieu ?? item.MaPhieu ?? "")
         .toLowerCase()
         .includes(search) ||
       String(item.Lo ?? "")
@@ -170,8 +178,42 @@ export default function MappingQrListPage({
   };
 
   const handleFilter = async () => {
+    const cleanKeyword = keyword.trim();
+    const isBarcodePattern = /^(GPA|PAH|NAH)/i.test(cleanKeyword);
+
+    // Nếu người dùng nhập mã barcode kiện (VD: GPA26110306) hoặc chưa chọn ngày nhưng có nhập mã để tìm
+    if (isBarcodePattern || ((!dateRange?.[0] || !dateRange?.[1]) && cleanKeyword)) {
+      setLoading(true);
+      try {
+        const barcodeRes = await getDanhSachVatTuTheoBarcodeKien(cleanKeyword);
+        if (barcodeRes?.success && Array.isArray(barcodeRes.data) && barcodeRes.data.length > 0) {
+          const matchedItems = barcodeRes.data.map((item) => ({
+            ...item,
+            _matchedBarcode: cleanKeyword.toLowerCase(),
+          }));
+          setList(matchedItems);
+          saveFilter(loai, {
+            dateRange,
+            keyword: cleanKeyword,
+            list: matchedItems,
+            status,
+          });
+          return;
+        }
+        if (!dateRange?.[0] || !dateRange?.[1]) {
+          setList([]);
+          showErrorToast(`Không tìm thấy phiếu giám định cho mã "${cleanKeyword}"`);
+          return;
+        }
+      } catch (error) {
+        console.error("Lỗi tra cứu barcode kiện:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     if (!dateRange?.[0] || !dateRange?.[1]) {
-      showErrorToast("Vui lòng chọn khoảng thời gian");
+      showErrorToast("Vui lòng chọn khoảng thời gian hoặc nhập mã barcode kiện");
       return;
     }
 
@@ -195,16 +237,38 @@ export default function MappingQrListPage({
 
       const data = response.data ?? [];
 
-      const filteredData = data.filter((item) =>
-        String(item.MaPhieu ?? "")
-          .toLowerCase()
-          .includes(keyword.trim().toLowerCase()),
-      );
+      let filteredData = cleanKeyword
+        ? data.filter((item) => {
+            const q = cleanKeyword.toLowerCase();
+            return (
+              String(item.maPhieu ?? item.MaPhieu ?? "")
+                .toLowerCase()
+                .includes(q) ||
+              String(item.Lo ?? "")
+                .toLowerCase()
+                .includes(q) ||
+              String(item.maHang ?? "")
+                .toLowerCase()
+                .includes(q)
+            );
+          })
+        : data;
+
+      // Nếu lọc theo ngày không khớp mã phiếu, thử tìm theo barcode kiện (GPA...)
+      if (cleanKeyword && filteredData.length === 0) {
+        const barcodeRes = await getDanhSachVatTuTheoBarcodeKien(cleanKeyword);
+        if (barcodeRes?.success && Array.isArray(barcodeRes.data) && barcodeRes.data.length > 0) {
+          filteredData = barcodeRes.data.map((item) => ({
+            ...item,
+            _matchedBarcode: cleanKeyword.toLowerCase(),
+          }));
+        }
+      }
 
       setList(filteredData);
       saveFilter(loai, {
         dateRange,
-        keyword,
+        keyword: cleanKeyword,
         list: filteredData,
         status,
       });
