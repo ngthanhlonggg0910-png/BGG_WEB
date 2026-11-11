@@ -170,6 +170,14 @@ export class MappingQrRepository implements IMapingQrRepository {
         SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
             Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
         WHERE CTPGDId = @CTPGDId;
+
+        IF EXISTS (
+          SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh
+          WHERE CTPGDId = @CTPGDId AND ISNULL(LoaiTiLe, '') <> ''
+        )
+        BEGIN
+          EXEC dbo.wh_chitietphieugiamdinh_capnhat_tilekiem @TiLe = 0, @LoaiTiLe = N'', @CTPGDId = @CTPGDId;
+        END
       END
 
       SELECT @RowCount AS RowsUpdated;
@@ -279,7 +287,14 @@ export class MappingQrRepository implements IMapingQrRepository {
           )
           .input('MaCayCu', sql.NVarChar(50), orig.MaCay ?? null)
           .input('MaCayMappingGoc', sql.NVarChar(50), maCayGoc || null)
-          .input('MaRo', sql.NVarChar(50), orig.MaRo ?? null).query(`
+          .input('MaRo', sql.NVarChar(50), orig.MaRo ?? null)
+          .input('DuocCap', sql.Bit, orig.DuocCap ?? null)
+          .input('MaHangPO', sql.NVarChar(250), orig.MaHangPO ?? null)
+          .input('SoToKhai', sql.NVarChar(250), orig.SoToKhai ?? null)
+          .input('NgayToKhai', sql.Date, orig.NgayToKhai ?? null)
+          .input('KetQuaKiem', sql.Bit, orig.KetQuaKiem ?? null)
+          .input('HuongXuLyCay', sql.NVarChar(250), orig.HuongXuLyCay ?? null)
+          .query(`
             INSERT INTO dbo.WH_ChiTietPhieuGiamDinh_Cay (
               CTPGDId,
               MaCay,
@@ -300,7 +315,13 @@ export class MappingQrRepository implements IMapingQrRepository {
               TGMapping,
               MaCayCu,
               MaCayMappingGoc,
-              MaRo
+              MaRo,
+              DuocCap,
+              MaHangPO,
+              SoToKhai,
+              NgayToKhai,
+              KetQuaKiem,
+              HuongXuLyCay
             )
             VALUES (
               @CTPGDId,
@@ -322,12 +343,18 @@ export class MappingQrRepository implements IMapingQrRepository {
               GETDATE(),
               @MaCayCu,
               @MaCayMappingGoc,
-              @MaRo
+              @MaRo,
+              @DuocCap,
+              @MaHangPO,
+              @SoToKhai,
+              @NgayToKhai,
+              @KetQuaKiem,
+              @HuongXuLyCay
             )
           `);
       }
 
-      // 3. Recalculate Thieu / Thua on WH_ChiTietPhieuGiamDinh and return all rolls
+      // 3. Recalculate Thieu / Thua (and AQL SLKiem if already selected) on WH_ChiTietPhieuGiamDinh and return all rolls
       const finalRes = await new sql.Request(transaction).input(
         'CTPGDId',
         sql.BigInt,
@@ -346,6 +373,14 @@ export class MappingQrRepository implements IMapingQrRepository {
         SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
             Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
         WHERE CTPGDId = @CTPGDId;
+
+        IF EXISTS (
+          SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh
+          WHERE CTPGDId = @CTPGDId AND ISNULL(LoaiTiLe, '') <> ''
+        )
+        BEGIN
+          EXEC dbo.wh_chitietphieugiamdinh_capnhat_tilekiem @TiLe = 0, @LoaiTiLe = N'', @CTPGDId = @CTPGDId;
+        END
 
         SELECT *
         FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
@@ -392,6 +427,14 @@ export class MappingQrRepository implements IMapingQrRepository {
           SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
               Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
           WHERE CTPGDId = @CTPGDId;
+
+          IF EXISTS (
+            SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh
+            WHERE CTPGDId = @CTPGDId AND ISNULL(LoaiTiLe, '') <> ''
+          )
+          BEGIN
+            EXEC dbo.wh_chitietphieugiamdinh_capnhat_tilekiem @TiLe = 0, @LoaiTiLe = N'', @CTPGDId = @CTPGDId;
+          END
         END
 
         SELECT @RowCount AS RowsDeleted;
