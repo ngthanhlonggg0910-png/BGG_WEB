@@ -15,12 +15,14 @@ import {
   WH_PhieuGiamDinh_GetDanhSachTrangThai_ResponseDTO,
   WH_PhieuGiamDinh_GetData_ByBarcodeKien_ResponseDTO,
   updateScannedRoll_ResponseDTO,
+  splitScannedRoll_ResponseDTO,
   deleteScannedRoll_ResponseDTO,
 } from '../dtos/mapping-qr-response.dto.js';
 import {
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   wh_DanhSachPhieuGiamDinhTheoThoiGian_RequestDTO,
   deleteScannedRoll_RequestDTO,
+  splitScannedRoll_RequestDTO,
 } from '../dtos/mapping-qr-request.dto.js';
 import { DatabaseService } from '../../infrastructure/database/database.service.js';
 
@@ -231,6 +233,32 @@ export class MappingQrService implements IMappingQrService {
         success: false,
         message: 'Cập nhật số lượng cây thất bại',
         rowsAffected: 0,
+      };
+    }
+  }
+
+  async splitScannedRoll(
+    dto: splitScannedRoll_RequestDTO,
+  ): Promise<splitScannedRoll_ResponseDTO> {
+    try {
+      const data = await this.mappingQrRepository.splitScannedRoll(dto);
+      return {
+        success: true,
+        message: `Đã tách thành công thành ${dto.quantities?.length || 2} tem`,
+        data,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Lỗi khi tách tem/cây',
+        error instanceof Error ? error.stack : String(error),
+      );
+      return {
+        success: false,
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : 'Có lỗi khi tách tem/cây',
+        data: [],
       };
     }
   }

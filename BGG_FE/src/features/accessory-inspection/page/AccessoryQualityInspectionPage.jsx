@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import DeclaredAccessoryDefectCard from "../components/DeclaredAccessoryDefectCard";
+import ScannedRollsManagerSection from "../../mapping-qr/components/ScannedRollsManagerSection";
 import { useLocation } from "react-router-dom";
 import {
   getAccessoryDefects,
@@ -459,6 +460,13 @@ export default function AccessoryQualityInspectionPage() {
               </button>
             </div>
           </section>
+
+          <ScannedRollsManagerSection
+            ctpgdId={materialInfo.idCTPGD}
+            item={location?.state?.item}
+            showMaterialHeader={false}
+            sectionTitle="Danh sách tem / gói trong thùng"
+          />
 
           <section className="overflow-hidden rounded-2xl border border-egmf-border bg-white shadow-egmf-card">
             <div className="flex items-center justify-between gap-3 border-b border-egmf-border-subtle bg-egmf-surface-subtle px-4 py-3.5 sm:px-5">

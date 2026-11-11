@@ -47,6 +47,17 @@ export async function updateScannedRoll(payload) {
   });
 }
 
+export async function splitScannedRoll(payload) {
+  return postJson("/api/mapping-qr/splitScannedRoll", {
+    CayId: payload.CayId,
+    CTPGDId: payload.CTPGDId,
+    quantities: payload.quantities,
+    TKId: payload.TKId,
+    TenNguoiTao: payload.TenNguoiTao,
+    NguoiTao: payload.NguoiTao,
+  });
+}
+
 export async function deleteScannedRoll(MaCay) {
   return postJson("/api/mapping-qr/deleteScannedRoll", {
     MaCay,

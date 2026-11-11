@@ -1,4 +1,4 @@
-import sql, { Transaction } from 'mssql';
+import sql from 'mssql';
 import { Injectable } from '@nestjs/common';
 import { IMapingQrRepository } from '../../domain/repositories/mapping-qr.interface.repository.js';
 import { DatabaseService } from '../database/database.service.js';
@@ -10,7 +10,7 @@ import {
   WH_PhieuGiamDinh_GetDanhSachTrangThai,
   WH_PhieuGiamDinh_GetData_ByBarcodeKien,
 } from '../../domain/entities/mapping-qr.entity.js';
-import { request } from 'http';
+import { splitScannedRoll_RequestDTO } from '../../application/dtos/mapping-qr-request.dto.js';
 
 @Injectable()
 export class MappingQrRepository implements IMapingQrRepository {
@@ -123,7 +123,8 @@ export class MappingQrRepository implements IMapingQrRepository {
       .query(`
       SELECT *
       FROM WH_ChiTietPhieuGiamDinh_Cay
-      WHERE CTPGDId = @CTPGDId;  
+      WHERE CTPGDId = @CTPGDId
+      ORDER BY CayId ASC;
     `);
 
     return result.recordset;
@@ -141,13 +142,223 @@ export class MappingQrRepository implements IMapingQrRepository {
       .input('SL', sql.Float, SL)
       .input('CayId', sql.BigInt, CayId)
       .input('CTPGDId', sql.BigInt, CTPGDId).query(`
-      UPDATE WH_ChiTietPhieuGiamDinh_Cay
-      SET SL = @SL
-      WHERE CayId = @CayId
-        AND CTPGDId = @CTPGDId
+      UPDATE c
+      SET c.SL = @SL,
+          c.SoMet = CASE WHEN ISNULL(p.LoaiGiamDinh, 'pl') = 'pl' OR ISNULL(c.SoMet, 0) = ISNULL(c.SL, 0) THEN @SL ELSE c.SoMet END,
+          c.SoYard = CASE WHEN ISNULL(p.LoaiGiamDinh, 'pl') = 'pl' OR ISNULL(c.SoYard, 0) = ISNULL(c.SL, 0) THEN @SL ELSE c.SoYard END,
+          c.SoGross = CASE WHEN ISNULL(p.LoaiGiamDinh, 'pl') = 'pl' OR ISNULL(c.SoGross, 0) = ISNULL(c.SL, 0) THEN @SL ELSE c.SoGross END
+      FROM dbo.WH_ChiTietPhieuGiamDinh_Cay c
+      LEFT JOIN dbo.WH_ChiTietPhieuGiamDinh ct ON ct.CTPGDId = c.CTPGDId
+      LEFT JOIN dbo.WH_PhieuGiamDinh p ON p.PGDId = ct.PGDId
+      WHERE c.CayId = @CayId
+        AND c.CTPGDId = @CTPGDId;
+
+      DECLARE @RowCount INT = @@ROWCOUNT;
+
+      IF @RowCount > 0
+      BEGIN
+        DECLARE @SLChungTu REAL = 0, @TongSLCay REAL = 0;
+        SELECT @SLChungTu = ISNULL(TRY_CAST(ChungTu AS REAL), ISNULL(TRY_CAST(PKList AS REAL), 0))
+        FROM dbo.WH_ChiTietPhieuGiamDinh
+        WHERE CTPGDId = @CTPGDId;
+
+        SELECT @TongSLCay = ISNULL(SUM(ISNULL(SL, 0)), 0)
+        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
+        WHERE CTPGDId = @CTPGDId;
+
+        UPDATE dbo.WH_ChiTietPhieuGiamDinh
+        SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
+            Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
+        WHERE CTPGDId = @CTPGDId;
+      END
+
+      SELECT @RowCount AS RowsUpdated;
     `);
 
-    return result.rowsAffected[0] ?? 0;
+    return result.recordset?.[0]?.RowsUpdated ?? result.rowsAffected?.[0] ?? 0;
+  }
+
+  async splitScannedRoll(
+    dto: splitScannedRoll_RequestDTO,
+  ): Promise<ScannedRolls[]> {
+    const validQuantities = (dto.quantities || [])
+      .map((q) => Number(q))
+      .filter((q) => Number.isFinite(q) && q > 0);
+
+    if (validQuantities.length < 2) {
+      throw new Error('Cần ít nhất 2 phần có số lượng lớn hơn 0 để tách tem');
+    }
+
+    const pool = await this.databaseService.getPool();
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+
+    try {
+      const origRes = await new sql.Request(transaction)
+        .input('CayId', sql.BigInt, dto.CayId)
+        .input('CTPGDId', sql.BigInt, dto.CTPGDId).query(`
+          SELECT TOP 1
+            c.*,
+            ISNULL(p.LoaiGiamDinh, 'pl') AS LoaiGiamDinh
+          FROM dbo.WH_ChiTietPhieuGiamDinh_Cay c
+          LEFT JOIN dbo.WH_ChiTietPhieuGiamDinh ct ON ct.CTPGDId = c.CTPGDId
+          LEFT JOIN dbo.WH_PhieuGiamDinh p ON p.PGDId = ct.PGDId
+          WHERE c.CayId = @CayId AND c.CTPGDId = @CTPGDId
+        `);
+
+      const orig = origRes.recordset?.[0];
+      if (!orig) {
+        throw new Error('Không tìm thấy tem gốc cần tách');
+      }
+
+      const soLuongXuat = Number(orig.SoLuongXuat || 0);
+      if (soLuongXuat > 0 && validQuantities[0] < soLuongXuat) {
+        throw new Error(
+          `Tem gốc đã xuất kho ${soLuongXuat}, số lượng phần đầu tiên không được nhỏ hơn số lượng đã xuất`,
+        );
+      }
+
+      const isNL = String(orig.LoaiGiamDinh || 'pl').toLowerCase() === 'nl';
+      const firstQty = validQuantities[0];
+
+      // 1. Update original roll with the first split quantity
+      await new sql.Request(transaction)
+        .input('CayId', sql.BigInt, dto.CayId)
+        .input('CTPGDId', sql.BigInt, dto.CTPGDId)
+        .input('SL', sql.Float, firstQty).query(`
+          UPDATE dbo.WH_ChiTietPhieuGiamDinh_Cay
+          SET SL = @SL,
+              SoMet = CASE WHEN ${isNL ? 0 : 1} = 1 OR ISNULL(SoMet, 0) = ISNULL(SL, 0) THEN @SL ELSE SoMet END,
+              SoYard = CASE WHEN ${isNL ? 0 : 1} = 1 OR ISNULL(SoYard, 0) = ISNULL(SL, 0) THEN @SL ELSE SoYard END,
+              SoGross = CASE WHEN ${isNL ? 0 : 1} = 1 OR ISNULL(SoGross, 0) = ISNULL(SL, 0) THEN @SL ELSE SoGross END
+          WHERE CayId = @CayId AND CTPGDId = @CTPGDId
+        `);
+
+      const tkId = dto.TKId ?? orig.TKId ?? null;
+      const tenNguoiTao = dto.TenNguoiTao || orig.TenNguoiTao || '';
+      const nguoiTao = dto.NguoiTao ?? orig.NguoiTao ?? null;
+      const maCayGoc =
+        orig.MaCayMappingGoc && String(orig.MaCayMappingGoc).trim()
+          ? String(orig.MaCayMappingGoc).trim()
+          : String(orig.MaCay || '').trim();
+
+      // 2. Insert each additional split roll with a newly generated MaCay
+      for (let i = 1; i < validQuantities.length; i++) {
+        const qty = validQuantities[i];
+        const spName = isNL
+          ? 'dbo.SP_TaoMaCayMoi_GiamDinh'
+          : 'dbo.SP_TaoMaCayMoi_GiamDinh_PL';
+
+        const codeRes = await new sql.Request(transaction)
+          .output('MaCayMoi', sql.VarChar(20))
+          .execute(spName);
+
+        const maCayMoi = codeRes.output?.MaCayMoi;
+        if (!maCayMoi) {
+          throw new Error('Không thể sinh mã tem mới từ hệ thống');
+        }
+
+        await new sql.Request(transaction)
+          .input('CTPGDId', sql.BigInt, dto.CTPGDId)
+          .input('MaCay', sql.NVarChar(50), maCayMoi)
+          .input('SL', sql.Real, qty)
+          .input('TKId', sql.BigInt, tkId)
+          .input('TenNguoiTao', sql.NVarChar(500), tenNguoiTao)
+          .input('NguoiTao', sql.BigInt, nguoiTao)
+          .input('MaSoKien', sql.NVarChar(250), orig.MaSoKien ?? '')
+          .input('SoYard', sql.Decimal(18, 4), qty)
+          .input('SoMet', sql.Decimal(18, 4), qty)
+          .input('SoGross', sql.Decimal(18, 4), qty)
+          .input('DocDate', sql.Date, orig.DocDate ?? new Date())
+          .input('MaKho', sql.NVarChar(250), orig.MaKho ?? null)
+          .input('QrTrangMapping', sql.NVarChar(50), orig.QrTrangMapping ?? null)
+          .input(
+            'NguoiMapping',
+            sql.NVarChar(250),
+            tenNguoiTao || orig.NguoiMapping || null,
+          )
+          .input('MaCayCu', sql.NVarChar(50), orig.MaCay ?? null)
+          .input('MaCayMappingGoc', sql.NVarChar(50), maCayGoc || null)
+          .input('MaRo', sql.NVarChar(50), orig.MaRo ?? null).query(`
+            INSERT INTO dbo.WH_ChiTietPhieuGiamDinh_Cay (
+              CTPGDId,
+              MaCay,
+              SL,
+              TKId,
+              TenNguoiTao,
+              NgayTao,
+              NguoiTao,
+              MaSoKien,
+              SoLuongXuat,
+              SoYard,
+              SoMet,
+              SoGross,
+              DocDate,
+              MaKho,
+              QrTrangMapping,
+              NguoiMapping,
+              TGMapping,
+              MaCayCu,
+              MaCayMappingGoc,
+              MaRo
+            )
+            VALUES (
+              @CTPGDId,
+              @MaCay,
+              @SL,
+              @TKId,
+              @TenNguoiTao,
+              GETDATE(),
+              @NguoiTao,
+              @MaSoKien,
+              0,
+              @SoYard,
+              @SoMet,
+              @SoGross,
+              @DocDate,
+              @MaKho,
+              @QrTrangMapping,
+              @NguoiMapping,
+              GETDATE(),
+              @MaCayCu,
+              @MaCayMappingGoc,
+              @MaRo
+            )
+          `);
+      }
+
+      // 3. Recalculate Thieu / Thua on WH_ChiTietPhieuGiamDinh and return all rolls
+      const finalRes = await new sql.Request(transaction).input(
+        'CTPGDId',
+        sql.BigInt,
+        dto.CTPGDId,
+      ).query(`
+        DECLARE @SLChungTu REAL = 0, @TongSLCay REAL = 0;
+        SELECT @SLChungTu = ISNULL(TRY_CAST(ChungTu AS REAL), ISNULL(TRY_CAST(PKList AS REAL), 0))
+        FROM dbo.WH_ChiTietPhieuGiamDinh
+        WHERE CTPGDId = @CTPGDId;
+
+        SELECT @TongSLCay = ISNULL(SUM(ISNULL(SL, 0)), 0)
+        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
+        WHERE CTPGDId = @CTPGDId;
+
+        UPDATE dbo.WH_ChiTietPhieuGiamDinh
+        SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
+            Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
+        WHERE CTPGDId = @CTPGDId;
+
+        SELECT *
+        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
+        WHERE CTPGDId = @CTPGDId
+        ORDER BY CayId ASC;
+      `);
+
+      await transaction.commit();
+      return finalRes.recordset ?? [];
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   async deleteScannedRoll(MaCay: string): Promise<number> {
@@ -156,10 +367,36 @@ export class MappingQrRepository implements IMapingQrRepository {
       .request()
       .input('MaCay', sql.NVarChar(200), MaCay)
       .query(`
-        DELETE FROM WH_ChiTietPhieuGiamDinh_Cay
-        WHERE MaCay = @MaCay
+        DECLARE @CTPGDId BIGINT;
+        SELECT TOP 1 @CTPGDId = CTPGDId
+        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
+        WHERE MaCay = @MaCay;
+
+        DELETE FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
+        WHERE MaCay = @MaCay;
+
+        DECLARE @RowCount INT = @@ROWCOUNT;
+
+        IF @RowCount > 0 AND @CTPGDId IS NOT NULL
+        BEGIN
+          DECLARE @SLChungTu REAL = 0, @TongSLCay REAL = 0;
+          SELECT @SLChungTu = ISNULL(TRY_CAST(ChungTu AS REAL), ISNULL(TRY_CAST(PKList AS REAL), 0))
+          FROM dbo.WH_ChiTietPhieuGiamDinh
+          WHERE CTPGDId = @CTPGDId;
+
+          SELECT @TongSLCay = ISNULL(SUM(ISNULL(SL, 0)), 0)
+          FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
+          WHERE CTPGDId = @CTPGDId;
+
+          UPDATE dbo.WH_ChiTietPhieuGiamDinh
+          SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
+              Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
+          WHERE CTPGDId = @CTPGDId;
+        END
+
+        SELECT @RowCount AS RowsDeleted;
       `);
 
-    return result.rowsAffected[0] ?? 0;
+    return result.recordset?.[0]?.RowsDeleted ?? result.rowsAffected?.[0] ?? 0;
   }
 }

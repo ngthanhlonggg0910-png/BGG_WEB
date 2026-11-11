@@ -15,10 +15,12 @@ import {
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO,
   getScannedRolls_ResponseDTO,
   updateScannedRoll_ResponseDTO,
+  splitScannedRoll_ResponseDTO,
   deleteScannedRoll_ResponseDTO,
 } from '../../application/dtos/mapping-qr-response.dto.js';
 import {
   updateScannedRoll_RequestDTO,
+  splitScannedRoll_RequestDTO,
   wh_DanhSachPhieuGiamDinhTheoThoiGian_RequestDTO,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   deleteScannedRoll_RequestDTO,
@@ -80,6 +82,13 @@ export class MappingQrController {
       dto.CayId,
       dto.CTPGDId,
     );
+  }
+
+  @Post('splitScannedRoll')
+  async splitScannedRoll(
+    @Body() dto: splitScannedRoll_RequestDTO,
+  ): Promise<splitScannedRoll_ResponseDTO> {
+    return this.mappingQrService.splitScannedRoll(dto);
   }
 
   @Post('deleteScannedRoll')

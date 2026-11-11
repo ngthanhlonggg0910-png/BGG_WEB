@@ -31,6 +31,15 @@ export class updateScannedRoll_RequestDTO {
   CTPGDId: number;
 }
 
+export class splitScannedRoll_RequestDTO {
+  CayId: number;
+  CTPGDId: number;
+  quantities: number[];
+  TKId?: number;
+  TenNguoiTao?: string;
+  NguoiTao?: number;
+}
+
 export class deleteScannedRoll_RequestDTO {
   MaCay: string;
 }

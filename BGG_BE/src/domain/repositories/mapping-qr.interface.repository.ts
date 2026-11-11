@@ -8,6 +8,7 @@ import {
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile,
   ScannedRolls,
 } from '../entities/mapping-qr.entity.js';
+import { splitScannedRoll_RequestDTO } from '../../application/dtos/mapping-qr-request.dto.js';
 
 export interface IMapingQrRepository {
   getDanhSachTrangThaiPhieuGiamDinh(): Promise<
@@ -56,6 +57,8 @@ export interface IMapingQrRepository {
     CayId: number,
     CTPGDId: number,
   ): Promise<number>;
+
+  splitScannedRoll(dto: splitScannedRoll_RequestDTO): Promise<ScannedRolls[]>;
 
   deleteScannedRoll(MaCay: string): Promise<number>;
 }
