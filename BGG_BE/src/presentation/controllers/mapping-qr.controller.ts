@@ -17,6 +17,7 @@ import {
   updateScannedRoll_ResponseDTO,
   splitScannedRoll_ResponseDTO,
   deleteScannedRoll_ResponseDTO,
+  getMaterialsByQrTrang_ResponseDTO,
 } from '../../application/dtos/mapping-qr-response.dto.js';
 import {
   updateScannedRoll_RequestDTO,
@@ -69,8 +70,16 @@ export class MappingQrController {
   @Post('getScannedRolls')
   getScannedRolls(
     @Body('CTPGDId', ParseIntPipe) CTPGDId: number,
+    @Body('QrTrangMapping') QrTrangMapping?: string,
   ): Promise<getScannedRolls_ResponseDTO> {
-    return this.mappingQrService.getScannedRolls(CTPGDId);
+    return this.mappingQrService.getScannedRolls(CTPGDId, QrTrangMapping);
+  }
+
+  @Post('getMaterialsByQrTrang')
+  getMaterialsByQrTrang(
+    @Body('Barcode') Barcode: string,
+  ): Promise<getMaterialsByQrTrang_ResponseDTO> {
+    return this.mappingQrService.getMaterialsByQrTrang(Barcode);
   }
 
   @Post('updateScannedRoll')

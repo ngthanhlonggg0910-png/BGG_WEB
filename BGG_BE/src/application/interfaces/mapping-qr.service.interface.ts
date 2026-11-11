@@ -15,6 +15,7 @@ import {
   updateScannedRoll_ResponseDTO,
   splitScannedRoll_ResponseDTO,
   deleteScannedRoll_ResponseDTO,
+  getMaterialsByQrTrang_ResponseDTO,
 } from '../dtos/mapping-qr-response.dto.js';
 
 export interface IMappingQrService {
@@ -36,7 +37,14 @@ export interface IMappingQrService {
     dto: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   ): Promise<wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO>;
 
-  getScannedRolls(CTPGDId: number): Promise<getScannedRolls_ResponseDTO>;
+  getScannedRolls(
+    CTPGDId: number,
+    QrTrangMapping?: string,
+  ): Promise<getScannedRolls_ResponseDTO>;
+
+  getMaterialsByQrTrang(
+    Barcode: string,
+  ): Promise<getMaterialsByQrTrang_ResponseDTO>;
 
   updateScannedRoll(
     SL: number,

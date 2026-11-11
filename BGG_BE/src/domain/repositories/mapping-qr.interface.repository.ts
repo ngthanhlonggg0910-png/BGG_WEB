@@ -50,7 +50,12 @@ export interface IMapingQrRepository {
     QrTrangMapping: string,
   ): Promise<wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile>;
 
-  getScannedRolls(CTPGDId: number): Promise<ScannedRolls[]>;
+  getScannedRolls(
+    CTPGDId: number,
+    QrTrangMapping?: string,
+  ): Promise<ScannedRolls[]>;
+
+  getMaterialsByQrTrang(Barcode: string): Promise<any[]>;
 
   updateScannedRoll(
     SL: number,

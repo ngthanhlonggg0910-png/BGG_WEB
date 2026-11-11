@@ -117,17 +117,140 @@ export class MappingQrRepository implements IMapingQrRepository {
     return row;
   }
 
-  async getScannedRolls(CTPGDId: number): Promise<ScannedRolls[]> {
+  async getScannedRolls(
+    CTPGDId: number,
+    QrTrangMapping?: string,
+  ): Promise<ScannedRolls[]> {
     const pool = await this.databaseService.getPool();
-    const result = await pool.request().input('CTPGDId', sql.BigInt, CTPGDId)
-      .query(`
+    const cleanQr = QrTrangMapping ? String(QrTrangMapping).trim() : '';
+    const result = await pool
+      .request()
+      .input('CTPGDId', sql.BigInt, CTPGDId)
+      .input('QrTrangMapping', sql.NVarChar(100), cleanQr).query(`
       SELECT *
       FROM WH_ChiTietPhieuGiamDinh_Cay
       WHERE CTPGDId = @CTPGDId
+        AND (@QrTrangMapping = '' OR QrTrangMapping = @QrTrangMapping)
       ORDER BY CayId ASC;
     `);
 
     return result.recordset;
+  }
+
+  async getMaterialsByQrTrang(Barcode: string): Promise<any[]> {
+    const cleanBarcode = String(Barcode ?? '').trim();
+    if (!cleanBarcode) {
+      return [];
+    }
+
+    const pool = await this.databaseService.getPool();
+    const result = await pool
+      .request()
+      .input('Barcode', sql.NVarChar(100), cleanBarcode).query(`
+      DECLARE @TargetQr NVARCHAR(100) = @Barcode;
+
+      -- Nếu người dùng quét mã tem con (PAH.../NAH...), tự động suy ra mã thùng QrTrangMapping của nó
+      IF NOT EXISTS (
+        SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh_Cay WHERE QrTrangMapping = @Barcode
+      )
+      BEGIN
+        SELECT TOP 1 @TargetQr = ISNULL(NULLIF(LTRIM(RTRIM(QrTrangMapping)), ''), @Barcode)
+        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
+        WHERE MaCay = @Barcode;
+      END
+
+      WITH CartonPerCTPGD AS (
+        SELECT
+          c.CTPGDId,
+          MAX(ISNULL(c.QrTrangMapping, @TargetQr)) AS QrTrangMapping,
+          MAX(ISNULL(c.MaSoKien, '')) AS MaSoKien,
+          ROUND(SUM(ISNULL(c.SL, 0)), 4) AS SoLuongTrongThung,
+          COUNT(*) AS SoTemTrongThung
+        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay c
+        WHERE c.QrTrangMapping = @TargetQr OR c.MaCay = @Barcode
+        GROUP BY c.CTPGDId
+      ),
+      TotalPerCTPGD AS (
+        SELECT
+          c.CTPGDId,
+          ROUND(SUM(ISNULL(c.SL, 0)), 4) AS TongGiamDinhPL,
+          ROUND(SUM(ISNULL(c.SoMet, 0)), 4) AS TongGiamDinh,
+          COUNT(*) AS TongSoCayToanPhieu
+        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay c
+        INNER JOIN CartonPerCTPGD ct ON ct.CTPGDId = c.CTPGDId
+        GROUP BY c.CTPGDId
+      ),
+      BarvoInfo AS (
+        SELECT
+          VTId,
+          MAX(ArtCode) AS ArtCode,
+          MAX(ProductCode) AS ProductCode
+        FROM dbo.Lib_NguyenPhuLieu_Barvo
+        GROUP BY VTId
+      )
+      SELECT
+        carton.QrTrangMapping,
+        carton.MaSoKien,
+        carton.SoLuongTrongThung,
+        carton.SoTemTrongThung,
+        ISNULL(tot.TongGiamDinhPL, 0) AS TongGiamDinhPL,
+        ISNULL(tot.TongGiamDinh, 0) AS TongGiamDinh,
+        ISNULL(tot.TongSoCayToanPhieu, 0) AS SoLuongCay,
+        b.CTPGDId,
+        b.PGDId,
+        pgd.MaPhieu,
+        pgd.NgayGiamDinh,
+        pgd.TrangThai AS TrangThaiPhieu,
+        pgd.MaHang,
+        pgd.LoaiGiamDinh,
+        pgd.Lo AS LoPhieu,
+        pgd.TenNguoiTao AS TenNguoiTaoPhieu,
+        pgd.TenNguoiGiamDinh,
+        a.VTId,
+        a.DHId,
+        a.MaChungLoai,
+        a.DienGiai AS TenChungLoai,
+        a.Item,
+        a.MaMau AS ColorCode,
+        a.ThanhPhan,
+        a.KhoVatTu,
+        a.Size,
+        a.DVT,
+        a.QuyCach,
+        a.MatVatTuGhep,
+        a.LoaiNPL,
+        a.DienGiai,
+        a.CodeMauVai,
+        a.TenNguoiTao,
+        c.ArtCode,
+        c.ProductCode,
+        b.SLKDat,
+        b.SLDat,
+        b.SLKiem,
+        b.ChungTu,
+        b.Lot,
+        b.Kho,
+        b.FA,
+        b.PKList,
+        b.Brand,
+        b.ChoXuLy,
+        b.HuongXuLy,
+        b.LoaiTiLe,
+        b.TiLe,
+        b.Lo,
+        b.SoPO,
+        b.PONo,
+        b.SoLuongChungTuThucTe
+      FROM CartonPerCTPGD carton
+      INNER JOIN dbo.WH_ChiTietPhieuGiamDinh b ON b.CTPGDId = carton.CTPGDId
+      INNER JOIN dbo.WH_PhieuGiamDinh pgd ON pgd.PGDId = b.PGDId
+      INNER JOIN dbo.Lib_NguyenPhuLieu a ON a.VTId = b.VTId
+      LEFT JOIN BarvoInfo c ON c.VTId = a.VTId
+      LEFT JOIN TotalPerCTPGD tot ON tot.CTPGDId = b.CTPGDId
+      ORDER BY b.CTPGDId ASC;
+    `);
+
+    return result.recordset ?? [];
   }
 
   async updateScannedRoll(

@@ -110,6 +110,7 @@ const statusSelectStyles = {
 export default function MappingQrListPage({
   sourcePage,
   screenTitle = "Mapping QR",
+  onSwitchToCartonScan,
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -240,13 +241,24 @@ export default function MappingQrListPage({
                 <SlidersHorizontal size={17} strokeWidth={2.4} />
                 <span>Theo thời gian</span>
               </span>
-              <Link
-                to="/mapping-qr-barcode"
-                className="group flex min-h-10 items-center justify-center gap-2 rounded-lg px-2.5 text-center text-xs font-bold text-egmf-ink-soft transition-all duration-200 hover:bg-egmf-primary-tint hover:text-egmf-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 sm:text-sm"
-              >
-                <ScanBarcode size={17} strokeWidth={2.3} className="transition-transform duration-200 group-hover:scale-110" />
-                <span>Theo barcode kiện</span>
-              </Link>
+              {typeof onSwitchToCartonScan === "function" ? (
+                <button
+                  type="button"
+                  onClick={onSwitchToCartonScan}
+                  className="group flex min-h-10 items-center justify-center gap-2 rounded-lg px-2.5 text-center text-xs font-bold text-egmf-ink-soft transition-all duration-200 hover:bg-egmf-primary-tint hover:text-egmf-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 sm:text-sm"
+                >
+                  <ScanBarcode size={17} strokeWidth={2.3} className="transition-transform duration-200 group-hover:scale-110" />
+                  <span>Quét tem thùng</span>
+                </button>
+              ) : (
+                <Link
+                  to="/mapping-qr-barcode"
+                  className="group flex min-h-10 items-center justify-center gap-2 rounded-lg px-2.5 text-center text-xs font-bold text-egmf-ink-soft transition-all duration-200 hover:bg-egmf-primary-tint hover:text-egmf-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 sm:text-sm"
+                >
+                  <ScanBarcode size={17} strokeWidth={2.3} className="transition-transform duration-200 group-hover:scale-110" />
+                  <span>Theo barcode kiện</span>
+                </Link>
+              )}
             </nav>
             <section className="rounded-xl border border-egmf-border bg-egmf-surface-raised p-3 shadow-sm sm:p-4">
                 <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
@@ -403,7 +415,17 @@ export default function MappingQrListPage({
                               </div>
                               <div className="min-w-0">
                                 <dt className="text-[10px] font-bold uppercase tracking-[0.06em] text-egmf-muted">Trạng thái</dt>
-                                <dd className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary">{item.trangThai === "MOITAO" ? "Mới tạo" : item.trangThai === "DAXACNHAN" ? "Đã xác nhận" : "Hủy"}</dd>
+                                <dd className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary">
+                                  {item.trangThai === "MOITAO"
+                                    ? "Mới tạo"
+                                    : item.trangThai === "CHOKIEM"
+                                      ? "Chờ kiểm"
+                                      : item.trangThai === "DAXACNHAN"
+                                        ? "Đã xác nhận"
+                                        : item.trangThai === "HUYXACNHAN"
+                                          ? "Hủy xác nhận"
+                                          : "Hủy"}
+                                </dd>
                               </div>
                               <div className="min-w-0">
                                 <dt className="text-[10px] font-bold uppercase tracking-[0.06em] text-egmf-muted">Người tạo</dt>

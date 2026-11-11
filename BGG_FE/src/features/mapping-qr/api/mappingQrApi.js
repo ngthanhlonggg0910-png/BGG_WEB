@@ -33,9 +33,16 @@ export async function saveMapping(payload) {
   );
 }
 
-export async function getScannedRolls(CTPGDId) {
+export async function getScannedRolls(CTPGDId, QrTrangMapping) {
   return postJson("/api/mapping-qr/getScannedRolls", {
     CTPGDId: CTPGDId,
+    QrTrangMapping: QrTrangMapping || undefined,
+  });
+}
+
+export async function getMaterialsByQrTrang(Barcode) {
+  return postJson("/api/mapping-qr/getMaterialsByQrTrang", {
+    Barcode,
   });
 }
 

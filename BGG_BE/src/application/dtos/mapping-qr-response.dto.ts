@@ -60,3 +60,9 @@ export class deleteScannedRoll_ResponseDTO {
   message: string;
   rowsAffected: number;
 }
+
+export class getMaterialsByQrTrang_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: any[];
+}

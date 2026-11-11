@@ -17,6 +17,7 @@ import {
   updateScannedRoll_ResponseDTO,
   splitScannedRoll_ResponseDTO,
   deleteScannedRoll_ResponseDTO,
+  getMaterialsByQrTrang_ResponseDTO,
 } from '../dtos/mapping-qr-response.dto.js';
 import {
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
@@ -182,9 +183,15 @@ export class MappingQrService implements IMappingQrService {
     }
   }
 
-  async getScannedRolls(CTPGDId: number): Promise<getScannedRolls_ResponseDTO> {
+  async getScannedRolls(
+    CTPGDId: number,
+    QrTrangMapping?: string,
+  ): Promise<getScannedRolls_ResponseDTO> {
     try {
-      const result = await this.mappingQrRepository.getScannedRolls(CTPGDId);
+      const result = await this.mappingQrRepository.getScannedRolls(
+        CTPGDId,
+        QrTrangMapping,
+      );
       return {
         success: true,
         message: 'Lấy ds thành công',
@@ -196,6 +203,30 @@ export class MappingQrService implements IMappingQrService {
       return {
         success: false,
         message: 'Lấy danh sách cây thất bại',
+        data: [],
+      };
+    }
+  }
+
+  async getMaterialsByQrTrang(
+    Barcode: string,
+  ): Promise<getMaterialsByQrTrang_ResponseDTO> {
+    try {
+      const result =
+        await this.mappingQrRepository.getMaterialsByQrTrang(Barcode);
+      return {
+        success: true,
+        message: 'Lấy danh sách vật tư theo tem thùng thành công',
+        data: result,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Lỗi lấy danh sách vật tư theo tem thùng',
+        error instanceof Error ? error.stack : String(error),
+      );
+      return {
+        success: false,
+        message: 'Không thể lấy danh sách vật tư theo tem thùng',
         data: [],
       };
     }

@@ -95,12 +95,20 @@ export default function AccessoryQualityInspectionPage() {
     .filter(Boolean)
     .join(" ");
 
-  // Dữ liệu mẫu - thay bằng dữ liệu API.
+  const qrTrangMapping =
+    location.state?.qrTrangMapping ||
+    location.state?.item?.QrTrangMapping ||
+    "";
+
   const materialInfo = {
-    maVatTu: location.state?.item?.MatVatTuGhep || "",
+    maVatTu:
+      location.state?.item?.MatVatTuGhep ||
+      location.state?.item?.TenChungLoai ||
+      location.state?.item?.DienGiai ||
+      "Kiểm phụ liệu",
     idCTPGD: location.state?.item?.CTPGDId || "",
-    pgdId: location.state?.pgdId || "",
-    maPhieu: location?.state?.maPhieu || "",
+    pgdId: location.state?.pgdId || location.state?.item?.PGDId || "",
+    maPhieu: location?.state?.maPhieu || location.state?.item?.MaPhieu || "",
   };
 
   const inspectionRateOptions = [
@@ -116,7 +124,13 @@ export default function AccessoryQualityInspectionPage() {
       if (!response.success) {
         return;
       }
-      setDsKhaiBaoLoi(response.data ?? []);
+      const allDefects = Array.isArray(response.data) ? response.data : [];
+      const currentCtpgdId = Number(materialInfo.idCTPGD);
+      setDsKhaiBaoLoi(
+        currentCtpgdId > 0
+          ? allDefects.filter((d) => Number(d.CTPGDId) === currentCtpgdId)
+          : allDefects,
+      );
     } catch (error) {
       console.error("Có lỗi lấy ds lỗi khai báo FE: ", error);
     }
@@ -393,6 +407,53 @@ export default function AccessoryQualityInspectionPage() {
     >
       <div className="min-h-full bg-egmf-surface text-egmf-ink">
         <main className="mx-auto w-full max-w-4xl space-y-4 px-4 py-5 sm:space-y-5 sm:px-6 sm:py-7 lg:px-8">
+          {/* Thông tin Tem thùng & Vật tư đang kiểm */}
+          <section className="overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-blue-100 bg-gradient-to-r from-blue-50/90 to-white px-4 py-3 sm:px-5">
+              <div className="flex flex-wrap items-center gap-2">
+                {qrTrangMapping && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 font-mono text-xs font-extrabold text-white shadow-2xs">
+                    Thùng: {qrTrangMapping}
+                  </span>
+                )}
+                {materialInfo.maPhieu && (
+                  <span className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-700">
+                    Phiếu GĐ: <strong className="text-blue-700">{materialInfo.maPhieu}</strong>
+                  </span>
+                )}
+                {location.state?.item?.Item && (
+                  <span className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-1 font-mono text-xs font-extrabold text-slate-900">
+                    Mã VT: {location.state.item.Item}
+                  </span>
+                )}
+              </div>
+              {location.state?.item?.Size && (
+                <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 border border-blue-200">
+                  Size: {location.state.item.Size}
+                </span>
+              )}
+            </div>
+            <div className="px-4 py-3 sm:px-5">
+              <p className="m-0 text-sm font-extrabold text-slate-900">
+                {location.state?.item?.TenChungLoai ||
+                  location.state?.item?.DienGiai ||
+                  materialInfo.maVatTu}
+              </p>
+              <p className="m-0 mt-1 text-xs text-slate-500">
+                Mọi cập nhật số lượng, tách tem và kết quả kiểm tại đây sẽ được lưu trực tiếp vào Phiếu giám định{" "}
+                <strong>{materialInfo.maPhieu || `#${materialInfo.pgdId}`}</strong>.
+              </p>
+            </div>
+          </section>
+
+          <ScannedRollsManagerSection
+            ctpgdId={materialInfo.idCTPGD}
+            item={location?.state?.item}
+            qrTrangMapping={qrTrangMapping}
+            showMaterialHeader={false}
+            sectionTitle="Danh sách tem / gói trong thùng"
+          />
+
           <section className="rounded-2xl border border-egmf-border bg-white p-4 shadow-egmf-card sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <span className="grid size-8 place-items-center rounded-lg bg-egmf-primary-soft text-egmf-primary">
@@ -460,13 +521,6 @@ export default function AccessoryQualityInspectionPage() {
               </button>
             </div>
           </section>
-
-          <ScannedRollsManagerSection
-            ctpgdId={materialInfo.idCTPGD}
-            item={location?.state?.item}
-            showMaterialHeader={false}
-            sectionTitle="Danh sách tem / gói trong thùng"
-          />
 
           <section className="overflow-hidden rounded-2xl border border-egmf-border bg-white shadow-egmf-card">
             <div className="flex items-center justify-between gap-3 border-b border-egmf-border-subtle bg-egmf-surface-subtle px-4 py-3.5 sm:px-5">

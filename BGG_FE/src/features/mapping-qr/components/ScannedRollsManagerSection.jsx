@@ -54,6 +54,7 @@ function buildEvenSplitRows(totalSL, count) {
 export default function ScannedRollsManagerSection({
   ctpgdId,
   item,
+  qrTrangMapping = "",
   showMaterialHeader = true,
   sectionTitle = "Danh sách tem / gói trong thùng",
   onScan,
@@ -106,7 +107,10 @@ export default function ScannedRollsManagerSection({
 
     try {
       setLoading(true);
-      const response = await getScannedRolls(Number(ctpgdId));
+      const response = await getScannedRolls(
+        Number(ctpgdId),
+        qrTrangMapping || undefined,
+      );
 
       if (response?.success) {
         const rolls = response.data || [];
@@ -126,7 +130,7 @@ export default function ScannedRollsManagerSection({
     } finally {
       setLoading(false);
     }
-  }, [ctpgdId, onRollsChanged]);
+  }, [ctpgdId, qrTrangMapping, onRollsChanged]);
 
   useEffect(() => {
     fetchScannedRolls();
@@ -316,8 +320,15 @@ export default function ScannedRollsManagerSection({
       }
 
       if (Array.isArray(response.data) && response.data.length > 0) {
-        setList(response.data);
-        onRollsChanged?.(response.data);
+        const filteredData = qrTrangMapping
+          ? response.data.filter(
+              (r) =>
+                String(r.QrTrangMapping ?? "").trim() ===
+                String(qrTrangMapping).trim(),
+            )
+          : response.data;
+        setList(filteredData);
+        onRollsChanged?.(filteredData);
       } else {
         await fetchScannedRolls();
       }
@@ -451,11 +462,19 @@ export default function ScannedRollsManagerSection({
                 <Boxes size={17} strokeWidth={2.3} />
               </span>
               <div>
-                <h2 className="m-0 text-base font-extrabold text-egmf-ink">
-                  {sectionTitle}
-                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="m-0 text-base font-extrabold text-egmf-ink">
+                    {sectionTitle}
+                  </h2>
+                  {qrTrangMapping && (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 font-mono text-xs font-extrabold text-blue-700">
+                      <QrCode size={12} />
+                      {qrTrangMapping}
+                    </span>
+                  )}
+                </div>
                 <p className="m-0 mt-0.5 text-xs text-egmf-muted">
-                  Cập nhật lại số lượng thực tế hoặc tách 1 tem thành nhiều tem nhỏ trong thùng.
+                  Cập nhật số lượng thực tế hoặc tách 1 tem thành nhiều tem nhỏ (tự động lưu vào Phiếu giám định).
                 </p>
               </div>
             </div>

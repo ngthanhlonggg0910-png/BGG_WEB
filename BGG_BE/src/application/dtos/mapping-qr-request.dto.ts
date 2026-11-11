@@ -43,3 +43,7 @@ export class splitScannedRoll_RequestDTO {
 export class deleteScannedRoll_RequestDTO {
   MaCay: string;
 }
+
+export class getMaterialsByQrTrang_RequestDTO {
+  Barcode: string;
+}
