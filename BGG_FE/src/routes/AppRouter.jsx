@@ -33,7 +33,7 @@ import AccessoryInspectionListPage from "../features/accessory-inspection/page/A
 import AccessoryQualityInspectionPage from "../features/accessory-inspection/page/AccessoryQualityInspectionPage";
 import MaterialReceiptListPage from "../features/material-receipt/pages/MaterialReceiptListPage";
 import MaterialReceiptDetailPage from "../features/material-receipt/pages/MaterialReceiptDetailPage";
-
+import SampleInspectionPage from "../features/technical-department/pages/SampleInspectionPage";
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -251,7 +251,11 @@ export default function AppRouter() {
 
         <Route
           path="/mapping-qr-raw-material"
-          element={<PrivateRoute><RawMaterialRollQrPage /></PrivateRoute>}
+          element={
+            <PrivateRoute>
+              <RawMaterialRollQrPage />
+            </PrivateRoute>
+          }
         />
         <Route
           path="/mapping-qr-list"
@@ -303,6 +307,15 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <AccessoryQualityInspectionPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/technical-department"
+          element={
+            <PrivateRoute>
+              <SampleInspectionPage />
             </PrivateRoute>
           }
         />
