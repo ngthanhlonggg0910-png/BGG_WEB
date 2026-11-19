@@ -10,6 +10,8 @@ import {
 } from "../../../shared/components/ui/CustomToast";
 import { taoPhieuKiemVaiAuto } from "../../fabric-inspection/api/fabric-inspections.api";
 import { themCayTaiPhieu } from "../../fabric-inspection/api/fabric-inspections.api";
+import { kiemTraCayDeNoi } from "../../cutting-management/api/cutting.api";
+
 export default function PickingOrderScan() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,6 +28,13 @@ export default function PickingOrderScan() {
 
   const kho = location.state?.kho;
   const PKVId = location.state?.PKVId;
+  const phieu = location?.state?.phieu;
+  const form = location.state?.form;
+  const phieuHoachToanId = Number(
+    location.state?.PhieuHoachToanId ??
+      phieu?.PhieuHoachToanId ??
+      form?.maPhieu,
+  );
 
   const user = getCurrentUser();
   const TKId = user?.data?.TKId;
@@ -116,6 +125,75 @@ export default function PickingOrderScan() {
       }
     }
 
+    //TH4: QUÉT KIỂM TRA CÂY CÓ HỢP LỆ ĐỂ NỐI
+    if (
+      scanType === "NOI_CAY_TAO_GOC" ||
+      scanType === "NOI_CAY_TIEP" ||
+      scanType === "HOACH_TOAN_THUONG"
+    ) {
+      try {
+        const isNoiCayTiep = scanType === "NOI_CAY_TIEP";
+        const isHoachToanThuong = scanType === "HOACH_TOAN_THUONG";
+
+        const currentPhieuHoachToanId = Number(
+          location?.state?.PhieuHoachToanId ?? 0,
+        );
+
+        const chiTietPhieuHoachToanId = isNoiCayTiep
+          ? Number(location?.state?.ChiTietPhieuHoachToanId ?? 0)
+          : 0;
+
+        if (!currentPhieuHoachToanId) {
+          showErrorToast("Không xác định được Phiếu hoạch toán.");
+          return;
+        }
+
+        if (isNoiCayTiep && !chiTietPhieuHoachToanId) {
+          showErrorToast("Không xác định được cây gốc để nối tiếp.");
+          return;
+        }
+
+        const payload = {
+          PhieuHoachToanId: currentPhieuHoachToanId,
+          ChiTietPhieuHoachToanId: chiTietPhieuHoachToanId, //ChiTietPhieuHoachToanId = 0 ? Tạo cây gốc : Tạo cây nối
+          MaCay: code,
+        };
+
+        const response = await kiemTraCayDeNoi(payload);
+
+        if (!response?.success || response?.data?.HopLe === false) {
+          showErrorToast(
+            response?.message ||
+              response?.data?.ThongBao ||
+              "Cây không hợp lệ để nối.",
+          );
+          return;
+        }
+
+        navigate("/fabric-splicing", {
+          state: {
+            scanType: scanType,
+            PhieuHoachToanId: currentPhieuHoachToanId,
+            ChiTietPhieuHoachToanId: chiTietPhieuHoachToanId,
+            MaCay: code,
+            form: location?.state?.form,
+            phieu: location?.state?.phieu,
+            mode:
+              scanType === "HOACH_TOAN_THUONG"
+                ? "HOACH_TOAN_THUONG"
+                : scanType === "NOI_CAY_TIEP"
+                  ? "THEM_CAY_NOI"
+                  : "TAO_CAY_GOC",
+            MaCayGoc: location?.state?.MaCayGoc,
+          },
+        });
+      } catch (error) {
+        console.error("[kiemTraCayDeNoi] Lỗi:", error);
+        showErrorToast(
+          error.message || "Có lỗi xảy ra khi kiểm tra cây vải để nối.",
+        );
+      }
+    }
     return;
   };
 
@@ -140,13 +218,15 @@ export default function PickingOrderScan() {
 
             <h1 className="text-lg font-extrabold tracking-tight text-egmf-ink sm:text-2xl">
               {scanType === "fabric-inspection" ||
-              scanType === "ADD_ROLL_TO_INSPECTION"
+              scanType === "ADD_ROLL_TO_INSPECTION" ||
+              scanType === "NOI_CAY_TAO_GOC" ||
+              scanType === "NOI_CAY_TIEP" ||
+              scanType === "HOACH_TOAN_THUONG"
                 ? "Quét mã cây"
                 : scanType === "picking" && kho === "NA"
                   ? "Quét mã rọ"
                   : "Quét mã QR trắng"}
             </h1>
-
             <p className="mx-auto mt-1.5 max-w-md text-sm font-medium leading-5 text-egmf-ink-soft sm:mt-2 sm:leading-6 sm:text-[15px]">
               Dùng máy quét mã vạch hoặc nhập mã rổ để tiếp tục soạn hàng.
             </p>

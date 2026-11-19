@@ -73,7 +73,7 @@ function resolvePickingOrderId(location) {
   return id;
 }
 
-export function useFocusedInputScanner() {
+export function useFocusedInputScanner({ form } = {}) {
   const location = useLocation();
   const navigate = useNavigate();
   const { pkvId } = useParams();
@@ -189,6 +189,51 @@ export function useFocusedInputScanner() {
           scanType: "ADD_ROLL_TO_INSPECTION",
           TKId: TKId,
           PKVId: pkvId,
+        },
+      });
+      return;
+    }
+
+    //KIỂM TRA CÂY CÓ HỢP LỆ ĐỂ NỐI
+    if (location.pathname.startsWith("/cutting-detail/")) {
+      const PhieuHoachToanId = Number(
+        form?.maPhieu ?? location.state?.phieu?.PhieuHoachToanId,
+      );
+
+      navigate("/picking-order-scan?scanType=HOACH_TOAN_THUONG", {
+        state: {
+          scanType: "HOACH_TOAN_THUONG",
+          PhieuHoachToanId,
+          phieu: location.state?.phieu,
+          form,
+        },
+      });
+      return;
+    }
+
+    if (location.pathname.startsWith("/fabric-splicing-chain/")) {
+      const cayGoc = location.state?.cayGoc;
+      const phieuHoachToanId = Number(
+        location.state?.PhieuHoachToanId ?? cayGoc?.PhieuHoachToanId,
+      );
+      const chiTietPhieuHoachToanId = Number(
+        location.state?.ChiTietPhieuHoachToanId ??
+          cayGoc?.ChiTietPhieuHoachToanId,
+      );
+      const maCayGoc = location.state?.MaCayGoc ?? cayGoc?.MaCay;
+
+      if (!phieuHoachToanId || !chiTietPhieuHoachToanId || !maCayGoc) {
+        showWarningToast("Thiếu thông tin cây gốc để nối.");
+        return;
+      }
+      navigate("/picking-order-scan?scanType=NOI_CAY_TIEP", {
+        state: {
+          scanType: "NOI_CAY_TIEP",
+          PhieuHoachToanId: phieuHoachToanId,
+          ChiTietPhieuHoachToanId: chiTietPhieuHoachToanId,
+          MaCayGoc: maCayGoc,
+          form: location.state?.form,
+          phieu: location.state?.phieu,
         },
       });
       return;

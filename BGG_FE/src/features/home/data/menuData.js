@@ -9,6 +9,8 @@ import {
   QrCode,
   ClipboardCheck,
   PackageCheck,
+  Settings2,
+  Wrench,
 } from "lucide-react";
 
 export const menuGroups = [
@@ -80,6 +82,13 @@ export const menuGroups = [
         icon: ClipboardList,
         iconTheme: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100",
       },
+      {
+        key: "khaucat",
+        title: "Khâu cắt",
+        path: "/cutting-management",
+        icon: Scissors,
+        iconTheme: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100",
+      },
     ],
   },
   {
@@ -100,6 +109,19 @@ export const menuGroups = [
         path: "/accessory-inspection",
         icon: ClipboardCheck,
         iconTheme: "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100",
+      },
+    ],
+  },
+  {
+    key: "technical-department",
+    title: "Phòng kỹ thuật",
+    icon: Wrench,
+    items: [
+      {
+        key: "technical-management",
+        title: "Phòng kỹ thuật",
+        path: "/technical-department",
+        icon: Settings2,
       },
     ],
   },

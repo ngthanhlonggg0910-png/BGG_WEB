@@ -1,4 +1,10 @@
-import { ArrowLeft, Menu, PanelLeftClose, PanelLeftOpen, ScanBarcode } from "lucide-react";
+import {
+  ArrowLeft,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ScanBarcode,
+} from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -14,7 +20,13 @@ import Sidebar from "./Sidebar";
 import MobileNavigation from "./MobileNavigation";
 
 // MAIN LAYOUT
-export default function MainLayout({ children, screenTitle, hideMobileNavigation = false, headerBackTo }) {
+export default function MainLayout({
+  children,
+  screenTitle,
+  hideMobileNavigation = false,
+  headerBackTo,
+  scannerForm,
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const isOrderPage = location.pathname.startsWith("/production-order");
@@ -37,7 +49,7 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
     toggleTorch,
     torchOn,
     videoRef,
-  } = useFocusedInputScanner();
+  } = useFocusedInputScanner({ form: scannerForm });
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -101,7 +113,8 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
 
     if (path === "/infor") return "Thông tin";
 
-    if (path.startsWith("/material-location-update")) return "update-material-location";
+    if (path.startsWith("/material-location-update"))
+      return "update-material-location";
 
     if (path.startsWith("/warehouse")) return "warehouse";
 
@@ -112,6 +125,8 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
     if (path.startsWith("/picking-order")) return "soanhang";
 
     if (path.startsWith("/fabric-inspection")) return "fabric-inspection";
+
+    if (path.startsWith("/technical-department")) return "sample-inspection";
 
     return "workspace";
   })();
@@ -195,7 +210,9 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
       </aside>
 
       {/* MAIN CONTENT */}
-      <div className={`min-w-0 ${isSidebarCollapsed ? "ml-0" : isOrderPage ? "lg:ml-[270px]" : "md:ml-[270px]"}`}>
+      <div
+        className={`min-w-0 ${isSidebarCollapsed ? "ml-0" : isOrderPage ? "lg:ml-[270px]" : "md:ml-[270px]"}`}
+      >
         {/* HEADER */}
         <header
           className="
@@ -208,9 +225,18 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
             md:min-h-[88px] md:px-8 md:pt-0
           "
         >
-          <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 size-36 rounded-full bg-cyan-200/25 blur-2xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute right-24 top-0 hidden h-full w-56 opacity-40 md:block [background-image:linear-gradient(rgba(37,99,235,.14)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,.14)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(90deg,transparent,#000_45%,transparent)]" />
-          <div aria-hidden="true" className="pointer-events-none absolute right-12 top-1/2 hidden h-px w-32 bg-gradient-to-r from-transparent via-cyan-300 to-transparent md:block" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-10 -top-12 size-36 rounded-full bg-cyan-200/25 blur-2xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-24 top-0 hidden h-full w-56 opacity-40 md:block [background-image:linear-gradient(rgba(37,99,235,.14)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,.14)_1px,transparent_1px)] [background-size:18px_18px] [mask-image:linear-gradient(90deg,transparent,#000_45%,transparent)]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-12 top-1/2 hidden h-px w-32 bg-gradient-to-r from-transparent via-cyan-300 to-transparent md:block"
+          />
 
           {/* MOBILE MENU / BACK BUTTON */}
           <button
@@ -250,11 +276,23 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
           <button
             type="button"
             onClick={() => setIsSidebarCollapsed((current) => !current)}
-            aria-label={isSidebarCollapsed ? "Mở thanh điều hướng" : "Thu gọn thanh điều hướng"}
-            title={isSidebarCollapsed ? "Mở thanh điều hướng" : "Thu gọn thanh điều hướng"}
+            aria-label={
+              isSidebarCollapsed
+                ? "Mở thanh điều hướng"
+                : "Thu gọn thanh điều hướng"
+            }
+            title={
+              isSidebarCollapsed
+                ? "Mở thanh điều hướng"
+                : "Thu gọn thanh điều hướng"
+            }
             className={`relative z-10 hidden size-10 shrink-0 place-items-center rounded-xl border border-blue-100 bg-white/85 text-egmf-primary shadow-sm transition hover:border-egmf-primary hover:bg-egmf-primary-tint focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 ${isOrderPage ? "lg:grid" : "md:grid"}`}
           >
-            {isSidebarCollapsed ? <PanelLeftOpen size={19} strokeWidth={2.2} /> : <PanelLeftClose size={19} strokeWidth={2.2} />}
+            {isSidebarCollapsed ? (
+              <PanelLeftOpen size={19} strokeWidth={2.2} />
+            ) : (
+              <PanelLeftClose size={19} strokeWidth={2.2} />
+            )}
           </button>
 
           {/* SCREEN TITLE */}
@@ -274,7 +312,14 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
                 vectorEffect="non-scaling-stroke"
               />
               <defs>
-                <linearGradient id="headerPulse" x1="0" x2="260" y1="0" y2="0" gradientUnits="userSpaceOnUse">
+                <linearGradient
+                  id="headerPulse"
+                  x1="0"
+                  x2="260"
+                  y1="0"
+                  y2="0"
+                  gradientUnits="userSpaceOnUse"
+                >
                   <stop stopColor="#2563EB" />
                   <stop offset="0.62" stopColor="#60A5FA" />
                   <stop offset="1" stopColor="#22D3EE" />
@@ -294,7 +339,9 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
           </span>
 
           {/* LOGO MOBILE */}
-          <div className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-egmf-primary-tint p-1.5 ${isOrderPage ? "lg:hidden" : "md:hidden"}`}>
+          <div
+            className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-egmf-primary-tint p-1.5 ${isOrderPage ? "lg:hidden" : "md:hidden"}`}
+          >
             <img
               src="/ic_launcher_512.png"
               alt="BGG Kho"
@@ -334,13 +381,15 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
       </div>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      {!hideMobileNavigation && <MobileNavigation
-        keyboardOffset={keyboardOffset}
-        tabletLayout={isOrderPage}
-        onScan={startScan}
-        onSelect={handleSelect}
-        selectedKey={selectedKey}
-      />}
+      {!hideMobileNavigation && (
+        <MobileNavigation
+          keyboardOffset={keyboardOffset}
+          tabletLayout={isOrderPage}
+          onScan={startScan}
+          onSelect={handleSelect}
+          selectedKey={selectedKey}
+        />
+      )}
 
       {/* MOBILE DRAWER */}
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>

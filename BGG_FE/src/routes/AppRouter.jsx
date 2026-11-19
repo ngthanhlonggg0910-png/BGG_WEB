@@ -33,6 +33,11 @@ import AccessoryInspectionListPage from "../features/accessory-inspection/page/A
 import AccessoryQualityInspectionPage from "../features/accessory-inspection/page/AccessoryQualityInspectionPage";
 import MaterialReceiptListPage from "../features/material-receipt/pages/MaterialReceiptListPage";
 import MaterialReceiptDetailPage from "../features/material-receipt/pages/MaterialReceiptDetailPage";
+import SampleInspectionPage from "../features/technical-department/pages/SampleInspectionPage";
+import CuttingManagementPage from "../features/cutting-management/pages/CuttingManagementPage";
+import CuttingDetailPage from "../features/cutting-management/pages/CuttingDetailPage";
+import FabricSplicingChainPage from "../features/cutting-management/pages/FabricSplicingChainPage";
+import FabricSplicingPage from "../features/cutting-management/pages/FabricSplicingPage";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -251,7 +256,11 @@ export default function AppRouter() {
 
         <Route
           path="/mapping-qr-raw-material"
-          element={<PrivateRoute><RawMaterialRollQrPage /></PrivateRoute>}
+          element={
+            <PrivateRoute>
+              <RawMaterialRollQrPage />
+            </PrivateRoute>
+          }
         />
         <Route
           path="/mapping-qr-list"
@@ -303,6 +312,53 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <AccessoryQualityInspectionPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* PHÒNG KỸ THUẬT */}
+        <Route
+          path="/technical-department"
+          element={
+            <PrivateRoute>
+              <SampleInspectionPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* CUTTING */}
+        <Route
+          path="/cutting-management"
+          element={
+            <PrivateRoute>
+              <CuttingManagementPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="cutting-detail/:id"
+          element={
+            <PrivateRoute>
+              <CuttingDetailPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/fabric-splicing"
+          element={
+            <PrivateRoute>
+              <FabricSplicingPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/fabric-splicing-chain/:id"
+          element={
+            <PrivateRoute>
+              <FabricSplicingChainPage />
             </PrivateRoute>
           }
         />

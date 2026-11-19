@@ -70,6 +70,66 @@ textarea {
   );
 }
 
+/* Keep document previews usable in the constrained modal viewport. */
+.word-preview .docx-wrapper {
+  min-width: 100%;
+  padding: 20px;
+  align-items: flex-start;
+}
+
+.word-preview .docx-wrapper > section.docx {
+  min-width: 100%;
+  max-width: none;
+  overflow: visible;
+}
+
+.word-preview .docx-wrapper img,
+.word-preview .docx-wrapper svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.word-preview__scale {
+  width: fit-content;
+  min-width: 100%;
+  zoom: var(--document-zoom, 1);
+}
+
+.excel-preview .fortune-container,
+.excel-preview .fortune-sheet-container,
+.excel-preview .fortune-sheet {
+  height: 100% !important;
+}
+
+.excel-preview .fortune-container {
+  box-sizing: border-box;
+  padding-bottom: 56px;
+}
+
+.excel-preview .luckysheet-scrollbar-ltr::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.excel-preview .luckysheet-scrollbar-ltr::-webkit-scrollbar-thumb {
+  background-color: rgb(100 116 139 / 70%);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.excel-preview .luckysheet-scrollbar-ltr {
+  scrollbar-color: rgb(100 116 139 / 70%) transparent;
+  scrollbar-width: auto;
+}
+
+.excel-preview .luckysheet-scrollbar-x {
+  height: 14px !important;
+}
+
+.excel-preview .luckysheet-scrollbar-y {
+  width: 14px !important;
+}
+
 
 @media (min-width: 768px) {
   .egmf-mobile-nav-clearance {
@@ -102,6 +162,12 @@ textarea {
     padding-bottom: 0.75rem;
     line-height: 1.5;
   }
+
+  .word-preview .docx-wrapper {
+    padding: 8px;
+    align-items: flex-start;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {

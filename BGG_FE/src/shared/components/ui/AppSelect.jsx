@@ -156,11 +156,40 @@ export default function AppSelect({
   options = [],
   searchable = false,
   value,
+  wrapLabels = false,
   ...props
 }) {
   const selectedOption = options.find((option) => option.value === value) || null;
   const styles = {
     ...selectStyles,
+    valueContainer: (base) => ({
+      ...selectStyles.valueContainer(base),
+      ...(wrapLabels ? { paddingTop: 8, paddingBottom: 8 } : {}),
+    }),
+    singleValue: (base) => ({
+      ...selectStyles.singleValue(base),
+      ...(wrapLabels
+        ? {
+            position: "static",
+            transform: "none",
+            maxWidth: "none",
+            overflow: "visible",
+            textOverflow: "clip",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+          }
+        : {}),
+    }),
+    option: (base, state) => ({
+      ...selectStyles.option(base, state),
+      ...(wrapLabels
+        ? {
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }
+        : {}),
+    }),
     menuList: (base) => ({
       ...selectStyles.menuList(base),
       maxHeight: menuMaxHeight,
