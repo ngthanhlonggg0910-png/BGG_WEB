@@ -58,3 +58,17 @@ export class TEC_GetGiayDeNghi_ByBarcodeMau {
   SoLanGuiMailAutonomy: number;
   NguoiChinhSuaMoiNhat: string | null;
 }
+
+export class TEC_GetTrangThai_ByBarCodeMau {
+  TrangThai: string;
+  TrangThaiAutonomy: string;
+}
+
+export class TEC_TaiLieuKyThuat_LayDanhSachFile_TheoBarcodeMau {
+  DuongDanLocal: string;
+  TenLoaiTaiLieu: string;
+  TenTaiLieu: string;
+  NguoiTao: string;
+  NgayTao: Date;
+  TrangThai: string;
+}

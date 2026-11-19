@@ -1,5 +1,5 @@
 function normalizeMojibake(value) {
-  if (typeof value !== "string" || !(/[ÃÂ]|á[º»]/u.test(value))) {
+  if (typeof value !== "string" || !/[ÃÂ]|á[º»]/u.test(value)) {
     return value;
   }
 
@@ -57,26 +57,11 @@ export async function postJson(url, payload) {
 }
 
 export async function getJson(url) {
-  try {
-    const response = await fetch(url);
+  const response = await fetch(url);
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const contentType = response.headers.get("content-type");
-
-    if (!contentType?.includes("application/json")) {
-      const text = await response.text();
-
-      console.error("Server trả về HTML/Text:", text.slice(0, 300));
-
-      throw new Error(`API không trả về JSON. URL: ${response.url}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("API Error:", error);
-    throw error;
+  if (!response.ok) {
+    throw new Error("HTTP Error");
   }
+
+  return await response.json();
 }

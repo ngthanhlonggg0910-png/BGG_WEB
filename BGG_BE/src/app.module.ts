@@ -12,6 +12,8 @@ import { MappingQrModule } from './presentation/modules/mapping-qr.module.js';
 import { MaterialInspectionModule } from './presentation/modules/material-inspection.module.js';
 import { MaterialReceiptModule } from './presentation/modules/material-receipt.module.js';
 import { TechnicalDepartmentModule } from './presentation/modules/technical-department.module.js';
+import { CuttingModule } from './presentation/modules/cutting.module.js';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -28,6 +30,7 @@ import { TechnicalDepartmentModule } from './presentation/modules/technical-depa
     MaterialInspectionModule,
     MaterialReceiptModule,
     TechnicalDepartmentModule,
+    CuttingModule,
   ],
 })
 export class AppModule {}

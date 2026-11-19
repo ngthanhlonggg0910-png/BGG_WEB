@@ -82,6 +82,13 @@ export const menuGroups = [
         icon: ClipboardList,
         iconTheme: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100",
       },
+      {
+        key: "khaucat",
+        title: "Khâu cắt",
+        path: "/cutting-management",
+        icon: Scissors,
+        iconTheme: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100",
+      },
     ],
   },
   {

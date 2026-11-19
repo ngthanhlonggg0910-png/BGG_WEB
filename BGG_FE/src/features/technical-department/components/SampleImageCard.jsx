@@ -2,8 +2,8 @@ import { Image as ImageIcon, Maximize2 } from "lucide-react";
 
 export default function SampleImageCard({ title, src, subtitle }) {
   return (
-    <section className="group overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-egmf-card transition-shadow duration-200 hover:shadow-[0_12px_28px_rgba(37,99,235,0.1)]">
-      <header className="flex items-center justify-between gap-3 border-b border-egmf-border-subtle px-3.5 py-3 sm:px-4">
+    <section className="group overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised shadow-sm transition-shadow duration-200 hover:shadow-egmf-card">
+      <header className="flex min-h-13 items-center justify-between gap-3 border-b border-egmf-border-subtle px-3.5 py-2.5 sm:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-cyan-50 text-cyan-700">
             <ImageIcon size={17} strokeWidth={2.2} />
@@ -26,7 +26,7 @@ export default function SampleImageCard({ title, src, subtitle }) {
           </span>
         )}
       </header>
-      <div className="aspect-[16/10] min-h-48 bg-gradient-to-br from-egmf-surface-subtle via-white to-cyan-50/70 p-3 sm:p-4">
+      <div className="aspect-[16/9] min-h-40 bg-gradient-to-br from-egmf-surface-subtle via-white to-cyan-50/70 p-3 sm:p-4">
         {src ? (
           <img
             src={src}
