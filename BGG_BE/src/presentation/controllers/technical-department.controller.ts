@@ -24,19 +24,18 @@ import type { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 
+/** Thư mục dùng chung trên máy chủ file, nơi phần mềm Phiếu điều tiết lưu tài liệu kỹ thuật. */
+const DEFAULT_TECHNICAL_DOCUMENT_FOLDER = String.raw`\\192.168.1.5\uploads\PhieuDieuTiet\Uploads\TaiLieuKyThuat`;
+
 /**
- * Thư mục tài liệu kỹ thuật, cấu hình theo từng máy bằng
- * TECHNICAL_DOCUMENT_FOLDER_PATH trong BGG_BE/.env, ví dụ
- * D:\Uploads\TaiLieuKyThuat hoặc \\192.168.1.5\uploads\PhieuDieuTiet\Uploads\TaiLieuKyThuat
+ * Thư mục tài liệu kỹ thuật: mặc định là thư mục dùng chung ở trên; có thể đổi
+ * theo từng máy bằng TECHNICAL_DOCUMENT_FOLDER_PATH trong BGG_BE/.env.
  */
 function technicalDocumentFolder(): string {
-  const folderPath = process.env.TECHNICAL_DOCUMENT_FOLDER_PATH?.trim();
-  if (!folderPath) {
-    throw new InternalServerErrorException(
-      'Chưa cấu hình TECHNICAL_DOCUMENT_FOLDER_PATH (thư mục tài liệu kỹ thuật)',
-    );
-  }
-  return folderPath;
+  return (
+    process.env.TECHNICAL_DOCUMENT_FOLDER_PATH?.trim() ||
+    DEFAULT_TECHNICAL_DOCUMENT_FOLDER
+  );
 }
 
 @Controller('technical-department')
