@@ -21,6 +21,30 @@ export function getAccountId() {
   return getCurrentProfile()?.TKId ?? null;
 }
 
+export function getAccessToken() {
+  const token = getCurrentProfile()?.accessToken;
+  return typeof token === "string" && token ? token : null;
+}
+
+// Expiry as read from the token payload. Only a UX shortcut: the server
+// verifies the signature and expiry on every request.
+function tokenExpiresAt(token) {
+  try {
+    const payload = token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
+    const { exp } = JSON.parse(atob(payload));
+    return Number.isFinite(exp) ? exp * 1000 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Sessions saved before login tokens existed have no accessToken and count as
+// logged out, so those users are sent to the login page once.
+export function hasValidSession() {
+  const token = getAccessToken();
+  return Boolean(token) && tokenExpiresAt(token) > Date.now();
+}
+
 export function saveUser(user, rememberMe) {
   localStorage.removeItem(USER_KEY);
   sessionStorage.removeItem(USER_KEY);

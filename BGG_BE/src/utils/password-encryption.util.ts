@@ -18,8 +18,5 @@ export function encryptPassword(password: string): string {
     cipher.final(),
   ]);
 
-  const result = encrypted.toString('base64');
-  console.log('Encrypted password:', result);
-
-  return result;
+  return encrypted.toString('base64');
 }

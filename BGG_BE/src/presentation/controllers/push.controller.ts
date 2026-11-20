@@ -1,7 +1,11 @@
 import { Body, Controller, Get, Headers, Post, ForbiddenException } from '@nestjs/common';
 import { PushService } from '../../application/services/push.service.js';
 import { PushAuthService } from '../../application/services/push-auth.service.js';
+import { Public } from '../guards/public.decorator.js';
 
+// Push routes verify their own web-push token (PushAuthService), so they skip
+// the global login guard; /push/config is intentionally public.
+@Public()
 @Controller('push')
 export class PushController {
   constructor(private readonly push: PushService, private readonly auth: PushAuthService) {}
