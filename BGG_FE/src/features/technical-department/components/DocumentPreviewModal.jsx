@@ -47,8 +47,11 @@ export default function DocumentPreviewModal({
   const [loadedFile, setLoadedFile] = useState(null);
   const [fileError, setFileError] = useState("");
   const documentUrl = selectedDocument?.url;
-  const fileBlob = loadedFile?.url === documentUrl ? loadedFile.blob : null;
-  const objectUrl = loadedFile?.url === documentUrl ? loadedFile.objectUrl : "";
+  // loadedFile có thể null khi chưa chọn tài liệu (documentUrl cũng undefined),
+  // nên phải kiểm tra loadedFile trước khi so URL.
+  const isLoadedFileCurrent = Boolean(loadedFile && documentUrl && loadedFile.url === documentUrl);
+  const fileBlob = isLoadedFileCurrent ? loadedFile.blob : null;
+  const objectUrl = isLoadedFileCurrent ? loadedFile.objectUrl : "";
 
   useEffect(() => {
     if (!isOpen || !documentUrl) return undefined;
