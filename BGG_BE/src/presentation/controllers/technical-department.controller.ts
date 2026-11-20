@@ -24,10 +24,23 @@ import type { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * Thư mục tài liệu kỹ thuật, cấu hình theo từng máy bằng
+ * TECHNICAL_DOCUMENT_FOLDER_PATH trong BGG_BE/.env, ví dụ
+ * D:\Uploads\TaiLieuKyThuat hoặc \\192.168.1.5\uploads\PhieuDieuTiet\Uploads\TaiLieuKyThuat
+ */
+function technicalDocumentFolder(): string {
+  const folderPath = process.env.TECHNICAL_DOCUMENT_FOLDER_PATH?.trim();
+  if (!folderPath) {
+    throw new InternalServerErrorException(
+      'Chưa cấu hình TECHNICAL_DOCUMENT_FOLDER_PATH (thư mục tài liệu kỹ thuật)',
+    );
+  }
+  return folderPath;
+}
+
 @Controller('technical-department')
 export class TechnicalDepartmentController {
-  // private readonly folderPath = String.raw`\\192.168.1.5\uploads\PhieuDieuTiet\Uploads\TaiLieuKyThuat`;
-  private readonly folderPath = 'D:\\Uploads\\TaiLieuKyThuat';
   constructor(
     @Inject('ITechnicalDepartmentService')
     private readonly technicalDepartmentService: ITechnicalDepartmentService,
@@ -51,7 +64,7 @@ export class TechnicalDepartmentController {
 
   @Get('files')
   getFiles() {
-    const files = fs.readdirSync(this.folderPath);
+    const files = fs.readdirSync(technicalDocumentFolder());
 
     return {
       success: true,
@@ -61,12 +74,7 @@ export class TechnicalDepartmentController {
 
   @Get('files/:fileName')
   getFile(@Param('fileName') fileName: string, @Res() res: Response) {
-    const folderPath = process.env.TECHNICAL_DOCUMENT_FOLDER_PATH;
-    console.log(folderPath);
-    // '\\\\192.168.1.5\\uploads\\PhieuDieuTiet\\Uploads\\TaiLieuKyThuat';
-    if (!folderPath) {
-      throw new InternalServerErrorException('Chưa cấu hình đường dẫn thư mục');
-    }
+    const folderPath = technicalDocumentFolder();
     if (
       !fileName ||
       fileName === '.' ||
