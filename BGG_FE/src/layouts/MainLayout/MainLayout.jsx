@@ -14,7 +14,13 @@ import Sidebar from "./Sidebar";
 import MobileNavigation from "./MobileNavigation";
 
 // MAIN LAYOUT
-export default function MainLayout({ children, screenTitle, hideMobileNavigation = false, headerBackTo }) {
+export default function MainLayout({
+  children,
+  screenTitle,
+  hideMobileNavigation = false,
+  headerBackTo,
+  headerBackFallback = "/home",
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const isOrderPage = location.pathname.startsWith("/production-order");
@@ -167,7 +173,15 @@ export default function MainLayout({ children, screenTitle, hideMobileNavigation
       return;
     }
 
-    navigate(-1);
+    // Trang được mở trực tiếp (link, thông báo, app PWA mở lại) thì không có
+    // trang trước trong lịch sử: navigate(-1) sẽ không làm gì cả.
+    const historyIndex = window.history.state?.idx;
+    if (typeof historyIndex === "number" && historyIndex > 0) {
+      navigate(-1);
+      return;
+    }
+
+    navigate(headerBackFallback, { replace: true });
   };
 
   const handleInstallApp = () => {

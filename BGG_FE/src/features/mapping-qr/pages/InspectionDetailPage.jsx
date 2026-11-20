@@ -9,7 +9,10 @@ import {
 } from "lucide-react";
 import { useLocation, useParams } from "react-router-dom";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
-import { getChiTietPhieuGiamDinh, saveMapping } from "../api/mappingQrApi";
+import {
+  getChiTietPhieuGiamDinh,
+  saveMappingBatch,
+} from "../api/mappingQrApi";
 import {
   showErrorToast,
   showSuccessToast,
@@ -17,6 +20,7 @@ import {
 import { getCurrentUser } from "../../../shared/auth/session";
 import { useNavigate } from "react-router-dom";
 import { formatDateTime } from "../../../shared/utils/formatDateTime";
+import { getTrangThaiPhieuGiamDinh } from "../api/inspectionConfirmApi";
 
 export default function InspectionDetailPage() {
   const navigate = useNavigate();
@@ -31,8 +35,18 @@ export default function InspectionDetailPage() {
   const { PGDId } = useParams();
   const pgdId = Number(PGDId);
   const location = useLocation();
-  const loai = location?.state?.loai;
-  const maPhieu = location?.state?.maPhieu;
+  // Thông tin phiếu lấy từ server (khi mở bằng link / app mở lại thì không có
+  // location.state); location.state chỉ dùng để hiển thị ngay lúc đầu.
+  const [phieuInfo, setPhieuInfo] = useState(null);
+  // LoaiGiamDinh trong DB là CHAR nên có khoảng trắng ở cuối ("pl        ").
+  const loai = String(location?.state?.loai || phieuInfo?.LoaiGiamDinh || "")
+    .trim()
+    .toLowerCase();
+  const maPhieu =
+    location?.state?.maPhieu ||
+    location?.state?.data?.maPhieu ||
+    phieuInfo?.MaPhieu ||
+    "";
   const [loading, setLoading] = useState(false);
   const [materials, setMaterials] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -44,6 +58,30 @@ export default function InspectionDetailPage() {
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(true);
   const sourcePage = location.state?.sourcePage;
   const inforPGD = location?.state?.data;
+  const [trangThaiPhieu, setTrangThaiPhieu] = useState(
+    location?.state?.data?.trangThai ?? "",
+  );
+  // Trạng thái, mã phiếu, loại phiếu lấy từ server (nút Xác nhận nằm ở danh sách phiếu).
+  useEffect(() => {
+    if (!Number.isSafeInteger(pgdId) || pgdId <= 0) return undefined;
+    let cancelled = false;
+    getTrangThaiPhieuGiamDinh(pgdId)
+      .then((response) => {
+        if (cancelled || !response?.data) return;
+        setPhieuInfo(response.data);
+        setTrangThaiPhieu(response.data.TrangThai ?? "");
+      })
+      .catch((error) =>
+        console.error("Không lấy được thông tin phiếu giám định:", error),
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [pgdId]);
+
+  // Desktop khóa chỉnh sửa khi phiếu đã xác nhận hoặc đã hủy.
+  const phieuDaKhoa =
+    trangThaiPhieu === "DAXACNHAN" || trangThaiPhieu === "HUY";
 
   const fetchData = async () => {
     setLoading(true);
@@ -174,6 +212,11 @@ export default function InspectionDetailPage() {
   const handleConfirmMapping = async () => {
     if (saving) return;
 
+    if (phieuDaKhoa) {
+      showErrorToast("Phiếu đã xác nhận hoặc đã hủy, không thể mapping thêm tem.");
+      return;
+    }
+
     const qr = qrTemTrang.trim();
 
     // 1. Kiểm tra QR trắng
@@ -283,66 +326,64 @@ export default function InspectionDetailPage() {
       }
     }
 
-    // 6. Gọi API Mapping
+    // 6. Gọi API Mapping: tất cả tem được lưu trong một transaction,
+    // lỗi ở bất kỳ tem nào thì không tem nào được lưu (bấm lại không bị trùng).
     setSaving(true);
 
-    let successCount = 0;
+    const items = danhSachTem.map((tem) => ({
+      CTPGDId: tem.CTPGDId,
+      SL: tem.SL,
+      TKId: Number(TKId),
+      TenNguoiTao: tenNguoiTao,
+      NguoiTao: Number(NVId),
+      NoiDung: "Mapping QR trắng",
+      NguoiThayDoi: tenNguoiTao,
+      TaiKhoanThayDoi: taiKhoanThayDoi,
+      MACAddress: maccAddress || "",
+      ComputerName: computerName || "",
+      MaSoKien: maSoKien.trim(),
+      MaKho: maKho,
+      SoMet: tem.SL,
+      SoYard: tem.SL,
+      SoGross: tem.SL,
+      QrTrangMapping: qr,
+    }));
 
     try {
-      for (const tem of danhSachTem) {
-        const payload = {
-          CTPGDId: tem.CTPGDId,
-          SL: tem.SL,
-          TKId: Number(TKId),
-          TenNguoiTao: tenNguoiTao,
-          NguoiTao: Number(NVId),
-          NoiDung: "Mapping QR trắng",
-          NguoiThayDoi: tenNguoiTao,
-          TaiKhoanThayDoi: taiKhoanThayDoi,
-          MACAddress: maccAddress || "",
-          ComputerName: computerName || "",
-          MaSoKien: maSoKien.trim(),
-          MaKho: maKho,
-          SoMet: tem.SL,
-          SoYard: tem.SL,
-          SoGross: tem.SL,
-          QrTrangMapping: qr,
-        };
+      const response = await saveMappingBatch(items);
 
-        const response = await saveMapping(payload);
-
-        if (!response.success || Number(response.data?.KetQua) !== 1) {
-          throw new Error(
-            response.message || `Mapping thất bại tại item ${tem.CTPGDId}`,
-          );
-        }
-
-        successCount++;
+      if (!response?.success) {
+        throw new Error(response?.message || "Mapping QR thất bại");
       }
 
-      showSuccessToast(`Mapping thành công ${successCount} tem!`);
+      showSuccessToast(
+        response.message || `Mapping thành công ${items.length} tem!`,
+      );
 
       // Reset sau khi lưu thành công
       setQrTemTrang("");
       setMaSoKien("");
       setSelected([]);
       setTemRows({});
-
-      await fetchData();
     } catch (error) {
       console.error("Lỗi Mapping QR:", error);
-
-      showErrorToast(
-        `${error.message || "Mapping QR thất bại"}. ` +
-          `Đã lưu ${successCount}/${danhSachTem.length} tem.`,
-      );
+      showErrorToast(error.message || "Mapping QR thất bại");
     } finally {
       setSaving(false);
+      // Luôn tải lại để SL đã nhập / còn lại khớp với dữ liệu trên server.
+      await fetchData();
     }
   };
 
   return (
-    <MainLayout screenTitle={`Phiếu giám định ${maPhieu}`}>
+    <MainLayout
+      screenTitle={maPhieu ? `Phiếu giám định ${maPhieu}` : "Phiếu giám định"}
+      headerBackFallback={
+        sourcePage === "accessory-inspection"
+          ? "/accessory-inspection"
+          : "/mapping-qr-option"
+      }
+    >
       <div className="min-h-full bg-egmf-surface text-[15px] text-egmf-ink">
         {/* HEADER */}
         <header className="sr-only">Thông tin chi tiết phiếu giám định</header>
@@ -365,10 +406,10 @@ export default function InspectionDetailPage() {
               </div>
               <dl className="relative mt-2.5 flex flex-wrap gap-x-5 gap-y-1.5 border-t border-egmf-border-subtle pt-2.5">
                 {[
-                  ["Số phiếu", inforPGD.maPhieu],
-                  ["Ngày giám định", formatDateTime(inforPGD.ngayGiamDinh)],
-                  ["Loại giám định", inforPGD.loaiGiamDinh],
-                  ["Mã hàng", inforPGD.maHang],
+                  ["Số phiếu", maPhieu],
+                  ["Ngày giám định", formatDateTime(inforPGD?.ngayGiamDinh)],
+                  ["Loại giám định", inforPGD?.loaiGiamDinh ?? loai],
+                  ["Mã hàng", inforPGD?.maHang],
                 ].map(([label, value]) => (
                   <div
                     key={label}
@@ -479,7 +520,12 @@ export default function InspectionDetailPage() {
                   <button
                     type="button"
                     onClick={handleConfirmMapping}
-                    disabled={saving}
+                    disabled={saving || phieuDaKhoa}
+                    title={
+                      phieuDaKhoa
+                        ? "Phiếu đã xác nhận hoặc đã hủy, không thể mapping thêm"
+                        : undefined
+                    }
                     className="col-span-2 h-9 w-full rounded-md bg-egmf-primary px-3 text-xs font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-1 sm:text-sm"
                   >
                     {saving ? "Đang lưu..." : "XÁC NHẬN"}
@@ -794,7 +840,7 @@ export default function InspectionDetailPage() {
                               navigate(`/accessory-quality-inspection`, {
                                 state: {
                                   item,
-                                  maPhieu: inforPGD.maPhieu,
+                                  maPhieu,
                                   pgdId: pgdId,
                                 },
                               });

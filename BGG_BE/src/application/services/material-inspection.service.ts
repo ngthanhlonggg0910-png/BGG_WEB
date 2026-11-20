@@ -158,6 +158,17 @@ export class MaterialInspectionService implements IMaterialInspectionService {
         data: null,
       };
     }
+    // Confirming / un-confirming / cancelling must go through the checked flow
+    // (permissions, document-quantity checks, phiếu nhập kho) in
+    // /api/phieu-giam-dinh/xac-nhan and /huy-xac-nhan.
+    if (['DAXACNHAN', 'HUYXACNHAN', 'HUY'].includes(dto.TrangThai.trim().toUpperCase())) {
+      return {
+        success: false,
+        message:
+          'Vui lòng dùng chức năng Xác nhận / Hủy xác nhận phiếu giám định để đổi trạng thái này',
+        data: null,
+      };
+    }
     try {
       const result = await this.materialInspectionRepository.updateTrangThai(
         dto.PGDId,
