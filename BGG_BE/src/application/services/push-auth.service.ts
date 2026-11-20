@@ -7,11 +7,13 @@ export class PushAuthService {
     return process.env.PUSH_AUTH_SECRET || process.env.PASSWORD_SECRET_KEY;
   }
 
-  issue(tkId: number): string | undefined {
+  issue(tkId: number | string): string | undefined {
     const secret = this.secret();
-    if (!secret) return undefined;
+    // TKId comes from a BIGINT column, which mssql returns as a string.
+    const sub = Number(tkId);
+    if (!secret || !Number.isSafeInteger(sub) || sub <= 0) return undefined;
     const payload = Buffer.from(JSON.stringify({
-      sub: tkId, exp: Math.floor(Date.now() / 1000) + 7 * 86400, purpose: 'web-push',
+      sub, exp: Math.floor(Date.now() / 1000) + 7 * 86400, purpose: 'web-push',
     })).toString('base64url');
     const signature = createHmac('sha256', secret).update(payload).digest('base64url');
     return `${payload}.${signature}`;

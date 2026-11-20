@@ -26,6 +26,7 @@ export default function MainLayout({
   hideMobileNavigation = false,
   headerBackTo,
   scannerForm,
+  headerBackFallback = "/home",
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -182,7 +183,15 @@ export default function MainLayout({
       return;
     }
 
-    navigate(-1);
+    // Trang được mở trực tiếp (link, thông báo, app PWA mở lại) thì không có
+    // trang trước trong lịch sử: navigate(-1) sẽ không làm gì cả.
+    const historyIndex = window.history.state?.idx;
+    if (typeof historyIndex === "number" && historyIndex > 0) {
+      navigate(-1);
+      return;
+    }
+
+    navigate(headerBackFallback, { replace: true });
   };
 
   const handleInstallApp = () => {

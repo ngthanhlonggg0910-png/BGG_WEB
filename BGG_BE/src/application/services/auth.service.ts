@@ -1,14 +1,12 @@
 import { PushAuthService } from './push-auth.service.js';
+import { AuthTokenService } from './auth-token.service.js';
 import { Inject, Injectable } from '@nestjs/common';
 
 import type { IUserRepository } from '../../domain/repositories/user.repository.interface.js';
 import type { IAuthService } from '../interfaces/auth-service.interface.js';
 
 import { LoginRequestDTO } from '../dtos/login-request.dto.js';
-import {
-  GetUsernameAndPassword_ResponseDTO,
-  LoginResponseDTO,
-} from '../dtos/login-response.dto.js';
+import { LoginResponseDTO } from '../dtos/login-response.dto.js';
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -16,9 +14,14 @@ export class AuthService implements IAuthService {
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
     private readonly pushAuth: PushAuthService,
+    private readonly authToken: AuthTokenService,
   ) {}
 
   async login(dto: LoginRequestDTO): Promise<LoginResponseDTO> {
+    if (typeof dto?.TenTaiKhoan !== 'string' || typeof dto?.MatKhau !== 'string') {
+      return new LoginResponseDTO(false, 'Sai tài khoản hoặc mật khẩu');
+    }
+
     const user = await this.userRepository.login(dto.TenTaiKhoan, dto.MatKhau);
 
     if (!user) {
@@ -39,28 +42,8 @@ export class AuthService implements IAuthService {
       SoNoiBo: user.SoNoiBo,
       SoDienThoai: user.SoDienThoai,
       TKId: user.TKId,
+      accessToken: this.authToken.issue(user.TKId),
       pushToken: this.pushAuth.issue(user.TKId),
     });
-  }
-
-  async getUsernameAndPassword(
-    TenDangNhap: string,
-  ): Promise<GetUsernameAndPassword_ResponseDTO> {
-    try {
-      const infor =
-        await this.userRepository.getUsernameAndPassword(TenDangNhap);
-
-      return {
-        success: true,
-        message: 'Thành công',
-        data: infor,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Có lỗi: ${error}`,
-        data: null,
-      };
-    }
   }
 }

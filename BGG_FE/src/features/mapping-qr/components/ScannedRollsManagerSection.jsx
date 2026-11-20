@@ -24,6 +24,9 @@ import {
 } from "../../../shared/components/ui/CustomToast";
 import { getCurrentUser } from "../../../shared/auth/session";
 
+// Quantities come back from REAL/FLOAT columns; compare with a tolerance.
+const SPLIT_TOLERANCE = 0.001;
+
 function buildEvenSplitRows(totalSL, count) {
   const safeTotal = Number(totalSL);
   if (!Number.isFinite(safeTotal) || safeTotal <= 0 || count < 2) {
@@ -189,16 +192,11 @@ export default function ScannedRollsManagerSection({
         CTPGDId: rollCtpgdId,
       });
 
-      const refreshedRolls = await fetchScannedRolls();
-      const updatedRoll = Array.isArray(refreshedRolls)
-        ? refreshedRolls.find(
-            (cay) =>
-              Number(cay.CayId) === cayId &&
-              Number(cay.CTPGDId) === rollCtpgdId,
-          )
-        : null;
+      // Server's answer decides success. Re-reading SL and comparing with `!==`
+      // fails for values like 33.3 that a REAL column stores as 33.2999992.
+      await fetchScannedRolls();
 
-      if (Number(updatedRoll?.SL) !== enteredQuantity) {
+      if (!response?.success) {
         throw new Error(
           response?.message || "Cập nhật số lượng thất bại. Vui lòng thử lại.",
         );
@@ -296,6 +294,14 @@ export default function ScannedRollsManagerSection({
       parsedQuantities.push(num);
     }
 
+    const tongCacPhan = parsedQuantities.reduce((sum, q) => sum + q, 0);
+    if (Math.abs(tongCacPhan - originalSplitRollSL) > SPLIT_TOLERANCE) {
+      setSplitError(
+        `Tổng các tem (${Number(tongCacPhan.toFixed(4))}) phải bằng SL tem gốc (${Number(originalSplitRollSL.toFixed(4))})`,
+      );
+      return;
+    }
+
     const soLuongXuat = Number(rollToSplit?.SoLuongXuat || 0);
     if (soLuongXuat > 0 && parsedQuantities[0] < soLuongXuat) {
       setSplitError(
@@ -361,31 +367,24 @@ export default function ScannedRollsManagerSection({
     if (deletingRoll) return;
 
     const maCay = String(rollToDelete?.MaCay ?? "").trim();
+    const cayId = Number(rollToDelete?.CayId);
+    const rollCtpgdId = Number(rollToDelete?.CTPGDId ?? ctpgdId);
 
-    if (!maCay) {
-      showErrorToast("Không tìm thấy mã tem để xóa");
+    if (!Number.isFinite(cayId) || !Number.isFinite(rollCtpgdId)) {
+      showErrorToast("Không tìm thấy thông tin tem để xóa");
       return;
     }
 
     try {
       setDeletingRoll(true);
-      const response = await deleteScannedRoll(maCay);
+      const response = await deleteScannedRoll({
+        CayId: cayId,
+        CTPGDId: rollCtpgdId,
+        MaCay: maCay,
+      });
 
-      if (response?.success === false) {
-        const refreshedRolls = await fetchScannedRolls();
-        const wasDeleted =
-          Array.isArray(refreshedRolls) &&
-          !refreshedRolls.some(
-            (cay) => String(cay.MaCay ?? "").trim() === maCay,
-          );
-
-        if (wasDeleted) {
-          setRollToDelete(null);
-          showSuccessToast("Đã xóa tem thành công");
-          return;
-        }
-
-        throw new Error(response.message || "Xóa tem thất bại");
+      if (!response?.success) {
+        throw new Error(response?.message || "Xóa tem thất bại");
       }
 
       await fetchScannedRolls();
@@ -1032,7 +1031,13 @@ export default function ScannedRollsManagerSection({
               <button
                 type="button"
                 onClick={() => setRollToDelete(cay)}
-                className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-bold text-red-600 transition hover:bg-red-100 active:scale-95"
+                disabled={Number(cay.SoLuongXuat || 0) > 0}
+                title={
+                  Number(cay.SoLuongXuat || 0) > 0
+                    ? "Tem đã xuất kho, không thể xóa"
+                    : undefined
+                }
+                className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-bold text-red-600 transition hover:bg-red-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-red-50"
               >
                 <Trash2 size={14} strokeWidth={2.4} />
                 Xóa

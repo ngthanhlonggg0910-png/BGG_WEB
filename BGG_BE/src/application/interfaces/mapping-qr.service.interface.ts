@@ -3,6 +3,7 @@ import {
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   deleteScannedRoll_RequestDTO,
   splitScannedRoll_RequestDTO,
+  saveMappingBatch_RequestDTO,
 } from '../dtos/mapping-qr-request.dto.js';
 
 import {
@@ -16,6 +17,7 @@ import {
   splitScannedRoll_ResponseDTO,
   deleteScannedRoll_ResponseDTO,
   getMaterialsByQrTrang_ResponseDTO,
+  saveMappingBatch_ResponseDTO,
 } from '../dtos/mapping-qr-response.dto.js';
 
 export interface IMappingQrService {
@@ -36,6 +38,10 @@ export interface IMappingQrService {
   saveMapping(
     dto: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   ): Promise<wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO>;
+
+  saveMappingBatch(
+    dto: saveMappingBatch_RequestDTO,
+  ): Promise<saveMappingBatch_ResponseDTO>;
 
   getScannedRolls(
     CTPGDId: number,

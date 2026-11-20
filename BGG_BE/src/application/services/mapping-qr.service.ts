@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -18,14 +19,18 @@ import {
   splitScannedRoll_ResponseDTO,
   deleteScannedRoll_ResponseDTO,
   getMaterialsByQrTrang_ResponseDTO,
+  saveMappingBatch_ResponseDTO,
 } from '../dtos/mapping-qr-response.dto.js';
 import {
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   wh_DanhSachPhieuGiamDinhTheoThoiGian_RequestDTO,
   deleteScannedRoll_RequestDTO,
   splitScannedRoll_RequestDTO,
+  saveMappingBatch_RequestDTO,
 } from '../dtos/mapping-qr-request.dto.js';
 import { DatabaseService } from '../../infrastructure/database/database.service.js';
+
+const MAX_TEMS_PER_BATCH = 200;
 
 @Injectable()
 export class MappingQrService implements IMappingQrService {
@@ -183,6 +188,64 @@ export class MappingQrService implements IMappingQrService {
     }
   }
 
+  async saveMappingBatch(
+    dto: saveMappingBatch_RequestDTO,
+  ): Promise<saveMappingBatch_ResponseDTO> {
+    const items = Array.isArray(dto?.items) ? dto.items : [];
+
+    if (items.length === 0 || items.length > MAX_TEMS_PER_BATCH) {
+      throw new BadRequestException(
+        `Cần từ 1 đến ${MAX_TEMS_PER_BATCH} tem trong một lần mapping`,
+      );
+    }
+
+    for (const [index, item] of items.entries()) {
+      const sl = Number(item?.SL);
+      if (
+        !Number.isSafeInteger(Number(item?.CTPGDId)) ||
+        Number(item?.CTPGDId) <= 0 ||
+        !Number.isFinite(sl) ||
+        sl <= 0 ||
+        !String(item?.QrTrangMapping ?? '').trim()
+      ) {
+        throw new BadRequestException(`Dữ liệu tem thứ ${index + 1} không hợp lệ`);
+      }
+    }
+
+    try {
+      const result = await this.mappingQrRepository.saveMappingBatch(items);
+
+      if (!result.ok) {
+        const item = items[result.failedIndex];
+        const reason =
+          Number(result.failedRow?.KetQua) === 0
+            ? 'QR trắng không hợp lệ hoặc không tồn tại'
+            : 'Mapping QR thất bại';
+        return {
+          success: false,
+          message: `${reason} (tem ${result.failedIndex + 1}, item ${item.CTPGDId}). Chưa lưu tem nào, vui lòng thử lại.`,
+          savedCount: 0,
+          data: [],
+        };
+      }
+
+      return {
+        success: true,
+        message: `Mapping thành công ${result.rows.length} tem`,
+        savedCount: result.rows.length,
+        data: result.rows,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Lỗi khi Mapping QR theo lô',
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException(
+        'Có lỗi khi Mapping QR. Chưa lưu tem nào, vui lòng thử lại.',
+      );
+    }
+  }
+
   async getScannedRolls(
     CTPGDId: number,
     QrTrangMapping?: string,
@@ -237,34 +300,49 @@ export class MappingQrService implements IMappingQrService {
     CayId: number,
     CTPGDId: number,
   ): Promise<updateScannedRoll_ResponseDTO> {
+    const sl = Number(SL);
+    if (!Number.isFinite(sl) || sl <= 0) {
+      return {
+        success: false,
+        message: 'Số lượng thực tế phải lớn hơn 0',
+        rowsAffected: 0,
+      };
+    }
+
     try {
-      const rowsAffected = await this.mappingQrRepository.updateScannedRoll(
-        SL,
-        CayId,
-        CTPGDId,
+      const result = await this.mappingQrRepository.updateScannedRoll(
+        sl,
+        Number(CayId),
+        Number(CTPGDId),
       );
 
-      if (rowsAffected === 0) {
+      if (result.status === 'not_found') {
         return {
           success: false,
-          message: 'Không tìm thấy cây cần cập nhật',
+          message: 'Không tìm thấy tem cần cập nhật',
+          rowsAffected: 0,
+        };
+      }
+
+      if (result.status === 'below_exported') {
+        return {
+          success: false,
+          message: `Tem này đã xuất kho ${result.soLuongXuat}, số lượng không được nhỏ hơn số lượng đã xuất`,
           rowsAffected: 0,
         };
       }
 
       return {
         success: true,
-        message: 'Cập nhật số lượng cây thành công',
-        rowsAffected,
+        message: 'Cập nhật số lượng tem thành công',
+        rowsAffected: 1,
       };
     } catch (error) {
-      console.error('Lỗi cập nhật số lượng cây:', error);
-
-      return {
-        success: false,
-        message: 'Cập nhật số lượng cây thất bại',
-        rowsAffected: 0,
-      };
+      this.logger.error(
+        'Lỗi cập nhật số lượng tem',
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException('Cập nhật số lượng tem thất bại');
     }
   }
 
@@ -297,31 +375,49 @@ export class MappingQrService implements IMappingQrService {
   async deleteScannedRoll(
     dto: deleteScannedRoll_RequestDTO,
   ): Promise<deleteScannedRoll_ResponseDTO> {
+    const cayId = Number(dto?.CayId);
+    const ctpgdId = Number(dto?.CTPGDId);
+    if (!Number.isSafeInteger(cayId) || !Number.isSafeInteger(ctpgdId) || cayId <= 0 || ctpgdId <= 0) {
+      throw new BadRequestException('Thiếu CayId/CTPGDId của tem cần xóa');
+    }
+
+    const tenTem = dto.MaCay ? ` ${dto.MaCay}` : '';
+
     try {
-      const rowsAffected = await this.mappingQrRepository.deleteScannedRoll(
-        dto.MaCay,
+      const result = await this.mappingQrRepository.deleteScannedRoll(
+        cayId,
+        ctpgdId,
       );
 
-      if (rowsAffected === 0) {
-        return {
-          success: false,
-          message: 'KhÃ´ng tÃ¬m tháº¥y cÃ¢y cáº§n xÃ³a',
-          rowsAffected: 0,
-        };
+      switch (result.status) {
+        case 'deleted':
+          return { success: true, message: `Đã xóa tem${tenTem}`, rowsAffected: 1 };
+        case 'exported':
+          return {
+            success: false,
+            message: `Tem${tenTem} đã xuất kho ${result.soLuongXuat}, không thể xóa`,
+            rowsAffected: 0,
+          };
+        case 'picked':
+          return {
+            success: false,
+            message: `Tem${tenTem} đã được quét vào phiếu soạn hàng, không thể xóa`,
+            rowsAffected: 0,
+          };
+        default:
+          return {
+            success: false,
+            message: 'Không tìm thấy tem cần xóa',
+            rowsAffected: 0,
+          };
       }
-
-      return {
-        success: true,
-        message: 'XÃ³a cÃ¢y thÃ nh cÃ´ng',
-        rowsAffected,
-      };
     } catch (error) {
       this.logger.error(
-        'Lá»—i khi xÃ³a cÃ¢y',
+        'Lỗi khi xóa tem',
         error instanceof Error ? error.stack : String(error),
       );
 
-      throw new InternalServerErrorException('CÃ³ lá»—i khi xÃ³a cÃ¢y');
+      throw new InternalServerErrorException('Có lỗi khi xóa tem');
     }
   }
 }

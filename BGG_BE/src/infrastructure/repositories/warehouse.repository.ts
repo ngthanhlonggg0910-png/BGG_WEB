@@ -24,9 +24,10 @@ export class WarehouseRepository implements IWarehouseRepository {
   ): Promise<lib_DanhSachDanhSachKho_TheoTKId[]> {
     const pool = await this.databaseService.getPool();
 
-    const result = await pool.request().query(`
-        EXEC lib_DanhSachDanhSachKho_TheoTKId @TKId = ${TkId}
-    `);
+    const result = await pool
+      .request()
+      .input('TKId', sql.BigInt, Number(TkId))
+      .execute('lib_DanhSachDanhSachKho_TheoTKId');
 
     return result.recordset;
   }

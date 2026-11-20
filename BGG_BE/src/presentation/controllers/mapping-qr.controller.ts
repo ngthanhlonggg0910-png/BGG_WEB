@@ -18,6 +18,7 @@ import {
   splitScannedRoll_ResponseDTO,
   deleteScannedRoll_ResponseDTO,
   getMaterialsByQrTrang_ResponseDTO,
+  saveMappingBatch_ResponseDTO,
 } from '../../application/dtos/mapping-qr-response.dto.js';
 import {
   updateScannedRoll_RequestDTO,
@@ -25,6 +26,7 @@ import {
   wh_DanhSachPhieuGiamDinhTheoThoiGian_RequestDTO,
   wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   deleteScannedRoll_RequestDTO,
+  saveMappingBatch_RequestDTO,
 } from '../../application/dtos/mapping-qr-request.dto.js';
 @Controller('mapping-qr')
 export class MappingQrController {
@@ -65,6 +67,13 @@ export class MappingQrController {
     dto: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
   ): Promise<wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDTO> {
     return this.mappingQrService.saveMapping(dto);
+  }
+
+  @Post('saveMappingBatch')
+  saveMappingBatch(
+    @Body() dto: saveMappingBatch_RequestDTO,
+  ): Promise<saveMappingBatch_ResponseDTO> {
+    return this.mappingQrService.saveMappingBatch(dto);
   }
 
   @Post('getScannedRolls')

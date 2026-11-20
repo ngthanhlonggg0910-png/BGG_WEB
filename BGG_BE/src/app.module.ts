@@ -13,6 +13,7 @@ import { MaterialInspectionModule } from './presentation/modules/material-inspec
 import { MaterialReceiptModule } from './presentation/modules/material-receipt.module.js';
 import { TechnicalDepartmentModule } from './presentation/modules/technical-department.module.js';
 import { CuttingModule } from './presentation/modules/cutting.module.js';
+import { InspectionConfirmModule } from './presentation/modules/inspection-confirm.module.js';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { CuttingModule } from './presentation/modules/cutting.module.js';
     MaterialReceiptModule,
     TechnicalDepartmentModule,
     CuttingModule,
+    InspectionConfirmModule,
   ],
 })
 export class AppModule {}

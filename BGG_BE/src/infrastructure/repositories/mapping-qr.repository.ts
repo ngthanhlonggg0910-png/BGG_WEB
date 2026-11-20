@@ -10,7 +10,54 @@ import {
   WH_PhieuGiamDinh_GetDanhSachTrangThai,
   WH_PhieuGiamDinh_GetData_ByBarcodeKien,
 } from '../../domain/entities/mapping-qr.entity.js';
-import { splitScannedRoll_RequestDTO } from '../../application/dtos/mapping-qr-request.dto.js';
+import {
+  splitScannedRoll_RequestDTO,
+  wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
+} from '../../application/dtos/mapping-qr-request.dto.js';
+import type {
+  DeleteScannedRollResult,
+  SaveMappingBatchResult,
+  UpdateScannedRollResult,
+} from '../../domain/repositories/mapping-qr.interface.repository.js';
+
+// Quantities are stored as REAL/FLOAT; compare with a tolerance instead of `=`.
+const QTY_TOLERANCE = 0.001;
+
+// Recomputes Thieu/Thua (and AQL SLKiem when a ratio is selected) for @CTPGDId
+// after its rolls changed. Requires an @CTPGDId input on the request.
+const RECALC_THIEU_THUA_SQL = `
+  DECLARE @SLChungTu REAL = 0, @TongSLCay REAL = 0;
+  SELECT @SLChungTu = ISNULL(TRY_CAST(ChungTu AS REAL), ISNULL(TRY_CAST(PKList AS REAL), 0))
+  FROM dbo.WH_ChiTietPhieuGiamDinh
+  WHERE CTPGDId = @CTPGDId;
+
+  SELECT @TongSLCay = ISNULL(SUM(ISNULL(SL, 0)), 0)
+  FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
+  WHERE CTPGDId = @CTPGDId;
+
+  UPDATE dbo.WH_ChiTietPhieuGiamDinh
+  SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
+      Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
+  WHERE CTPGDId = @CTPGDId;
+
+  IF EXISTS (
+    SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh
+    WHERE CTPGDId = @CTPGDId AND ISNULL(LoaiTiLe, '') <> ''
+  )
+  BEGIN
+    EXEC dbo.wh_chitietphieugiamdinh_capnhat_tilekiem @TiLe = 0, @LoaiTiLe = N'', @CTPGDId = @CTPGDId;
+  END
+`;
+
+// A failed statement (deadlock, error inside a procedure) can already have
+// aborted the transaction; never let the rollback error hide the real one.
+async function safeRollback(transaction: sql.Transaction): Promise<void> {
+  try {
+    await transaction.rollback();
+  } catch {
+    // already rolled back by SQL Server
+  }
+}
 
 @Injectable()
 export class MappingQrRepository implements IMapingQrRepository {
@@ -142,8 +189,86 @@ export class MappingQrRepository implements IMapingQrRepository {
   ): Promise<wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile> {
     const pool = await this.databaseService.getPool();
 
-    const result = await pool
-      .request()
+    return this.execSaveMapping(pool.request(), {
+      CTPGDId,
+      SL,
+      TKId,
+      TenNguoiTao,
+      NguoiTao,
+      NoiDung,
+      NguoiThayDoi,
+      TaiKhoanThayDoi,
+      MACAddress,
+      ComputerName,
+      MaSoKien,
+      MaKho,
+      SoMet,
+      SoYard,
+      SoGross,
+      QrTrangMapping,
+    });
+  }
+
+  /**
+   * Maps several tems in one transaction: either every tem is saved or none is,
+   * so a failure halfway can't leave saved tems that a retry would duplicate.
+   */
+  async saveMappingBatch(
+    items: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO[],
+  ): Promise<SaveMappingBatchResult> {
+    const pool = await this.databaseService.getPool();
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+
+    try {
+      const rows: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile[] = [];
+
+      for (let index = 0; index < items.length; index++) {
+        const row = await this.execSaveMapping(
+          new sql.Request(transaction),
+          items[index],
+        );
+
+        if (Number(row.KetQua) !== 1) {
+          await safeRollback(transaction);
+          return { ok: false, failedIndex: index, failedRow: row };
+        }
+
+        rows.push(row);
+      }
+
+      await transaction.commit();
+      return { ok: true, rows };
+    } catch (error) {
+      await safeRollback(transaction);
+      throw error;
+    }
+  }
+
+  private async execSaveMapping(
+    request: sql.Request,
+    p: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO,
+  ): Promise<wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile> {
+    const {
+      CTPGDId,
+      SL,
+      TKId,
+      TenNguoiTao,
+      NguoiTao,
+      NoiDung,
+      NguoiThayDoi,
+      TaiKhoanThayDoi,
+      MACAddress,
+      ComputerName,
+      MaSoKien,
+      MaKho,
+      SoMet,
+      SoYard,
+      SoGross,
+      QrTrangMapping,
+    } = p;
+
+    const result = await request
       .input('CTPGDId', sql.BigInt, CTPGDId)
       .input('SL', sql.Real, SL)
       .input('TKId', sql.BigInt, TKId)
@@ -313,14 +438,37 @@ export class MappingQrRepository implements IMapingQrRepository {
     SL: number,
     CayId: number,
     CTPGDId: number,
-  ): Promise<number> {
+  ): Promise<UpdateScannedRollResult> {
     const pool = await this.databaseService.getPool();
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
 
-    const result = await pool
-      .request()
-      .input('SL', sql.Float, SL)
-      .input('CayId', sql.BigInt, CayId)
-      .input('CTPGDId', sql.BigInt, CTPGDId).query(`
+    try {
+      // Lock the roll so a concurrent export/split can't change it under us.
+      const current = await new sql.Request(transaction)
+        .input('CayId', sql.BigInt, CayId)
+        .input('CTPGDId', sql.BigInt, CTPGDId).query(`
+          SELECT ISNULL(SoLuongXuat, 0) AS SoLuongXuat
+          FROM dbo.WH_ChiTietPhieuGiamDinh_Cay WITH (UPDLOCK, HOLDLOCK)
+          WHERE CayId = @CayId AND CTPGDId = @CTPGDId;
+        `);
+
+      const row = current.recordset?.[0];
+      if (!row) {
+        await safeRollback(transaction);
+        return { status: 'not_found', soLuongXuat: 0 };
+      }
+
+      const soLuongXuat = Number(row.SoLuongXuat) || 0;
+      if (SL + QTY_TOLERANCE < soLuongXuat) {
+        await safeRollback(transaction);
+        return { status: 'below_exported', soLuongXuat };
+      }
+
+      await new sql.Request(transaction)
+        .input('SL', sql.Float, SL)
+        .input('CayId', sql.BigInt, CayId)
+        .input('CTPGDId', sql.BigInt, CTPGDId).query(`
       UPDATE c
       SET c.SL = @SL,
           c.SoMet = CASE WHEN ISNULL(p.LoaiGiamDinh, 'pl') = 'pl' OR ISNULL(c.SoMet, 0) = ISNULL(c.SL, 0) THEN @SL ELSE c.SoMet END,
@@ -332,37 +480,15 @@ export class MappingQrRepository implements IMapingQrRepository {
       WHERE c.CayId = @CayId
         AND c.CTPGDId = @CTPGDId;
 
-      DECLARE @RowCount INT = @@ROWCOUNT;
-
-      IF @RowCount > 0
-      BEGIN
-        DECLARE @SLChungTu REAL = 0, @TongSLCay REAL = 0;
-        SELECT @SLChungTu = ISNULL(TRY_CAST(ChungTu AS REAL), ISNULL(TRY_CAST(PKList AS REAL), 0))
-        FROM dbo.WH_ChiTietPhieuGiamDinh
-        WHERE CTPGDId = @CTPGDId;
-
-        SELECT @TongSLCay = ISNULL(SUM(ISNULL(SL, 0)), 0)
-        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
-        WHERE CTPGDId = @CTPGDId;
-
-        UPDATE dbo.WH_ChiTietPhieuGiamDinh
-        SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
-            Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
-        WHERE CTPGDId = @CTPGDId;
-
-        IF EXISTS (
-          SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh
-          WHERE CTPGDId = @CTPGDId AND ISNULL(LoaiTiLe, '') <> ''
-        )
-        BEGIN
-          EXEC dbo.wh_chitietphieugiamdinh_capnhat_tilekiem @TiLe = 0, @LoaiTiLe = N'', @CTPGDId = @CTPGDId;
-        END
-      END
-
-      SELECT @RowCount AS RowsUpdated;
+      ${RECALC_THIEU_THUA_SQL}
     `);
 
-    return result.recordset?.[0]?.RowsUpdated ?? result.rowsAffected?.[0] ?? 0;
+      await transaction.commit();
+      return { status: 'updated', soLuongXuat };
+    } catch (error) {
+      await safeRollback(transaction);
+      throw error;
+    }
   }
 
   async splitScannedRoll(
@@ -372,8 +498,11 @@ export class MappingQrRepository implements IMapingQrRepository {
       .map((q) => Number(q))
       .filter((q) => Number.isFinite(q) && q > 0);
 
-    if (validQuantities.length < 2) {
-      throw new Error('Cần ít nhất 2 phần có số lượng lớn hơn 0 để tách tem');
+    if (
+      validQuantities.length < 2 ||
+      validQuantities.length !== (dto.quantities || []).length
+    ) {
+      throw new Error('Cần ít nhất 2 phần, mỗi phần có số lượng lớn hơn 0 để tách tem');
     }
 
     const pool = await this.databaseService.getPool();
@@ -387,7 +516,7 @@ export class MappingQrRepository implements IMapingQrRepository {
           SELECT TOP 1
             c.*,
             ISNULL(p.LoaiGiamDinh, 'pl') AS LoaiGiamDinh
-          FROM dbo.WH_ChiTietPhieuGiamDinh_Cay c
+          FROM dbo.WH_ChiTietPhieuGiamDinh_Cay c WITH (UPDLOCK, HOLDLOCK)
           LEFT JOIN dbo.WH_ChiTietPhieuGiamDinh ct ON ct.CTPGDId = c.CTPGDId
           LEFT JOIN dbo.WH_PhieuGiamDinh p ON p.PGDId = ct.PGDId
           WHERE c.CayId = @CayId AND c.CTPGDId = @CTPGDId
@@ -396,6 +525,16 @@ export class MappingQrRepository implements IMapingQrRepository {
       const orig = origRes.recordset?.[0];
       if (!orig) {
         throw new Error('Không tìm thấy tem gốc cần tách');
+      }
+
+      // Splitting only redistributes the roll's quantity; it must not create or
+      // lose material.
+      const origSL = Number(orig.SL) || 0;
+      const tongCacPhan = validQuantities.reduce((sum, q) => sum + q, 0);
+      if (Math.abs(tongCacPhan - origSL) > QTY_TOLERANCE) {
+        throw new Error(
+          `Tổng số lượng các phần (${Number(tongCacPhan.toFixed(4))}) phải bằng số lượng tem gốc (${Number(origSL.toFixed(4))})`,
+        );
       }
 
       const soLuongXuat = Number(orig.SoLuongXuat || 0);
@@ -539,27 +678,7 @@ export class MappingQrRepository implements IMapingQrRepository {
         sql.BigInt,
         dto.CTPGDId,
       ).query(`
-        DECLARE @SLChungTu REAL = 0, @TongSLCay REAL = 0;
-        SELECT @SLChungTu = ISNULL(TRY_CAST(ChungTu AS REAL), ISNULL(TRY_CAST(PKList AS REAL), 0))
-        FROM dbo.WH_ChiTietPhieuGiamDinh
-        WHERE CTPGDId = @CTPGDId;
-
-        SELECT @TongSLCay = ISNULL(SUM(ISNULL(SL, 0)), 0)
-        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
-        WHERE CTPGDId = @CTPGDId;
-
-        UPDATE dbo.WH_ChiTietPhieuGiamDinh
-        SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
-            Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
-        WHERE CTPGDId = @CTPGDId;
-
-        IF EXISTS (
-          SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh
-          WHERE CTPGDId = @CTPGDId AND ISNULL(LoaiTiLe, '') <> ''
-        )
-        BEGIN
-          EXEC dbo.wh_chitietphieugiamdinh_capnhat_tilekiem @TiLe = 0, @LoaiTiLe = N'', @CTPGDId = @CTPGDId;
-        END
+        ${RECALC_THIEU_THUA_SQL}
 
         SELECT *
         FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
@@ -570,55 +689,63 @@ export class MappingQrRepository implements IMapingQrRepository {
       await transaction.commit();
       return finalRes.recordset ?? [];
     } catch (error) {
-      await transaction.rollback();
+      await safeRollback(transaction);
       throw error;
     }
   }
 
-  async deleteScannedRoll(MaCay: string): Promise<number> {
+  async deleteScannedRoll(
+    CayId: number,
+    CTPGDId: number,
+  ): Promise<DeleteScannedRollResult> {
     const pool = await this.databaseService.getPool();
-    const result = await pool
-      .request()
-      .input('MaCay', sql.NVarChar(200), MaCay)
-      .query(`
-        DECLARE @CTPGDId BIGINT;
-        SELECT TOP 1 @CTPGDId = CTPGDId
-        FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
-        WHERE MaCay = @MaCay;
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
 
-        DELETE FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
-        WHERE MaCay = @MaCay;
+    try {
+      const current = await new sql.Request(transaction)
+        .input('CayId', sql.BigInt, CayId)
+        .input('CTPGDId', sql.BigInt, CTPGDId).query(`
+          SELECT
+            ISNULL(c.SoLuongXuat, 0) AS SoLuongXuat,
+            CASE WHEN EXISTS (
+              SELECT 1 FROM dbo.WH_ChiTietPhieuSoanHang_ChiTietCay sh
+              WHERE sh.CayId = c.CayId
+            ) THEN 1 ELSE 0 END AS DaVaoPhieuSoan
+          FROM dbo.WH_ChiTietPhieuGiamDinh_Cay c WITH (UPDLOCK, HOLDLOCK)
+          WHERE c.CayId = @CayId AND c.CTPGDId = @CTPGDId;
+        `);
 
-        DECLARE @RowCount INT = @@ROWCOUNT;
+      const row = current.recordset?.[0];
+      if (!row) {
+        await safeRollback(transaction);
+        return { status: 'not_found', soLuongXuat: 0 };
+      }
 
-        IF @RowCount > 0 AND @CTPGDId IS NOT NULL
-        BEGIN
-          DECLARE @SLChungTu REAL = 0, @TongSLCay REAL = 0;
-          SELECT @SLChungTu = ISNULL(TRY_CAST(ChungTu AS REAL), ISNULL(TRY_CAST(PKList AS REAL), 0))
-          FROM dbo.WH_ChiTietPhieuGiamDinh
-          WHERE CTPGDId = @CTPGDId;
+      const soLuongXuat = Number(row.SoLuongXuat) || 0;
+      if (soLuongXuat > 0) {
+        await safeRollback(transaction);
+        return { status: 'exported', soLuongXuat };
+      }
+      if (Number(row.DaVaoPhieuSoan) === 1) {
+        await safeRollback(transaction);
+        return { status: 'picked', soLuongXuat };
+      }
 
-          SELECT @TongSLCay = ISNULL(SUM(ISNULL(SL, 0)), 0)
-          FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
-          WHERE CTPGDId = @CTPGDId;
+      await new sql.Request(transaction)
+        .input('CayId', sql.BigInt, CayId)
+        .input('CTPGDId', sql.BigInt, CTPGDId).query(`
+          DELETE FROM dbo.WH_ChiTietPhieuGiamDinh_Cay
+          WHERE CayId = @CayId AND CTPGDId = @CTPGDId;
 
-          UPDATE dbo.WH_ChiTietPhieuGiamDinh
-          SET Thieu = CASE WHEN @SLChungTu - @TongSLCay > 0 THEN ROUND(@SLChungTu - @TongSLCay, 2) ELSE 0 END,
-              Thua  = CASE WHEN @TongSLCay - @SLChungTu > 0 THEN ROUND(@TongSLCay - @SLChungTu, 2) ELSE 0 END
-          WHERE CTPGDId = @CTPGDId;
+          ${RECALC_THIEU_THUA_SQL}
+        `);
 
-          IF EXISTS (
-            SELECT 1 FROM dbo.WH_ChiTietPhieuGiamDinh
-            WHERE CTPGDId = @CTPGDId AND ISNULL(LoaiTiLe, '') <> ''
-          )
-          BEGIN
-            EXEC dbo.wh_chitietphieugiamdinh_capnhat_tilekiem @TiLe = 0, @LoaiTiLe = N'', @CTPGDId = @CTPGDId;
-          END
-        END
-
-        SELECT @RowCount AS RowsDeleted;
-      `);
-
-    return result.recordset?.[0]?.RowsDeleted ?? result.rowsAffected?.[0] ?? 0;
+      await transaction.commit();
+      return { status: 'deleted', soLuongXuat };
+    } catch (error) {
+      await safeRollback(transaction);
+      throw error;
+    }
   }
 }

@@ -1,3 +1,5 @@
+import { clearSession, getAccessToken } from "../auth/session";
+
 function normalizeMojibake(value) {
   if (typeof value !== "string" || !/[ÃÂ]|á[º»]/u.test(value)) {
     return value;
@@ -34,14 +36,32 @@ function normalizeApiMessage(data) {
   return data;
 }
 
+function authHeaders(extra = {}) {
+  const token = getAccessToken();
+  return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
+}
+
+let redirectingToLogin = false;
+
+// The login token is missing, expired or rejected: drop the stored session and
+// reload, so PrivateRoute sends the user to /login and back here afterwards.
+function handleUnauthorized(response) {
+  if (response.status !== 401 || redirectingToLogin) return;
+  redirectingToLogin = true;
+  clearSession();
+  window.location.reload();
+}
+
 export async function postJson(url, payload) {
   const response = await fetch(url, {
     method: "POST",
-    headers: {
+    headers: authHeaders({
       "Content-Type": "application/json",
-    },
+    }),
     body: JSON.stringify(payload),
   });
+
+  handleUnauthorized(response);
 
   const data = normalizeApiMessage(await response.json());
 
@@ -57,7 +77,9 @@ export async function postJson(url, payload) {
 }
 
 export async function getJson(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, { headers: authHeaders() });
+
+  handleUnauthorized(response);
 
   if (!response.ok) {
     throw new Error("HTTP Error");

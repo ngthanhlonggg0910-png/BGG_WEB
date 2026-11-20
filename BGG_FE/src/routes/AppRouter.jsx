@@ -7,7 +7,7 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import { getCurrentUser } from "../shared/auth/session";
+import { hasValidSession } from "../shared/auth/session";
 
 import Login from "../features/auth/pages/LoginPage";
 import Home from "../features/home/pages/HomePage";
@@ -52,9 +52,8 @@ function ScrollToTop() {
 // Kiểm tra user đã đăng nhập chưa
 function PrivateRoute({ children }) {
   const location = useLocation();
-  const user = getCurrentUser();
 
-  if (!user) {
+  if (!hasValidSession()) {
     return (
       <Navigate
         to="/login"
@@ -69,9 +68,7 @@ function PrivateRoute({ children }) {
 
 // Khi mở app tại "/"
 function StartRoute() {
-  const user = getCurrentUser();
-
-  if (user) {
+  if (hasValidSession()) {
     return <Navigate to="/home" replace />;
   }
 

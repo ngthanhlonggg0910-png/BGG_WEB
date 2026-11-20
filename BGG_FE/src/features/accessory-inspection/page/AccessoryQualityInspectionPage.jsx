@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
-  ClipboardCheck,
   ListChecks,
   PackageSearch,
   X,
@@ -10,12 +9,12 @@ import {
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import DeclaredAccessoryDefectCard from "../components/DeclaredAccessoryDefectCard";
 import ScannedRollsManagerSection from "../../mapping-qr/components/ScannedRollsManagerSection";
+import InspectionConfirmActions from "../../mapping-qr/components/InspectionConfirmActions";
 import { useLocation } from "react-router-dom";
 import {
   getAccessoryDefects,
   saveAccessoryInspectionRate,
   updateHuongXuLy,
-  updateTrangThai,
   khaiBaoLoiPhuLieu,
   layDanhSachLoiKhaiBao,
   xoaLoiKhaiBao,
@@ -25,7 +24,6 @@ import {
   showSuccessToast,
 } from "../../../shared/components/ui/CustomToast";
 import { getCurrentUser } from "../../../shared/auth/session";
-import { getComputerName } from "../../../shared/utils/getComputerName";
 
 const CUSTOM_AQL_RATE = "Theo AQL %";
 const PROCESSING_ACTIONS = {
@@ -79,17 +77,13 @@ export default function AccessoryQualityInspectionPage() {
   const [isSavingDefect, setIsSavingDefect] = useState(false);
   const defectRequestInFlightRef = useRef(false);
   const [processingAction, setProcessingAction] = useState(null);
-  const [isConfirmingInspection, setIsConfirmingInspection] = useState(false);
   const [isInspectionRateModalOpen, setIsInspectionRateModalOpen] =
     useState(false);
   const [isUpdatingProcessingStatus, setIsUpdatingProcessingStatus] =
     useState(false);
-  const [isConfirmInspectionModalOpen, setIsConfirmInspectionModalOpen] =
-    useState(false);
   const [dsKhaiBaoLoi, setDsKhaiBaoLoi] = useState([]);
   const location = useLocation();
   const user = getCurrentUser();
-  const TKId = user?.data?.TKId;
   const processingOption = PROCESSING_ACTIONS[processingAction];
   const tenNguoiTao = [user?.data?.HoVaTenLot, user?.data?.Ten]
     .filter(Boolean)
@@ -318,58 +312,6 @@ export default function AccessoryQualityInspectionPage() {
     }
   };
 
-  const handleOpenConfirmInspectionModal = () => {
-    setIsConfirmInspectionModalOpen(true);
-  };
-
-  const handleCloseConfirmInspectionModal = () => {
-    setIsConfirmInspectionModalOpen(false);
-  };
-
-  const handleSubmitConfirmInspection = async () => {
-    if (isConfirmingInspection) return;
-
-    const PGDId = Number(materialInfo.pgdId);
-
-    if (!Number.isSafeInteger(PGDId) || PGDId <= 0) {
-      showErrorToast("Không tìm thấy phiếu giám định.");
-      return;
-    }
-
-    setIsConfirmingInspection(true);
-
-    try {
-      const payload = {
-        PGDId: PGDId,
-        TrangThai: "DAXACNHAN",
-        NoiDung:
-          "Cập nhật Đã xác nhận PGD phụ liệu từ ứng dụng WebApp (Kiểm PL)",
-        NguoiThayDoi: tenNguoiTao,
-        TaiKhoanThayDoi: TKId,
-        MACAddress: "",
-        ComputerName: getComputerName(),
-      };
-
-      const response = await updateTrangThai(payload);
-      if (!response?.success || response?.data?.KetQua !== 1) {
-        showErrorToast(response.message || "Xác nhận phiếu giám định thất bại");
-        return;
-      }
-      handleCloseConfirmInspectionModal();
-      showSuccessToast(
-        response.message || "Xác nhận phiếu giám định thành công",
-      );
-    } catch (error) {
-      console.error("Lỗi xác nhận phiếu giám định FE: ", error);
-      showErrorToast(
-        error instanceof Error
-          ? error.message
-          : "Không thể xác nhận phiếu giám định.",
-      );
-    } finally {
-      setIsConfirmingInspection(false);
-    }
-  };
 
   const handleDeleteLoiKhaiBao = async (Id) => {
     if (!Number.isSafeInteger(Number(Id)) || Number(Id) <= 0) {
@@ -397,8 +339,6 @@ export default function AccessoryQualityInspectionPage() {
 
   const actionButtonClass =
     "flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-2xl border border-egmf-border bg-white p-4 text-center text-sm font-extrabold leading-tight text-egmf-primary transition hover:border-egmf-primary hover:bg-egmf-primary-tint focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 active:scale-[0.98]";
-  const wideActionButtonClass =
-    "flex min-h-14 w-full items-center justify-center gap-2 rounded-xl border border-egmf-border bg-white px-4 py-3 text-sm font-bold text-egmf-primary transition hover:border-egmf-primary hover:bg-egmf-primary-tint focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 active:scale-[0.98]";
 
   return (
     <MainLayout
@@ -508,17 +448,10 @@ export default function AccessoryQualityInspectionPage() {
             </div>
 
             <div className="mx-auto mt-5 max-w-md border-t border-egmf-border-subtle pt-4">
-              <button
-                type="button"
-                onClick={handleOpenConfirmInspectionModal}
-                className={wideActionButtonClass}
-                disabled={isConfirmingInspection}
-              >
-                <ClipboardCheck size={19} strokeWidth={2.4} />
-                {isConfirmingInspection
-                  ? "Đang xác nhận..."
-                  : "Xác nhận phiếu giám định"}
-              </button>
+              <InspectionConfirmActions
+                pgdId={materialInfo.pgdId}
+                maPhieu={materialInfo.maPhieu}
+              />
             </div>
           </section>
 
@@ -885,84 +818,6 @@ export default function AccessoryQualityInspectionPage() {
           </div>
         )}
 
-        {isConfirmInspectionModalOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-3 backdrop-blur-[2px]"
-            onClick={handleCloseConfirmInspectionModal}
-          >
-            <section
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="confirm-inspection-modal-title"
-              className="w-full max-w-md overflow-hidden rounded-3xl border border-egmf-border bg-white shadow-[0_28px_72px_rgba(15,23,42,.25)]"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <header className="relative overflow-hidden bg-gradient-to-br from-egmf-primary-soft via-white to-egmf-surface-subtle px-5 pb-5 pt-6 sm:px-6">
-                <span className="absolute -right-7 -top-7 size-28 rounded-full bg-egmf-primary/10" />
-                <span className="absolute -right-1 top-12 size-12 rounded-full border-[10px] border-egmf-primary/10" />
-                <div className="relative flex items-start gap-4">
-                  <span className="grid size-13 shrink-0 place-items-center rounded-2xl bg-egmf-primary text-white shadow-[0_10px_22px_rgba(37,99,235,.28)]">
-                    <ClipboardCheck size={26} strokeWidth={2.4} />
-                  </span>
-                  <div className="min-w-0 pt-0.5">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-egmf-primary/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-egmf-primary">
-                      <CheckCircle2 size={13} strokeWidth={2.8} />
-                      Sẵn sàng xác nhận
-                    </span>
-                    <h2
-                      id="confirm-inspection-modal-title"
-                      className="m-0 mt-2 text-lg font-extrabold text-egmf-ink"
-                    >
-                      Xác nhận phiếu giám định
-                    </h2>
-                    <p className="m-0 mt-1 text-sm leading-5 text-egmf-muted">
-                      Kiểm tra lại thông tin trước khi hoàn tất phiếu.
-                    </p>
-                  </div>
-                </div>
-              </header>
-
-              <div className="px-5 py-5 sm:px-6">
-                <div className="flex items-center gap-3 rounded-2xl border border-egmf-primary/15 bg-egmf-primary-soft/60 p-3.5">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-egmf-primary shadow-sm">
-                    <ClipboardCheck size={19} strokeWidth={2.3} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="m-0 text-[11px] font-bold uppercase tracking-[0.1em] text-egmf-muted">
-                      Mã phiếu giám định
-                    </p>
-                    <p className="m-0 mt-0.5 truncate text-base font-extrabold text-egmf-ink">
-                      {materialInfo.maPhieu || "—"}
-                    </p>
-                  </div>
-                </div>
-                <p className="m-0 mt-4 text-sm leading-5 text-egmf-ink-secondary">
-                  Bạn có chắc muốn xác nhận phiếu giám định này? Thao tác sẽ
-                  chuyển phiếu sang bước tiếp theo.
-                </p>
-              </div>
-
-              <footer className="flex flex-col-reverse gap-2.5 border-t border-egmf-border-subtle bg-egmf-surface-subtle px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-                <button
-                  type="button"
-                  onClick={handleCloseConfirmInspectionModal}
-                  className="flex h-11 items-center justify-center gap-2 rounded-xl border border-egmf-border bg-white px-5 text-sm font-bold text-egmf-ink-secondary transition hover:border-egmf-primary-border hover:bg-egmf-primary-tint hover:text-egmf-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
-                >
-                  <X size={17} strokeWidth={2.5} />
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSubmitConfirmInspection}
-                  className="flex h-11 items-center justify-center gap-2 rounded-xl bg-egmf-primary px-5 text-sm font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20"
-                >
-                  <CheckCircle2 size={18} strokeWidth={2.5} />
-                  Xác nhận
-                </button>
-              </footer>
-            </section>
-          </div>
-        )}
       </div>
     </MainLayout>
   );

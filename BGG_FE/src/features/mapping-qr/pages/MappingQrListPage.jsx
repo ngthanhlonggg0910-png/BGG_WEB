@@ -8,18 +8,22 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Button, ConfigProvider, DatePicker } from "antd";
+import { Button, ConfigProvider } from "antd";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import { formatDateTime } from "../../../shared/utils/formatDateTime";
 import ReactSelect from "react-select";
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
+import DateRangeQuickPicker from "../../../shared/components/ui/DateRangeQuickPicker";
 import {
   getDanhSachTrangThaiPhieuGiamDinh,
   getDanhSachPhieuGiamDinhTheoThoiGian,
   getDanhSachVatTuTheoBarcodeKien,
 } from "../api/mappingQrApi";
 import { showErrorToast } from "../../../shared/components/ui/CustomToast";
+import InspectionConfirmActions from "../components/InspectionConfirmActions";
+import { getQuyenXacNhanPhieu } from "../api/inspectionConfirmApi";
+import { getCurrentProfile } from "../../../shared/auth/session";
 
 // const statusOptions = [
 //   { label: "Tất cả", value: "all" },
@@ -82,8 +86,8 @@ const statusSelectStyles = {
     borderRadius: 10,
     boxShadow: state.isFocused ? "0 0 0 3px rgba(37, 99, 235, 0.12)" : "none",
     cursor: "pointer",
-    height: 40,
-    minHeight: 40,
+    height: 44,
+    minHeight: 44,
   }),
   dropdownIndicator: (base) => ({ ...base, color: "#2563eb", padding: 7 }),
   indicatorSeparator: () => ({ display: "none" }),
@@ -128,6 +132,41 @@ export default function MappingQrListPage({
     savedFilter?.toDate ? dayjs(savedFilter.toDate) : null,
   ]);
   const [status, setStatus] = useState(savedFilter?.status ?? null);
+  // Quyền Xác nhận / Hủy xác nhận của tài khoản (theo phân quyền desktop), lấy một lần.
+  const [quyenXacNhan, setQuyenXacNhan] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getQuyenXacNhanPhieu()
+      .then((response) => {
+        if (!cancelled && response?.data) setQuyenXacNhan(response.data);
+      })
+      .catch((error) => console.error("Không lấy được quyền xác nhận phiếu:", error));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handlePhieuStatusChange = (pgdId, trangThai) => {
+    // Người xác nhận trở thành người giám định (backend ghi cùng lúc khi xác nhận).
+    const profile = getCurrentProfile();
+    const tenNguoiXacNhan = [profile?.HoVaTenLot, profile?.Ten]
+      .filter(Boolean)
+      .join(" ");
+    const nextList = list.map((phieu) =>
+      phieu.pGDId === pgdId
+        ? {
+            ...phieu,
+            trangThai,
+            ...(trangThai === "DAXACNHAN" && tenNguoiXacNhan
+              ? { TenNguoiGiamDinh: tenNguoiXacNhan }
+              : {}),
+          }
+        : phieu,
+    );
+    setList(nextList);
+    saveFilter(loai, { dateRange, keyword, list: nextList, status });
+  };
 
   const listFilter = list.filter((item) => {
     const search = keyword?.trim().toLowerCase() || "";
@@ -177,12 +216,15 @@ export default function MappingQrListPage({
     }
   };
 
-  const handleFilter = async () => {
+  // `rangeOverride` is passed by the quick-date buttons, which filter right away
+  // (state from setDateRange is not updated yet in this call).
+  const handleFilter = async (rangeOverride) => {
+    const range = Array.isArray(rangeOverride) ? rangeOverride : dateRange;
     const cleanKeyword = keyword.trim();
     const isBarcodePattern = /^(GPA|PAH|NAH)/i.test(cleanKeyword);
 
     // Nếu người dùng nhập mã barcode kiện (VD: GPA26110306) hoặc chưa chọn ngày nhưng có nhập mã để tìm
-    if (isBarcodePattern || ((!dateRange?.[0] || !dateRange?.[1]) && cleanKeyword)) {
+    if (isBarcodePattern || ((!range?.[0] || !range?.[1]) && cleanKeyword)) {
       setLoading(true);
       try {
         const barcodeRes = await getDanhSachVatTuTheoBarcodeKien(cleanKeyword);
@@ -193,14 +235,14 @@ export default function MappingQrListPage({
           }));
           setList(matchedItems);
           saveFilter(loai, {
-            dateRange,
+            dateRange: range,
             keyword: cleanKeyword,
             list: matchedItems,
             status,
           });
           return;
         }
-        if (!dateRange?.[0] || !dateRange?.[1]) {
+        if (!range?.[0] || !range?.[1]) {
           setList([]);
           showErrorToast(`Không tìm thấy phiếu giám định cho mã "${cleanKeyword}"`);
           return;
@@ -212,7 +254,7 @@ export default function MappingQrListPage({
       }
     }
 
-    if (!dateRange?.[0] || !dateRange?.[1]) {
+    if (!range?.[0] || !range?.[1]) {
       showErrorToast("Vui lòng chọn khoảng thời gian hoặc nhập mã barcode kiện");
       return;
     }
@@ -223,8 +265,8 @@ export default function MappingQrListPage({
       const payload = {
         LoaiGiamDinh: loai,
         KieuThoiGian: "time",
-        NgayBatDau: dateRange[0].format("YYYY-MM-DD"),
-        NgayKetThuc: dateRange[1].format("YYYY-MM-DD"),
+        NgayBatDau: range[0].format("YYYY-MM-DD"),
+        NgayKetThuc: range[1].format("YYYY-MM-DD"),
         TrangThai: status || "ALL",
       };
 
@@ -267,7 +309,7 @@ export default function MappingQrListPage({
 
       setList(filteredData);
       saveFilter(loai, {
-        dateRange,
+        dateRange: range,
         keyword: cleanKeyword,
         list: filteredData,
         status,
@@ -325,39 +367,11 @@ export default function MappingQrListPage({
               )}
             </nav>
             <section className="rounded-xl border border-egmf-border bg-egmf-surface-raised p-3 shadow-sm sm:p-4">
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-                  <div className="min-w-0">
-                    <label className="mb-1 block text-xs font-bold text-egmf-ink-secondary">Từ ngày</label>
-                    <DatePicker
-                      allowClear={false}
-                      className="!flex !h-10 !w-full !items-center !rounded-lg [&_.ant-picker-input>input]:!text-sm [&_.ant-picker-input>input]:!font-medium"
-                      format="DD/MM/YYYY"
-                      onChange={(date) =>
-                        setDateRange((previous) => [
-                          date,
-                          previous?.[1] ?? null,
-                        ])
-                      }
-                      value={dateRange?.[0]}
-                    />
-                  </div>
-
-                  <div className="min-w-0">
-                    <label className="mb-1 block text-xs font-bold text-egmf-ink-secondary">Đến ngày</label>
-                    <DatePicker
-                      allowClear={false}
-                      className="!flex !h-10 !w-full !items-center !rounded-lg [&_.ant-picker-input>input]:!text-sm [&_.ant-picker-input>input]:!font-medium"
-                      format="DD/MM/YYYY"
-                      onChange={(date) =>
-                        setDateRange((previous) => [
-                          previous?.[0] ?? null,
-                          date,
-                        ])
-                      }
-                      value={dateRange?.[1]}
-                    />
-                  </div>
-                </div>
+                <DateRangeQuickPicker
+                  value={dateRange}
+                  onChange={setDateRange}
+                  onPresetSelect={(range) => handleFilter(range)}
+                />
 
                 <div className="mt-2.5 grid grid-cols-[minmax(0,1fr)_96px] items-end gap-2.5 border-t border-egmf-border-subtle pt-2.5 sm:grid-cols-[minmax(0,1fr)_112px] sm:gap-3">
                   <div>
@@ -379,7 +393,7 @@ export default function MappingQrListPage({
                   </div>
 
                   <Button
-                    className="!h-[40px] !w-full !rounded-lg !bg-egmf-primary !px-3 !text-sm !font-bold !shadow-egmf-primary-compact hover:!bg-egmf-primary-strong"
+                    className="!h-[44px] !w-full !rounded-lg !bg-egmf-primary !px-3 !text-sm !font-bold !shadow-egmf-primary-compact hover:!bg-egmf-primary-strong"
                     loading={loading}
                     onClick={handleFilter}
                     type="primary"
@@ -500,6 +514,19 @@ export default function MappingQrListPage({
                                 <dd className="m-0 mt-0.5 truncate font-semibold text-egmf-ink-secondary">{item.TenNguoiGiamDinh ?? "—"}</dd>
                               </div>
                             </dl>
+
+                            {quyenXacNhan && (
+                              <InspectionConfirmActions
+                                compact
+                                pgdId={item.pGDId}
+                                maPhieu={item.maPhieu}
+                                trangThai={item.trangThai}
+                                quyen={quyenXacNhan}
+                                onStatusChange={(trangThai) =>
+                                  handlePhieuStatusChange(item.pGDId, trangThai)
+                                }
+                              />
+                            )}
                           </div>
 
                           <ChevronRight
