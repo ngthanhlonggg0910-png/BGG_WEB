@@ -33,6 +33,11 @@ export async function saveMapping(payload) {
   );
 }
 
+// Saves every tem in one transaction: all of them are mapped, or none is.
+export async function saveMappingBatch(items) {
+  return postJson("/api/mapping-qr/saveMappingBatch", { items });
+}
+
 export async function getScannedRolls(CTPGDId, QrTrangMapping) {
   return postJson("/api/mapping-qr/getScannedRolls", {
     CTPGDId: CTPGDId,
@@ -65,8 +70,10 @@ export async function splitScannedRoll(payload) {
   });
 }
 
-export async function deleteScannedRoll(MaCay) {
+export async function deleteScannedRoll({ CayId, CTPGDId, MaCay }) {
   return postJson("/api/mapping-qr/deleteScannedRoll", {
+    CayId,
+    CTPGDId,
     MaCay,
   });
 }

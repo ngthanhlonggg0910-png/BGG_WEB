@@ -40,8 +40,15 @@ export class splitScannedRoll_RequestDTO {
   NguoiTao?: number;
 }
 
+export class saveMappingBatch_RequestDTO {
+  items: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_RequestDTO[];
+}
+
 export class deleteScannedRoll_RequestDTO {
-  MaCay: string;
+  CayId: number;
+  CTPGDId: number;
+  /** Only used in messages; the roll is identified by CayId + CTPGDId. */
+  MaCay?: string;
 }
 
 export class getMaterialsByQrTrang_RequestDTO {

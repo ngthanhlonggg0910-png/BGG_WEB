@@ -37,6 +37,13 @@ export class wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile_ResponseDT
   data: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile;
 }
 
+export class saveMappingBatch_ResponseDTO {
+  success: boolean;
+  message: string;
+  savedCount: number;
+  data: wh_ChiTietPhieuGiamDinhCay_ThemMoi_MappingQRTrang_Mobile[];
+}
+
 export class getScannedRolls_ResponseDTO {
   success: boolean;
   message: string;
