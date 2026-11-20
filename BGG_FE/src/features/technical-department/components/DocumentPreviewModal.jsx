@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import AppSelect from "../../../shared/components/ui/AppSelect";
+import { fetchBlob } from "../../../shared/api/httpClient";
 import { parseExcelSheets } from "../utils/excelPreview.utils";
 import { getSelectedDocumentPreview } from "../utils/documentPreview.utils";
 import DocumentPreviewLoading from "./DocumentPreviewLoading";
@@ -41,6 +42,43 @@ export default function DocumentPreviewModal({
     selectedIndex,
   );
 
+  // File được tải một lần kèm token đăng nhập; ảnh/PDF/link dùng blob URL,
+  // Word/Excel đọc trực tiếp từ Blob.
+  const [loadedFile, setLoadedFile] = useState(null);
+  const [fileError, setFileError] = useState("");
+  const documentUrl = selectedDocument?.url;
+  const fileBlob = loadedFile?.url === documentUrl ? loadedFile.blob : null;
+  const objectUrl = loadedFile?.url === documentUrl ? loadedFile.objectUrl : "";
+
+  useEffect(() => {
+    if (!isOpen || !documentUrl) return undefined;
+
+    let isCancelled = false;
+    let createdUrl = "";
+    setFileError("");
+
+    fetchBlob(documentUrl)
+      .then((blob) => {
+        if (isCancelled) return;
+        createdUrl = URL.createObjectURL(blob);
+        setLoadedFile({ url: documentUrl, blob, objectUrl: createdUrl });
+      })
+      .catch((error) => {
+        console.error("Lỗi tải tài liệu:", error);
+        if (!isCancelled) {
+          setFileError("Không tải được tài liệu.");
+          setIsImageLoading(false);
+          setIsWordLoading(false);
+          setIsExcelLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [isOpen, documentUrl]);
+
   const updateWordFitZoom = useCallback(() => {
     const previewElement = wordPreviewRef.current;
     const pageElements = wordRef.current?.querySelectorAll("section.docx");
@@ -66,7 +104,7 @@ export default function DocumentPreviewModal({
   }, [selectedDocument?.url, typeFile]);
 
   useEffect(() => {
-    if (!isOpen || typeFile !== 2 || !selectedDocument?.url || !wordRef.current) {
+    if (!isOpen || typeFile !== 2 || !fileBlob || !wordRef.current) {
       return undefined;
     }
 
@@ -75,12 +113,9 @@ export default function DocumentPreviewModal({
 
     const loadWord = async () => {
       try {
-        const response = await fetch(selectedDocument.url);
-        const blob = await response.blob();
-
         if (!isCancelled && wordRef.current) {
           wordRef.current.innerHTML = "";
-          await renderAsync(blob, wordRef.current);
+          await renderAsync(fileBlob, wordRef.current);
           requestAnimationFrame(updateWordFitZoom);
         }
       } catch (error) {
@@ -94,7 +129,7 @@ export default function DocumentPreviewModal({
     return () => {
       isCancelled = true;
     };
-  }, [isOpen, selectedDocument?.url, typeFile, updateWordFitZoom]);
+  }, [isOpen, fileBlob, typeFile, updateWordFitZoom]);
 
   useEffect(() => {
     if (!isOpen || typeFile !== 2 || !wordPreviewRef.current) {
@@ -107,7 +142,7 @@ export default function DocumentPreviewModal({
   }, [isOpen, typeFile, updateWordFitZoom]);
 
   useEffect(() => {
-    if (!isOpen || !selectedDocument?.url || typeFile !== 3) return undefined;
+    if (!isOpen || !fileBlob || typeFile !== 3) return undefined;
 
     let isCancelled = false;
 
@@ -116,10 +151,7 @@ export default function DocumentPreviewModal({
       setExcelData([]);
 
       try {
-        const response = await fetch(selectedDocument.url);
-        if (!response.ok) throw new Error("Không thể tải Excel");
-
-        const buffer = await response.arrayBuffer();
+        const buffer = await fileBlob.arrayBuffer();
         const sheets = parseExcelSheets(buffer);
 
         if (!isCancelled) setExcelData(sheets);
@@ -134,7 +166,7 @@ export default function DocumentPreviewModal({
     return () => {
       isCancelled = true;
     };
-  }, [isOpen, selectedDocument?.url, typeFile]);
+  }, [isOpen, fileBlob, typeFile]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -215,7 +247,7 @@ export default function DocumentPreviewModal({
                 <div className="flex shrink-0 items-center justify-between gap-2 border-b border-egmf-border-subtle bg-white px-2 py-1.5 sm:px-3">
                   <div className="flex items-center gap-1">
                     <a
-                      href={selectedDocument.url}
+                      href={objectUrl || undefined}
                       target="_blank"
                       rel="noreferrer"
                       title="Mở tệp ở tab mới"
@@ -225,8 +257,8 @@ export default function DocumentPreviewModal({
                       <ExternalLink size={17} />
                     </a>
                     <a
-                      href={selectedDocument.url}
-                      download
+                      href={objectUrl || undefined}
+                      download={selectedDocument.name}
                       title="Tải xuống"
                       aria-label="Tải xuống"
                       className="grid size-9 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-surface-subtle hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
@@ -284,8 +316,12 @@ export default function DocumentPreviewModal({
                 {typeFile === 1 && (
                   <div className="relative flex min-h-0 flex-1 touch-pan-x touch-pan-y items-center justify-center overflow-auto overscroll-contain bg-slate-100 p-2 sm:p-5">
                     {isImageLoading && <DocumentPreviewLoading label="Đang tải ảnh..." />}
+                    {fileError && (
+                      <p className="m-0 text-sm font-semibold text-red-600">{fileError}</p>
+                    )}
+                    {objectUrl && (
                     <img
-                      src={selectedDocument.url}
+                      src={objectUrl}
                       alt="Xem dạng ảnh"
                       onLoad={() => setIsImageLoading(false)}
                       onError={() => setIsImageLoading(false)}
@@ -295,6 +331,7 @@ export default function DocumentPreviewModal({
                         maxHeight: `${previewZoom * 100}%`,
                       }}
                     />
+                    )}
                   </div>
                 )}
 
@@ -332,7 +369,18 @@ export default function DocumentPreviewModal({
                   </div>
                 )}
 
-                {typeFile === 4 && <PdfPreview url={selectedDocument.url} />}
+                {typeFile === 4 &&
+                  (objectUrl ? (
+                    <PdfPreview url={objectUrl} />
+                  ) : (
+                    <div className="relative flex min-h-0 flex-1 items-center justify-center bg-slate-100">
+                      {fileError ? (
+                        <p className="m-0 text-sm font-semibold text-red-600">{fileError}</p>
+                      ) : (
+                        <DocumentPreviewLoading label="Đang tải PDF..." />
+                      )}
+                    </div>
+                  ))}
               </>
             )}
           </div>

@@ -87,3 +87,17 @@ export async function getJson(url) {
 
   return await response.json();
 }
+
+// Tải file (PDF/Word/Excel/ảnh) có kèm token đăng nhập. <img>/<iframe>/<a href>/pdf.js
+// không gửi được header Authorization, nên tải về thành Blob rồi dùng blob URL.
+export async function fetchBlob(url) {
+  const response = await fetch(url, { headers: authHeaders() });
+
+  handleUnauthorized(response);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.blob();
+}
