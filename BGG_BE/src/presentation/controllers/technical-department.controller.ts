@@ -37,12 +37,18 @@ import * as path from 'path';
 
 @Controller('technical-department')
 export class TechnicalDepartmentController {
-  // private readonly folderPath = String.raw`\\192.168.1.5\uploads\PhieuDieuTiet\Uploads\TaiLieuKyThuat`;
-  private readonly folderPath = 'D:\\Uploads\\TaiLieuKyThuat';
+  private readonly folderPath: string;
+
   constructor(
     @Inject('ITechnicalDepartmentService')
     private readonly technicalDepartmentService: ITechnicalDepartmentService,
-  ) {}
+  ) {
+    const folderPath = process.env.TECHNICAL_DOCUMENT_FOLDER_PATH;
+    if (!folderPath) {
+      throw new Error('Missing TECHNICAL_DOCUMENT_FOLDER_PATH');
+    }
+    this.folderPath = folderPath;
+  }
 
   @Post('TEC_GetGiayDeNghi_ByBarcodeMau')
   layThongTinGiayDeNghiTheoBarcodeMau(
@@ -63,7 +69,6 @@ export class TechnicalDepartmentController {
   @Get('files')
   getFiles() {
     const files = fs.readdirSync(this.folderPath);
-
     return {
       success: true,
       data: files,
@@ -72,10 +77,6 @@ export class TechnicalDepartmentController {
 
   @Get('files/:fileName')
   getFile(@Param('fileName') fileName: string, @Res() res: Response) {
-    const folderPath = process.env.TECHNICAL_DOCUMENT_FOLDER_PATH;
-    if (!folderPath) {
-      throw new InternalServerErrorException('Chưa cấu hình đường dẫn thư mục');
-    }
     if (
       !fileName ||
       fileName === '.' ||
@@ -85,7 +86,7 @@ export class TechnicalDepartmentController {
       throw new NotFoundException('Tên file không hợp lệ');
     }
 
-    const filePath = path.win32.join(folderPath, fileName);
+    const filePath = path.win32.join(this.folderPath, fileName);
 
     if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
       throw new NotFoundException('Không tìm thấy file');
