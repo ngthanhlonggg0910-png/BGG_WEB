@@ -8,13 +8,19 @@ import {
   Search,
 } from "lucide-react";
 
+import SelectSampleInspection from "../components/SelectSampleInspection";
+import SelectedInspectionType from "../components/SelectedInspectionType";
+
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import SampleImageCard from "../components/SampleImageCard";
 import DocumentPreviewModal from "../components/DocumentPreviewModal";
 import { displayPreviewValue } from "../utils/sampleInspection.utils";
 import { formatDateTime } from "../../../shared/utils/formatDateTime";
 
-const actions = [{ label: "Xem tài liệu kỹ thuật", icon: FileText }];
+const actions = [
+  { label: "Kiểm mẫu", icon: ClipboardCheck },
+  { label: "Xem tài liệu kỹ thuật", icon: FileText },
+];
 const detailGridClass =
   "grid grid-cols-2 gap-x-5 gap-y-3 sm:gap-x-6 [&>div]:min-w-0 [&_dt]:leading-4 [&_dd]:mt-0.5 [&_dd]:leading-5 [&_dd]:break-words";
 
@@ -22,9 +28,15 @@ import {
   layThongTinGiayDeNghiTheoBarcodeMau,
   layDanhSachFileTaiLieuTheoBarcodeMau,
   layTrangThaiTheoBarcodeMau,
+  capNhatTrangThaiBarcodeMau,
 } from "../api/technical-department.api";
 
-import { showErrorToast } from "../../../shared/components/ui/CustomToast";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "../../../shared/components/ui/CustomToast";
+import { Modal } from "antd";
+import { useNavigate } from "react-router-dom";
 
 export default function SampleInspectionPage() {
   const [barCodeMau, setBarCodeMau] = useState("");
@@ -37,7 +49,15 @@ export default function SampleInspectionPage() {
   const [dsFileName, setDsFileName] = useState([]);
   const [dsFile, setDsFile] = useState([]);
   const [loadingFile, setLoadingFile] = useState(false);
+  const [openPopup, setOpenPopup] = useState(false);
 
+  const [modeModal, setModeModal] = useState("Chọn loại");
+  const [selectedType, setSelectedType] = useState("QA"); //CHỌN LOẠI KIỂM
+  const [kqKiem, setKqKiem] = useState("");
+
+  const navigate = useNavigate();
+
+  console.log(kqKiem);
   //LẤY RA DANH SÁCH FILE THUỘC BarcodeMau
   const fetchDsFile = async () => {
     setLoadingFile(true);
@@ -61,18 +81,80 @@ export default function SampleInspectionPage() {
 
   //XỬ LÝ CÁC NÚT CHỨC NĂNG
   const handleAction = async (action) => {
-    if (action === "Xem tài liệu kỹ thuật") {
-      try {
-        setSelectedDocumentIndex(0);
-        setIsDocumentModalOpen(true);
-        const data = await fetchDsFile();
-        console.log("data: ", data);
-        setDsFileName(data.map((item) => item.DuongDanLocal.split("/").pop()));
-      } catch (error) {
-        console.error(error);
+    switch (action) {
+      case "Xem tài liệu kỹ thuật": {
+        try {
+          setSelectedDocumentIndex(0);
+          setIsDocumentModalOpen(true);
+          const data = await fetchDsFile();
+          console.log("data: ", data);
+          setDsFileName(
+            data.map((item) => item.DuongDanLocal.split("/").pop()),
+          );
+        } catch (error) {
+          console.error(error);
+        }
+        break;
       }
+
+      case "Kiểm mẫu": {
+        try {
+          setOpenPopup(true);
+        } catch (error) {}
+      }
+
+      default:
+        "Chức năng chưa hỗ trợ";
+        break;
     }
   };
+
+  console.log(modeModal, kqKiem);
+
+  const handleComfirmModal = async () => {
+    console.log(modeModal);
+    if (modeModal === "Chọn loại") {
+      setModeModal("Chọn kết quả kiểm");
+      return;
+    }
+
+    if (
+      modeModal === "Chọn kết quả kiểm" &&
+      ["HÀNG ĐẠT", "CHƯA KIỂM"].includes(kqKiem)
+    ) {
+      const payload = {
+        TrangThai: kqKiem,
+        isSua: kqKiem === "HÀNG SỬA" ? true : false,
+        BarcodeMau: barCodeMau,
+        LoaiKiemMau: selectedType,
+      };
+
+      const response = await capNhatTrangThaiBarcodeMau(payload);
+      if (!response.success) {
+        showErrorToast(response.message || "Cập nhật trạng thái thất bại");
+        return;
+      }
+      showSuccessToast(response.message || "Cập nhật trạng thái thành công");
+      setOpenPopup(false);
+      setModeModal("Chọn loại");
+      fetchTTGiayDeNghi();
+    }
+
+    if (
+      modeModal === "Chọn kết quả kiểm" &&
+      ["HÀNG LỖI", "HÀNG SỬA"].includes(kqKiem)
+    ) {
+      navigate("/sample-inspection/defects", {
+        state: {
+          barcodeMau: barCodeMau,
+          loaiKiem: selectedType,
+          kqKiem,
+        },
+      });
+    }
+  };
+
+  // console.log(modeModal);
 
   const fetchTTGiayDeNghi = async () => {
     setIsLoading(true);
@@ -254,7 +336,7 @@ export default function SampleInspectionPage() {
                       }
                     `}
                       >
-{displayPreviewValue(thongTinPhieu.TrangThai)}
+                        {displayPreviewValue(thongTinPhieu.TrangThai)}
                       </p>
                     </div>
                     <div>
@@ -275,7 +357,7 @@ export default function SampleInspectionPage() {
                       }
                     `}
                       >
-{displayPreviewValue(thongTinPhieu.TrangThaiAutonomy)}
+                        {displayPreviewValue(thongTinPhieu.TrangThaiAutonomy)}
                       </p>
                     </div>
                   </div>
@@ -286,7 +368,7 @@ export default function SampleInspectionPage() {
                         Mã hàng
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.MaHang)}
+                        {displayPreviewValue(thongTinPhieu.MaHang)}
                       </dd>
                     </div>
                     <div className="min-w-0">
@@ -294,7 +376,7 @@ export default function SampleInspectionPage() {
                         Mùa
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.Mua)}
+                        {displayPreviewValue(thongTinPhieu.Mua)}
                       </dd>
                     </div>
                     <div className="min-w-0">
@@ -302,7 +384,7 @@ export default function SampleInspectionPage() {
                         Brand
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.Brand)}
+                        {displayPreviewValue(thongTinPhieu.Brand)}
                       </dd>
                     </div>
                     <div className="min-w-0">
@@ -310,7 +392,7 @@ export default function SampleInspectionPage() {
                         Màu
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.Mau)}
+                        {displayPreviewValue(thongTinPhieu.Mau)}
                       </dd>
                     </div>
                     <div className="min-w-0">
@@ -318,7 +400,7 @@ export default function SampleInspectionPage() {
                         Size
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.Size)}
+                        {displayPreviewValue(thongTinPhieu.Size)}
                       </dd>
                     </div>
                     <div className="min-w-0">
@@ -326,7 +408,7 @@ export default function SampleInspectionPage() {
                         Loại mẫu
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.LoaiMau)}
+                        {displayPreviewValue(thongTinPhieu.LoaiMau)}
                       </dd>
                     </div>
                     <div className="col-span-full min-w-0 sm:col-span-2">
@@ -334,7 +416,7 @@ export default function SampleInspectionPage() {
                         KTTP
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.TenKTTP)}
+                        {displayPreviewValue(thongTinPhieu.TenKTTP)}
                       </dd>
                     </div>
                     <div className="min-w-0">
@@ -342,7 +424,7 @@ export default function SampleInspectionPage() {
                         Nhóm may
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.NhomMay)}
+                        {displayPreviewValue(thongTinPhieu.NhomMay)}
                       </dd>
                     </div>
                     <div className="col-span-full min-w-0">
@@ -350,7 +432,9 @@ export default function SampleInspectionPage() {
                         Ngày đồng bộ
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.NgayDongBo))}
+                        {displayPreviewValue(
+                          formatDateTime(thongTinPhieu.NgayDongBo),
+                        )}
                       </dd>
                     </div>
                     <div className="col-span-full min-w-0">
@@ -358,7 +442,7 @@ export default function SampleInspectionPage() {
                         Danh sách người may mẫu
                       </dt>
                       <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.DanhSachNguoiMayMau)}
+                        {displayPreviewValue(thongTinPhieu.DanhSachNguoiMayMau)}
                       </dd>
                     </div>
                   </dl>
@@ -391,7 +475,7 @@ export default function SampleInspectionPage() {
                               Trạng thái API
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.StatusCode)}
+                              {displayPreviewValue(thongTinPhieu.StatusCode)}
                             </dd>
                           </div>
                           <div>
@@ -399,7 +483,7 @@ export default function SampleInspectionPage() {
                               Barcode mẫu
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.BarcodeMau)}
+                              {displayPreviewValue(thongTinPhieu.BarcodeMau)}
                             </dd>
                           </div>
                           <div>
@@ -407,7 +491,7 @@ export default function SampleInspectionPage() {
                               Mã Master
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.MasterId)}
+                              {displayPreviewValue(thongTinPhieu.MasterId)}
                             </dd>
                           </div>
                           <div>
@@ -415,7 +499,9 @@ export default function SampleInspectionPage() {
                               ID thông tin SP
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.IdProductInformation)}
+                              {displayPreviewValue(
+                                thongTinPhieu.IdProductInformation,
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -423,7 +509,7 @@ export default function SampleInspectionPage() {
                               Site
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.Site)}
+                              {displayPreviewValue(thongTinPhieu.Site)}
                             </dd>
                           </div>
                           <div>
@@ -431,7 +517,7 @@ export default function SampleInspectionPage() {
                               Mã khách hàng
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.MaKhachHang)}
+                              {displayPreviewValue(thongTinPhieu.MaKhachHang)}
                             </dd>
                           </div>
                           <div>
@@ -439,7 +525,7 @@ export default function SampleInspectionPage() {
                               Chủng loại
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.ChungLoai)}
+                              {displayPreviewValue(thongTinPhieu.ChungLoai)}
                             </dd>
                           </div>
                           <div>
@@ -447,7 +533,7 @@ export default function SampleInspectionPage() {
                               PLI
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.PLI)}
+                              {displayPreviewValue(thongTinPhieu.PLI)}
                             </dd>
                           </div>
                           <div>
@@ -455,7 +541,7 @@ export default function SampleInspectionPage() {
                               PE/PM
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.PePm)}
+                              {displayPreviewValue(thongTinPhieu.PePm)}
                             </dd>
                           </div>
                           <div>
@@ -463,7 +549,7 @@ export default function SampleInspectionPage() {
                               R3 code
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.R3Code)}
+                              {displayPreviewValue(thongTinPhieu.R3Code)}
                             </dd>
                           </div>
                           <div>
@@ -471,7 +557,9 @@ export default function SampleInspectionPage() {
                               Ngày đề nghị
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.NgayDeNghi))}
+                              {displayPreviewValue(
+                                formatDateTime(thongTinPhieu.NgayDeNghi),
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -479,7 +567,9 @@ export default function SampleInspectionPage() {
                               Hình thức TT
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.HinhThucThanhToan)}
+                              {displayPreviewValue(
+                                thongTinPhieu.HinhThucThanhToan,
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -499,7 +589,7 @@ export default function SampleInspectionPage() {
                               SL xuất
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.SLXuat)}
+                              {displayPreviewValue(thongTinPhieu.SLXuat)}
                             </dd>
                           </div>
                           <div>
@@ -507,7 +597,7 @@ export default function SampleInspectionPage() {
                               SL lưu
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.SLLuu)}
+                              {displayPreviewValue(thongTinPhieu.SLLuu)}
                             </dd>
                           </div>
                           <div>
@@ -515,7 +605,7 @@ export default function SampleInspectionPage() {
                               Tổng SL
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.TongSL)}
+                              {displayPreviewValue(thongTinPhieu.TongSL)}
                             </dd>
                           </div>
                           <div className="col-span-full">
@@ -523,7 +613,7 @@ export default function SampleInspectionPage() {
                               Ghi chú KTTP
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.GhiChuKTTP)}
+                              {displayPreviewValue(thongTinPhieu.GhiChuKTTP)}
                             </dd>
                           </div>
                         </dl>
@@ -539,7 +629,9 @@ export default function SampleInspectionPage() {
                               Xác nhận QL phòng
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.XacNhanQLPhong)}
+                              {displayPreviewValue(
+                                thongTinPhieu.XacNhanQLPhong,
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -547,7 +639,9 @@ export default function SampleInspectionPage() {
                               Ngày cắt
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.NgayCat))}
+                              {displayPreviewValue(
+                                formatDateTime(thongTinPhieu.NgayCat),
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -555,7 +649,9 @@ export default function SampleInspectionPage() {
                               Ngày yêu cầu gửi mẫu
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.NgayYeuCauGuiMau))}
+                              {displayPreviewValue(
+                                formatDateTime(thongTinPhieu.NgayYeuCauGuiMau),
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -563,7 +659,9 @@ export default function SampleInspectionPage() {
                               Người yêu cầu gửi mail
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.NguoiYeuCauGuiMai)}
+                              {displayPreviewValue(
+                                thongTinPhieu.NguoiYeuCauGuiMai,
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -571,7 +669,9 @@ export default function SampleInspectionPage() {
                               Ngày thực tế gửi mail
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.NgayThucTeGuiMai))}
+                              {displayPreviewValue(
+                                formatDateTime(thongTinPhieu.NgayThucTeGuiMai),
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -579,7 +679,9 @@ export default function SampleInspectionPage() {
                               Số lần gửi mail
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.SoLanGuiMailAutonomy)}
+                              {displayPreviewValue(
+                                thongTinPhieu.SoLanGuiMailAutonomy,
+                              )}
                             </dd>
                           </div>
                           <div className="col-span-full">
@@ -587,7 +689,7 @@ export default function SampleInspectionPage() {
                               Ghi chú cắt
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.GhiChuCat)}
+                              {displayPreviewValue(thongTinPhieu.GhiChuCat)}
                             </dd>
                           </div>
                         </dl>
@@ -603,7 +705,9 @@ export default function SampleInspectionPage() {
                               Kết quả duyệt mẫu
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.KetQuaDuyetMau)}
+                              {displayPreviewValue(
+                                thongTinPhieu.KetQuaDuyetMau,
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -611,7 +715,11 @@ export default function SampleInspectionPage() {
                               Ngày nhận KQ duyệt
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.NgayNhanKQDuyetMau))}
+                              {displayPreviewValue(
+                                formatDateTime(
+                                  thongTinPhieu.NgayNhanKQDuyetMau,
+                                ),
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -619,7 +727,7 @@ export default function SampleInspectionPage() {
                               Kết quả GOPROD
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.KqGOPROD)}
+                              {displayPreviewValue(thongTinPhieu.KqGOPROD)}
                             </dd>
                           </div>
                           <div className="col-span-full">
@@ -627,7 +735,7 @@ export default function SampleInspectionPage() {
                               Lý do NOK
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.LyDoNOK)}
+                              {displayPreviewValue(thongTinPhieu.LyDoNOK)}
                             </dd>
                           </div>
                           <div className="col-span-full">
@@ -635,7 +743,7 @@ export default function SampleInspectionPage() {
                               NOK từ
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.LyDoNOKFrom)}
+                              {displayPreviewValue(thongTinPhieu.LyDoNOKFrom)}
                             </dd>
                           </div>
                           <div className="col-span-full">
@@ -643,7 +751,9 @@ export default function SampleInspectionPage() {
                               Ghi chú tiến độ mẫu
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.GhiChuTienDoMau)}
+                              {displayPreviewValue(
+                                thongTinPhieu.GhiChuTienDoMau,
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -651,7 +761,9 @@ export default function SampleInspectionPage() {
                               Ngày gửi mẫu lần 2
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.NgayGuiMau2))}
+                              {displayPreviewValue(
+                                formatDateTime(thongTinPhieu.NgayGuiMau2),
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -659,7 +771,9 @@ export default function SampleInspectionPage() {
                               Kết quả duyệt lần 2
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.KetQuaDuyetMau2)}
+                              {displayPreviewValue(
+                                thongTinPhieu.KetQuaDuyetMau2,
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -667,7 +781,9 @@ export default function SampleInspectionPage() {
                               Ngày nhận KQ lần 2
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.NgayNhanKQ2))}
+                              {displayPreviewValue(
+                                formatDateTime(thongTinPhieu.NgayNhanKQ2),
+                              )}
                             </dd>
                           </div>
                           <div className="col-span-full">
@@ -675,7 +791,7 @@ export default function SampleInspectionPage() {
                               Lý do NOK lần 2
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.LyDoNOK2)}
+                              {displayPreviewValue(thongTinPhieu.LyDoNOK2)}
                             </dd>
                           </div>
                           <div className="col-span-full">
@@ -683,7 +799,7 @@ export default function SampleInspectionPage() {
                               Ghi chú gửi lần 2
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.GhiChuGui2)}
+                              {displayPreviewValue(thongTinPhieu.GhiChuGui2)}
                             </dd>
                           </div>
                         </dl>
@@ -699,7 +815,9 @@ export default function SampleInspectionPage() {
                               Ngày xuất
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.NgayXuat))}
+                              {displayPreviewValue(
+                                formatDateTime(thongTinPhieu.NgayXuat),
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -707,7 +825,7 @@ export default function SampleInspectionPage() {
                               SL xuất thống kê
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.SLXuatThongKe)}
+                              {displayPreviewValue(thongTinPhieu.SLXuatThongKe)}
                             </dd>
                           </div>
                           <div>
@@ -715,7 +833,7 @@ export default function SampleInspectionPage() {
                               SL xuất còn lại
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.SLXuatConLai)}
+                              {displayPreviewValue(thongTinPhieu.SLXuatConLai)}
                             </dd>
                           </div>
                           <div className="col-span-full">
@@ -723,7 +841,7 @@ export default function SampleInspectionPage() {
                               Ghi chú thống kê
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.GhiChuThongKe)}
+                              {displayPreviewValue(thongTinPhieu.GhiChuThongKe)}
                             </dd>
                           </div>
                           <div>
@@ -743,7 +861,7 @@ export default function SampleInspectionPage() {
                               Người xác nhận
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.NguoiXacNhan)}
+                              {displayPreviewValue(thongTinPhieu.NguoiXacNhan)}
                             </dd>
                           </div>
                           <div>
@@ -751,7 +869,9 @@ export default function SampleInspectionPage() {
                               Thời gian xác nhận
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.ThoiGianXacNhan))}
+                              {displayPreviewValue(
+                                formatDateTime(thongTinPhieu.ThoiGianXacNhan),
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -759,7 +879,7 @@ export default function SampleInspectionPage() {
                               Người tạo
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.NguoiTao)}
+                              {displayPreviewValue(thongTinPhieu.NguoiTao)}
                             </dd>
                           </div>
                           <div>
@@ -767,7 +887,7 @@ export default function SampleInspectionPage() {
                               Tài khoản tạo
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.TKId)}
+                              {displayPreviewValue(thongTinPhieu.TKId)}
                             </dd>
                           </div>
                           <div>
@@ -775,7 +895,9 @@ export default function SampleInspectionPage() {
                               Thời gian tạo
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(formatDateTime(thongTinPhieu.ThoiGianTao))}
+                              {displayPreviewValue(
+                                formatDateTime(thongTinPhieu.ThoiGianTao),
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -783,7 +905,9 @@ export default function SampleInspectionPage() {
                               New/Recolor/Carry Over
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.NewRecolorCarryOver)}
+                              {displayPreviewValue(
+                                thongTinPhieu.NewRecolorCarryOver,
+                              )}
                             </dd>
                           </div>
                           <div>
@@ -791,7 +915,7 @@ export default function SampleInspectionPage() {
                               Số người may mẫu
                             </dt>
                             <dd className="m-0 text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.SoNguoiMayMau)}
+                              {displayPreviewValue(thongTinPhieu.SoNguoiMayMau)}
                             </dd>
                           </div>
                           <div>
@@ -799,7 +923,9 @@ export default function SampleInspectionPage() {
                               Người chỉnh sửa mới nhất
                             </dt>
                             <dd className="m-0 break-words text-[13px] font-semibold text-egmf-ink-secondary">
-{displayPreviewValue(thongTinPhieu.NguoiChinhSuaMoiNhat)}
+                              {displayPreviewValue(
+                                thongTinPhieu.NguoiChinhSuaMoiNhat,
+                              )}
                             </dd>
                           </div>
                         </dl>
@@ -835,6 +961,32 @@ export default function SampleInspectionPage() {
         selectedIndex={selectedDocumentIndex}
         onSelectedIndexChange={setSelectedDocumentIndex}
       />
+
+      {openPopup && (
+        <Modal
+          title="Kiểm mẫu"
+          open={openPopup}
+          onCancel={() => setOpenPopup(false)}
+          okText="Xác nhận"
+          cancelText="Hủy"
+          onOk={handleComfirmModal}
+        >
+          {modeModal === "Chọn loại" && (
+            <SelectedInspectionType
+              value={selectedType}
+              onChange={setSelectedType}
+            />
+          )}
+          {modeModal === "Chọn kết quả kiểm" && (
+            <SelectSampleInspection
+              barcodeMau={barCodeMau}
+              loai={selectedType}
+              value={kqKiem}
+              onChange={setKqKiem}
+            />
+          )}
+        </Modal>
+      )}
     </MainLayout>
   );
 }

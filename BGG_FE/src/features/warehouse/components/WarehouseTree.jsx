@@ -57,11 +57,7 @@ const getDetailLines = (fabric) =>
       return !commonLabels.has(label);
     });
 
-export default function WarehouseTree({
-  data = [],
-  tongSoCay = 0,
-  tongSoLuong = 0,
-}) {
+export default function WarehouseTree({ data = [] }) {
   const [keyword, setKeyword] = useState("");
   const [showSummary, setShowSummary] = useState(true);
   const [openGroups, setOpenGroups] = useState([]);
@@ -121,43 +117,6 @@ export default function WarehouseTree({
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      {/* HEADER TỔNG QUAN */}
-      <button
-        type="button"
-        aria-expanded={showSummary}
-        onClick={() => setShowSummary((prev) => !prev)}
-        className="w-full rounded-2xl p-4 text-left text-white shadow-egmf-primary-summary sm:p-5"
-        style={{ backgroundColor: "var(--egmf-primary)" }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
-            <Warehouse size={24} strokeWidth={2.2} />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <h2 className="m-0 text-xl font-extrabold text-white">
-              Tổng quan kho
-            </h2>
-            <p className="m-0 mt-1 text-sm font-medium text-white/85">
-              Danh sách vật tư và cây vải
-            </p>
-          </div>
-
-          <ChevronDown
-            size={24}
-            className={`shrink-0 transition-transform duration-200 ${
-              showSummary ? "rotate-180" : ""
-            }`}
-          />
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <HeaderStat label="Nhóm vật tư" value={groups.length} />
-          <HeaderStat label="Số cây" value={tongSoCay} />
-          <HeaderStat label="Tổng SL" value={formatNumber(tongSoLuong)} />
-        </div>
-      </button>
-
       {showSummary && (
         <>
           {/* SEARCH */}
@@ -366,53 +325,43 @@ function RollDetail({ fabric, group }) {
         <div className="grid grid-cols-2 gap-x-4 gap-y-4">
           <DetailInfo label="Khách hàng" value={fabric.KhachHang} />
           <DetailInfo label="Brand" value={fabric.Brand} />
-          <DetailInfo label="Item" value={fabric.Item ?? group.Item} />
-          <DetailInfo label="Art" value={fabric.Art ?? group.Art} />
-          <DetailInfo label="LOT" value={fabric.Lot ?? group.Lot} />
-          <DetailInfo label="Màu" value={fabric.MaMau ?? group.MaMau} />
         </div>
 
         {/* THÔNG TIN BỔ SUNG */}
         {details.length > 0 && (
-          <div className="mt-4 border-t border-slate-100 pt-4">
-            <h5 className="m-0 mb-2 text-base font-bold text-slate-900">
-              Thông tin bổ sung
-            </h5>
+          <div className="">
+            {details.map((line, index) => {
+              const colonIndex = line.indexOf(":");
 
-            <div className="divide-y divide-slate-100">
-              {details.map((line, index) => {
-                const colonIndex = line.indexOf(":");
-
-                if (colonIndex === -1) {
-                  return (
-                    <p
-                      key={index}
-                      className="m-0 break-words py-2.5 text-[15px] font-medium leading-6 text-slate-700"
-                    >
-                      {line}
-                    </p>
-                  );
-                }
-
-                const label = line.slice(0, colonIndex).trim();
-                const value = line.slice(colonIndex + 1).trim();
-
+              if (colonIndex === -1) {
                 return (
-                  <div
+                  <p
                     key={index}
-                    className="flex items-start justify-between gap-3 py-2.5"
+                    className="m-0 break-words py-2.5 text-[15px] font-medium leading-6 text-slate-700"
                   >
-                    <span className="min-w-0 flex-1 break-words text-sm font-medium text-slate-500">
-                      {label}
-                    </span>
-
-                    <span className="max-w-[60%] break-words text-right text-[15px] font-bold text-slate-900">
-                      {display(value)}
-                    </span>
-                  </div>
+                    {line}
+                  </p>
                 );
-              })}
-            </div>
+              }
+
+              const label = line.slice(0, colonIndex).trim();
+              const value = line.slice(colonIndex + 1).trim();
+
+              return (
+                <div
+                  key={index}
+                  className="flex items-start justify-between gap-3 py-2.5"
+                >
+                  <span className="min-w-0 flex-1 break-words text-sm font-medium text-slate-500">
+                    {label}
+                  </span>
+
+                  <span className="max-w-[60%] break-words text-right text-[15px] font-bold text-slate-900">
+                    {display(value)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
 

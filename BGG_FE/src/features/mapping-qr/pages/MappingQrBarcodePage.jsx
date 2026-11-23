@@ -14,6 +14,7 @@ import MainLayout from "../../../layouts/MainLayout/MainLayout";
 import { formatDateTime } from "../../../shared/utils/formatDateTime";
 
 function MappingQrCard({ item, onClick }) {
+  console.log(item);
   return (
     <article
       onClick={onClick}
@@ -25,7 +26,10 @@ function MappingQrCard({ item, onClick }) {
         </p>
         <p className="m-0">Số phiếu: {item.maPhieu ?? ""}</p>
         <p className="m-0">Mã hàng: {item.maHang ?? ""}</p>
-        <p className="m-0">Loại giám định: {item.loaiGiamDinh ?? ""}</p>
+        <p className="m-0">
+          Loại giám định:{" "}
+          {item.loaiGiamDinh.trim() === "pl" ? "Phụ liệu" : "Nguyên liệu"}
+        </p>
         <p className="m-0">Lô: {item.Lo ?? ""}</p>
         <p className="m-0">Mã rổ: {item.MaRo ?? ""}</p>
         <p className="m-0">Trạng thái: {item.trangThai ?? ""}</p>
@@ -97,8 +101,8 @@ export default function MappingQrBarcodePage() {
 
   return (
     <MainLayout screenTitle="Tìm barcode kiện">
-      <main className="min-h-full bg-egmf-surface px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-        <section className="mx-auto w-full max-w-2xl">
+      <main className="flex min-h-full flex-1 flex-col bg-egmf-surface px-4 pt-5 sm:px-6 sm:py-7 lg:px-8">
+        <section className="mx-auto mb-4 flex w-full max-w-2xl flex-1 flex-col sm:mb-0">
           {/* Tabs */}
           <nav
             aria-label="Kiểu tra cứu"
@@ -142,28 +146,20 @@ export default function MappingQrBarcodePage() {
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
               />
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-egmf-primary px-3 text-xs font-bold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:text-sm"
+              >
+                {loading ? <Loader2 size={17} className="animate-spin" /> : "Tra cứu"}
+              </button>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-egmf-primary px-4 text-[15px] font-bold text-white shadow-egmf-primary-compact transition-all hover:bg-egmf-primary-strong active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? (
-                <Loader2 size={20} className="animate-spin" />
-              ) : (
-                <>
-                  <Search size={18} strokeWidth={2.5} />
-                  Tra cứu barcode
-                </>
-              )}
-            </button>
           </form>
 
           {/* Results */}
-          <div className="mt-5">
+          <div className="mt-5 flex min-h-0 flex-1 flex-col">
             {loading ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-14 text-egmf-primary">
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 py-14 text-egmf-primary">
                 <Loader2 size={32} className="animate-spin" />
                 <p className="text-sm font-semibold">Đang tải dữ liệu...</p>
               </div>
@@ -197,7 +193,7 @@ export default function MappingQrBarcodePage() {
                 </div>
               </>
             ) : (
-              <div className="relative overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised px-5 py-10 text-center shadow-egmf-card">
+              <div className="relative mb-4 flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden rounded-2xl border border-egmf-border bg-egmf-surface-raised px-5 py-10 text-center shadow-egmf-card sm:mb-0">
                 <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-egmf-primary-soft text-egmf-primary">
                   {hasSearched ? (
                     <Package size={32} />

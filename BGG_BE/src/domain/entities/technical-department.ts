@@ -72,3 +72,42 @@ export class TEC_TaiLieuKyThuat_LayDanhSachFile_TheoBarcodeMau {
   NgayTao: Date;
   TrangThai: string;
 }
+
+export class TEC_GetTrangThai_ByBarcodeMauAndLoai {
+  TrangThai: string;
+}
+
+export class TEC_BarcodeMau_UpdateTrangThai_Mobile {
+  RowsUpdated: number;
+  RowsDeleted: number;
+}
+
+export class TEC_KiemMau_DanhSachLoi {
+  id: number;
+  ten: string;
+  ma_loi: string;
+  ten_loi: string;
+  idloi: number;
+}
+
+export class TEC_KiemMau_Master_KiemTraTonTai {
+  NewId: number;
+}
+
+export class TEC_KiemMau_Detail_Insert {
+  NewId: number;
+}
+
+export class TEC_KiemMau_Detail_Select {
+  ViTriLoi: string;
+  NguoiKhaiBao: string;
+  ThoiGianKhaiBao: Date;
+  MucDoNghiemTrong: string;
+  MaLoi: string;
+  TenLoi: string;
+  SL: number;
+  Image: string;
+  BienPhapXuLy: string;
+  LoaiKiem: string;
+  GhiChu: string;
+}

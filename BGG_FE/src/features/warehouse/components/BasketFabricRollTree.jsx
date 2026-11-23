@@ -28,7 +28,7 @@ const getLocation = (basket) =>
     .replace(/^-\s*Vị trí:\s*/i, "")
     .trim() || "Chưa xác định";
 
-export default function BasketFabricRollCollapse({ data = [] }) {
+function LegacyBasketFabricRollCollapse({ data = [] }) {
   const [keyword, setKeyword] = useState("");
   const [openBaskets, setOpenBaskets] = useState([]);
   const [openRolls, setOpenRolls] = useState([]);
@@ -325,33 +325,9 @@ function RollReceipt({ roll, basket }) {
   );
   return (
     <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-xl border border-egmf-primary-border-soft bg-white shadow-[0_5px_20px_rgba(15,23,42,0.06)]">
-      <div className="border-b-2 border-dashed border-egmf-primary-border-soft bg-egmf-primary-soft px-4 py-5 text-center">
-        <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-white text-egmf-primary">
-          <ReceiptText size={25} />
-        </div>
-        <h3 className="m-0 text-lg font-extrabold tracking-wide text-egmf-brand-deep sm:text-xl">
-          PHIẾU THÔNG TIN CÂY VẢI
-        </h3>
-        <p className="m-0 mt-1 break-all text-base font-bold text-egmf-primary-deep">
-          {display(roll.MaCay)}
-        </p>
-      </div>
       <div className="px-4 py-3 sm:px-5">
-        <div className="divide-y divide-dashed divide-egmf-border">
-          {[
-            ["Mã cây", roll.MaCay],
-            ["Mã rổ", basket.MaRo],
-            ["Item", roll.Item],
-            ["Mã màu", roll.MaMau],
-            ["Lot", roll.Lot],
-            ["Khách hàng", roll.KhachHang],
-            ["Vị trí", basket._location],
-          ].map(([label, value]) => (
-            <ReceiptRow key={label} label={label} value={value} />
-          ))}
-        </div>
         {details.length > 0 && (
-          <div className="mt-4 border-t-2 border-dashed border-egmf-primary-border-soft pt-4">
+          <div className="mt-2">
             <h4 className="m-0 mb-3 flex items-center gap-2 text-base font-extrabold text-egmf-brand-deep">
               <Tag size={19} className="text-egmf-primary" />
               Thông tin chi tiết
@@ -368,17 +344,6 @@ function RollReceipt({ roll, basket }) {
             </div>
           </div>
         )}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t-2 border-dashed border-egmf-primary-border pt-4">
-          <span className="text-base font-extrabold text-egmf-brand-deep">
-            TỔNG SỐ LƯỢNG
-          </span>
-          <span className="break-all rounded-lg bg-egmf-primary-soft px-3 py-1.5 text-2xl font-extrabold text-egmf-primary-deep">
-            {number(roll.TongSoLuong)}
-          </span>
-        </div>
-      </div>
-      <div className="border-t border-dashed border-egmf-primary-border-soft bg-egmf-surface-subtle px-4 py-3 text-center text-sm font-bold text-egmf-ink-soft">
-        THÔNG TIN QUẢN LÝ KHO
       </div>
     </div>
   );
@@ -394,5 +359,92 @@ function ReceiptRow({ label, value }) {
         {display(value)}
       </span>
     </div>
+  );
+}
+
+export default function BasketFabricRollCollapse({ data = [] }) {
+  const [openRolls, setOpenRolls] = useState([]);
+  const baskets = Array.isArray(data) ? data : [];
+
+  const rolls = useMemo(
+    () =>
+      baskets.flatMap((basket, basketIndex) =>
+        (Array.isArray(basket.fabricRolls) ? basket.fabricRolls : []).map(
+          (roll, rollIndex) => ({
+            ...roll,
+            _key: `${basket.RId ?? basketIndex}-${roll.MaCay ?? rollIndex}-${rollIndex}`,
+            _basket: basket,
+          }),
+        ),
+      ),
+    [data],
+  );
+
+  const toggleRoll = (key) =>
+    setOpenRolls((previous) =>
+      previous.includes(key)
+        ? previous.filter((item) => item !== key)
+        : [...previous, key],
+    );
+
+  return (
+    <div className="w-full min-w-0 space-y-2.5">
+      {rolls.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-egmf-border bg-white p-6">
+          <Empty description="Không tìm thấy cây vải" />
+        </div>
+      ) : (
+        rolls.map((roll) => {
+          const isOpen = openRolls.includes(roll._key);
+
+          return (
+            <article
+              key={roll._key}
+              className={`overflow-hidden rounded-xl border bg-white shadow-sm transition-colors ${isOpen ? "border-egmf-primary-border" : "border-egmf-border hover:border-egmf-primary-border"}`}
+            >
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                onClick={() => toggleRoll(roll._key)}
+                className="grid w-full grid-cols-2 gap-x-3 gap-y-2 px-3.5 py-3 text-left transition hover:bg-egmf-surface-subtle focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 sm:grid-cols-4 sm:px-4"
+              >
+                <RollField label="Cây" value={roll.MaCay} strong />
+                <RollField label="SL" value={number(roll.TongSoLuong)} />
+                <RollField label="Item" value={roll.Item} />
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <RollField label="Mã màu" value={roll.MaMau} />
+                  <span
+                    className={`grid size-7 shrink-0 place-items-center rounded-full border border-egmf-primary-border-soft bg-egmf-primary-tint text-egmf-primary transition-transform ${isOpen ? "rotate-180" : ""}`}
+                  >
+                    <ChevronDown size={16} strokeWidth={2.5} />
+                  </span>
+                </div>
+              </button>
+
+              {isOpen && (
+                <div className="border-t border-egmf-border-subtle bg-egmf-surface-subtle p-3 sm:p-4">
+                  <RollReceipt roll={roll} basket={roll._basket} />
+                </div>
+              )}
+            </article>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+function RollField({ label, value, strong = false }) {
+  return (
+    <span className="block min-w-0">
+      <span className="block text-[10px] font-bold uppercase tracking-[0.06em] text-egmf-muted">
+        {label}
+      </span>
+      <span
+        className={`mt-0.5 block break-words text-sm text-egmf-ink-secondary ${strong ? "font-extrabold text-egmf-ink" : "font-semibold"}`}
+      >
+        {display(value)}
+      </span>
+    </span>
   );
 }
