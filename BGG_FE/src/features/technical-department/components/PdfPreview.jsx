@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { LoaderCircle, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  LoaderCircle,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
@@ -177,7 +184,7 @@ export default function PdfPreview({ url }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-slate-100">
-      <div className="flex shrink-0 items-center justify-end gap-1 border-b border-egmf-border-subtle bg-white px-2 py-1.5 sm:px-3">
+      <div className="flex shrink-0 items-center justify-end gap-1 border-b border-egmf-border-subtle bg-white px-2 py-1 sm:px-3">
         <button
           type="button"
           aria-label="Thu nhỏ PDF"
@@ -207,6 +214,26 @@ export default function PdfPreview({ url }) {
         >
           <RotateCcw size={16} />
         </button>
+        <span aria-hidden="true" className="mx-1 h-5 w-px bg-egmf-border-subtle" />
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          title="Mở tệp ở tab mới"
+          aria-label="Mở tệp ở tab mới"
+          className="grid size-8 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-surface-subtle hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
+        >
+          <ExternalLink size={16} />
+        </a>
+        <a
+          href={url}
+          download
+          title="Tải xuống"
+          aria-label="Tải xuống"
+          className="grid size-8 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-surface-subtle hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
+        >
+          <Download size={16} />
+        </a>
       </div>
 
       <div

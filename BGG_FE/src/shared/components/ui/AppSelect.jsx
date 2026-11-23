@@ -54,8 +54,8 @@ const selectStyles = {
   dropdownIndicator: (base) => ({
     ...base,
     display: "flex",
-    width: 44,
-    height: 44,
+    width: "var(--app-select-dropdown-indicator-size, 44px)",
+    height: "var(--app-select-dropdown-indicator-size, 44px)",
     alignItems: "center",
     justifyContent: "center",
     padding: 0,
@@ -69,8 +69,8 @@ const selectStyles = {
   clearIndicator: (base) => ({
     ...base,
     display: "flex",
-    width: 40,
-    height: 40,
+    width: "var(--app-select-clear-indicator-size, 40px)",
+    height: "var(--app-select-clear-indicator-size, 40px)",
     alignItems: "center",
     justifyContent: "center",
     padding: 0,
@@ -199,7 +199,11 @@ export default function AppSelect({
   return (
     <div
       className={cn("w-full", className)}
-      style={{ "--app-select-height": `${minHeight}px` }}
+      style={{
+        "--app-select-height": `${minHeight}px`,
+        "--app-select-dropdown-indicator-size": `${Math.min(minHeight, 44)}px`,
+        "--app-select-clear-indicator-size": `${Math.min(minHeight, 40)}px`,
+      }}
     >
       <ReactSelect
         {...props}

@@ -28,3 +28,44 @@ export async function layDanhSachFileTaiLieuTheoBarcodeMau(BarcodeMau) {
     },
   );
 }
+
+export async function getTrangThai(BarcodeMau, Loai) {
+  return postJson(
+    "/api/technical-department/TEC_GetTrangThai_ByBarcodeMauAndLoai",
+    {
+      BarcodeMau: BarcodeMau,
+      Loai: Loai,
+    },
+  );
+}
+
+export async function capNhatTrangThaiBarcodeMau(payload) {
+  return postJson(
+    "/api/technical-department/TEC_BarcodeMau_UpdateTrangThai_Mobile",
+    payload,
+  );
+}
+
+export async function layDanhSachLoi() {
+  return getJson("/api/technical-department/TEC_KiemMau_DanhSachLoi");
+}
+
+export async function kiemTraTonTai(payload) {
+  return postJson(
+    "/api/technical-department/TEC_KiemMau_Master_KiemTraTonTai",
+    payload,
+  );
+}
+
+export async function themDongKiemMau(payload) {
+  return postJson(
+    "/api/technical-department/TEC_KiemMau_Detail_Insert",
+    payload,
+  );
+}
+
+export async function layDanhSachLoiKiemMau(BarcodeMau) {
+  return postJson("/api/technical-department/TEC_KiemMau_Detail_Select", {
+    BarcodeMau: BarcodeMau,
+  });
+}

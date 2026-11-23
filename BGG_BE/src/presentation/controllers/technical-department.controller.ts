@@ -13,11 +13,22 @@ import type { ITechnicalDepartmentService } from '../../application/interfaces/t
 import {
   layThongTinGiayDeNghiTheoBarcodeMau_RequestDTO,
   layTrangThaiTheoBarcodeMau_RequestDTO,
+  layTrangThaiTheoLoaiVaBarcodeMau_RequestDTO,
+  capNhatTrangThai_TEC_BarcodeMau_RequestDTO,
+  TEC_KiemMau_Master_KiemTraTonTai_RequestDTO,
+  TEC_KiemMau_Detail_Insert_RequestDTO,
+  TEC_KiemMau_Detail_Select_RequestDTO,
 } from '../../application/dtos/technical-department/technical-department-request.dto.js';
 import {
   layThongTinGiayDeNghiTheoBarcodeMau_ResponseDTO,
   layTrangThaiTheoBarcodeMau_ResponseDTO,
   layDanhSachFileTaiLieuTheoBarcodeMau_ResponseDTO,
+  layTrangThaiTheoLoaiVaBarcodeMau_ResponseDTO,
+  capNhatTrangThai_TEC_BarcodeMau_ResponseDTO,
+  layDanhSachLoi_ResponseDTO,
+  TEC_KiemMau_Master_KiemTraTonTai_ResponseDTO,
+  TEC_KiemMau_Detail_Insert_ResponseDTO,
+  TEC_KiemMau_Detail_Select_ResponseDTO,
 } from '../../application/dtos/technical-department/technical-department-response.dto.js';
 
 import type { Response } from 'express';
@@ -62,8 +73,6 @@ export class TechnicalDepartmentController {
   @Get('files/:fileName')
   getFile(@Param('fileName') fileName: string, @Res() res: Response) {
     const folderPath = process.env.TECHNICAL_DOCUMENT_FOLDER_PATH;
-    console.log(folderPath);
-    // '\\\\192.168.1.5\\uploads\\PhieuDieuTiet\\Uploads\\TaiLieuKyThuat';
     if (!folderPath) {
       throw new InternalServerErrorException('Chưa cấu hình đường dẫn thư mục');
     }
@@ -94,5 +103,49 @@ export class TechnicalDepartmentController {
     return this.technicalDepartmentService.layDanhSachFileTaiLieuTheoBarcodeMau(
       BarcodeMau,
     );
+  }
+
+  @Post('TEC_GetTrangThai_ByBarcodeMauAndLoai')
+  layTrangThaiTheoLoaiVaBarcodeMau(
+    @Body() dto: layTrangThaiTheoLoaiVaBarcodeMau_RequestDTO,
+  ): Promise<layTrangThaiTheoLoaiVaBarcodeMau_ResponseDTO> {
+    return this.technicalDepartmentService.layTrangThaiTheoLoaiVaBarcodeMau(
+      dto,
+    );
+  }
+
+  @Post('TEC_BarcodeMau_UpdateTrangThai_Mobile')
+  capNhatTrangThai_TEC_BarcodeMau(
+    @Body() dto: capNhatTrangThai_TEC_BarcodeMau_RequestDTO,
+  ): Promise<capNhatTrangThai_TEC_BarcodeMau_ResponseDTO> {
+    return this.technicalDepartmentService.capNhatTrangThai_TEC_BarcodeMau(dto);
+  }
+
+  @Get('TEC_KiemMau_DanhSachLoi')
+  layDanhSachLoi(): Promise<layDanhSachLoi_ResponseDTO> {
+    return this.technicalDepartmentService.layDanhSachLoi();
+  }
+
+  @Post('TEC_KiemMau_Master_KiemTraTonTai')
+  TEC_KiemMau_Master_KiemTraTonTai(
+    @Body() dto: TEC_KiemMau_Master_KiemTraTonTai_RequestDTO,
+  ): Promise<TEC_KiemMau_Master_KiemTraTonTai_ResponseDTO> {
+    return this.technicalDepartmentService.TEC_KiemMau_Master_KiemTraTonTai(
+      dto,
+    );
+  }
+
+  @Post('TEC_KiemMau_Detail_Insert')
+  TEC_KiemMau_Detail_Insert(
+    @Body() dto: TEC_KiemMau_Detail_Insert_RequestDTO,
+  ): Promise<TEC_KiemMau_Detail_Insert_ResponseDTO> {
+    return this.technicalDepartmentService.TEC_KiemMau_Detail_Insert(dto);
+  }
+
+  @Post('TEC_KiemMau_Detail_Select')
+  TEC_KiemMau_Detail_Select(
+    @Body() dto: TEC_KiemMau_Detail_Select_RequestDTO,
+  ): Promise<TEC_KiemMau_Detail_Select_ResponseDTO> {
+    return this.technicalDepartmentService.TEC_KiemMau_Detail_Select(dto);
   }
 }

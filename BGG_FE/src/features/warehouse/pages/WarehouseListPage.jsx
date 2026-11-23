@@ -1,11 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import {
-  Search,
-  X,
-  RefreshCw,
-  AlertCircle,
-  PackageOpen,
-} from "lucide-react";
+import { Search, X, RefreshCw, AlertCircle, PackageOpen } from "lucide-react";
 
 import { getWarehousesByAccountId } from "../api/warehouseApi";
 import WarehouseCard from "../components/WarehouseCard";
@@ -92,8 +86,10 @@ export default function WarehouseList() {
         />
       ) : (
         <div className="mx-auto w-full max-w-[1300px] px-4 py-3 sm:px-6 sm:py-4 md:px-8">
-          <section aria-label="Danh sách kho" className="space-y-3 sm:space-y-4">
-
+          <section
+            aria-label="Danh sách kho"
+            className="space-y-3 sm:space-y-4"
+          >
             {/* SEARCH */}
             {!error && !loading && listKho.length > 0 && (
               <div className="flex h-12 items-center gap-2.5 rounded-lg border border-egmf-primary-border-soft bg-white px-3 transition-colors focus-within:border-egmf-primary focus-within:ring-[3px] focus-within:ring-egmf-primary/10">
@@ -182,15 +178,27 @@ export default function WarehouseList() {
               />
             ) : (
               <div className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
-                {filteredWarehouses.map((item) => (
-                  <WarehouseCard
-                    key={item.KId ?? item.MaKho}
-                    code={item.MaKho}
-                    name={item.TenKho}
-                    keeper={item.TenThuKho}
-                    onClick={() => handleWarehouseClick(item)}
-                  />
-                ))}
+                {[...filteredWarehouses]
+                  .sort((a, b) => {
+                    const priority = ["NA", "PA"];
+
+                    const indexA = priority.indexOf(a.MaKho);
+                    const indexB = priority.indexOf(b.MaKho);
+
+                    return (
+                      (indexA === -1 ? 999 : indexA) -
+                      (indexB === -1 ? 999 : indexB)
+                    );
+                  })
+                  .map((item) => (
+                    <WarehouseCard
+                      key={item.KId ?? item.MaKho}
+                      code={item.MaKho}
+                      name={item.TenKho}
+                      keeper={item.TenThuKho}
+                      onClick={() => handleWarehouseClick(item)}
+                    />
+                  ))}
               </div>
             )}
           </section>

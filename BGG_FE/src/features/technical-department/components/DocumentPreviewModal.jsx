@@ -31,6 +31,7 @@ export default function DocumentPreviewModal({
   const wordPreviewRef = useRef(null);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [wordFitZoom, setWordFitZoom] = useState(1);
+  const [fileSearch, setFileSearch] = useState("");
   const [excelData, setExcelData] = useState([]);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [isWordLoading, setIsWordLoading] = useState(false);
@@ -161,7 +162,7 @@ export default function DocumentPreviewModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="technical-document-modal-title"
-        className="egmf-dialog-panel flex h-[92dvh] w-full max-w-6xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-[86dvh] sm:rounded-2xl"
+        className="egmf-dialog-panel flex h-dvh w-full max-w-none flex-col overflow-hidden bg-white shadow-2xl sm:h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:rounded-2xl"
       >
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-egmf-border-subtle px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -192,16 +193,24 @@ export default function DocumentPreviewModal({
 
         {hasDocuments ? (
           <div className="flex min-h-0 flex-1 flex-col bg-egmf-surface-subtle">
-            <div className="shrink-0 border-b border-egmf-primary-border-soft bg-white/95 px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-4">
+            <div className="shrink-0 border-b border-egmf-primary-border-soft bg-white/95 px-3 py-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-4">
               <AppSelect
                 disabled={isLoadingFiles}
                 className="w-full"
-                minHeight={40}
+                minHeight={36}
                 menuMaxHeight={320}
                 searchable
-                wrapLabels
+                inputValue={fileSearch}
                 value={selectedIndex}
-                onChange={onSelectedIndexChange}
+                placeholder="Nhập để tìm tên tệp..."
+                onInputChange={(value, { action }) => {
+                  if (action === "input-change") setFileSearch(value);
+                  return value;
+                }}
+                onChange={(value) => {
+                  setFileSearch("");
+                  onSelectedIndexChange(value);
+                }}
                 options={fileNames.map((fileName, index) => ({
                   value: index,
                   label: fileName,
@@ -212,31 +221,32 @@ export default function DocumentPreviewModal({
 
             {selectedDocument && (
               <>
-                <div className="flex shrink-0 items-center justify-between gap-2 border-b border-egmf-border-subtle bg-white px-2 py-1.5 sm:px-3">
-                  <div className="flex items-center gap-1">
+                {typeFile !== 4 && (
+                  <div className="flex shrink-0 items-center justify-end gap-1 border-b border-egmf-border-subtle bg-white px-2 py-1 sm:px-3">
+                  <div className="order-2 ml-1 flex items-center gap-1 border-l border-egmf-border-subtle pl-1">
                     <a
                       href={selectedDocument.url}
                       target="_blank"
                       rel="noreferrer"
                       title="Mở tệp ở tab mới"
                       aria-label="Mở tệp ở tab mới"
-                      className="grid size-9 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-surface-subtle hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
+                      className="grid size-8 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-surface-subtle hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
                     >
-                      <ExternalLink size={17} />
+                      <ExternalLink size={16} />
                     </a>
                     <a
                       href={selectedDocument.url}
                       download
                       title="Tải xuống"
                       aria-label="Tải xuống"
-                      className="grid size-9 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-surface-subtle hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
+                      className="grid size-8 place-items-center rounded-lg text-egmf-muted transition hover:bg-egmf-surface-subtle hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15"
                     >
-                      <Download size={17} />
+                      <Download size={16} />
                     </a>
                   </div>
 
                   {[1, 2].includes(typeFile) && (
-                    <div className="flex items-center gap-1">
+                    <div className="order-1 flex items-center gap-1">
                       <button
                         type="button"
                         aria-label="Thu nhỏ nội dung"
@@ -279,7 +289,8 @@ export default function DocumentPreviewModal({
                       </button>
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
 
                 {typeFile === 1 && (
                   <div className="relative flex min-h-0 flex-1 touch-pan-x touch-pan-y items-center justify-center overflow-auto overscroll-contain bg-slate-100 p-2 sm:p-5">
