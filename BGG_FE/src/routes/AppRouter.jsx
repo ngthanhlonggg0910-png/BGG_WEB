@@ -38,6 +38,7 @@ import CuttingManagementPage from "../features/cutting-management/pages/CuttingM
 import CuttingDetailPage from "../features/cutting-management/pages/CuttingDetailPage";
 import FabricSplicingChainPage from "../features/cutting-management/pages/FabricSplicingChainPage";
 import FabricSplicingPage from "../features/cutting-management/pages/FabricSplicingPage";
+import SampleInspectionDefectPanel from "../features/technical-department/pages/SampleInspectionDefectPanel";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -356,6 +357,15 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <FabricSplicingChainPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/sample-inspection/defects"
+          element={
+            <PrivateRoute>
+              <SampleInspectionDefectPanel />
             </PrivateRoute>
           }
         />

@@ -9,17 +9,8 @@ const MappingOptionPage = () => {
 
   return (
     <MainLayout screenTitle="Mapping QR">
-      <main className="min-h-full bg-egmf-surface px-4 py-5 sm:px-6 sm:py-8">
+      <main className="min-h-full bg-egmf-surface px-4 sm:px-6 sm:py-8">
         <section className="mx-auto w-full max-w-2xl">
-          <header className="px-1 pb-1 sm:px-0">
-            <p className="m-0 text-[11px] font-extrabold uppercase tracking-[0.12em] text-egmf-primary">
-              Thiết lập mã QR
-            </p>
-            <h2 className="m-0 mt-1 text-xl font-extrabold tracking-tight text-egmf-ink sm:text-2xl">
-              Chọn chức năng mapping
-            </h2>
-          </header>
-
           <div className="mt-4 grid gap-3 sm:mt-5 sm:gap-4">
             {mappingOptions.map((item) => {
               const Icon = item.icon;

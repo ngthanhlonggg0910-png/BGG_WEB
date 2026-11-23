@@ -677,17 +677,6 @@ export default function InspectionDetailPage() {
                               </div>
                               <div className="min-w-0">
                                 <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
-                                  HĐ mua
-                                </dt>
-                                <dd
-                                  className="m-0 break-words font-semibold leading-5 text-egmf-ink-secondary"
-                                  title={item.SoPO}
-                                >
-                                  {item.SoPO || "—"}
-                                </dd>
-                              </div>
-                              <div className="min-w-0">
-                                <dt className="text-[11px] font-bold uppercase tracking-wide text-egmf-muted">
                                   Chứng từ
                                 </dt>
                                 <dd
