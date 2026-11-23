@@ -34,7 +34,10 @@ import {
   calculateBomMaterial,
   cancelMaterialOrderFromLsx,
   createMaterialOrderFromLsx,
+  getMaterialOrderPermissions,
   getProductionOrderDetail,
+  NO_MATERIAL_ORDER_PERMISSION as NO_QUYEN,
+  toMaterialOrderPermissions as toQuyen,
 } from "../api/productionOrderAPI";
 
 function normalizeSearchText(str) {
@@ -46,17 +49,10 @@ function normalizeSearchText(str) {
     .trim();
 }
 
+// Server (calculate-bom) đã phân loại sẵn: LoaiNPL chỉ là "NGUYÊN LIỆU" hoặc "PHỤ LIỆU",
+// cùng quy tắc với việc tách đơn Kho Vải / Kho Phụ Liệu khi gửi.
 function isNguyenLieuItem(loaiNPL) {
-  const s = String(loaiNPL || "")
-    .trim()
-    .toUpperCase();
-  return (
-    s.includes("NGUYÊN LIỆU") ||
-    s.includes("NGUYEN LIEU") ||
-    s.includes("VẢI") ||
-    s.includes("VAI") ||
-    s.includes("MEX")
-  );
+  return String(loaiNPL || "").trim().toUpperCase() === "NGUYÊN LIỆU";
 }
 
 function canCancelOrder(od) {
@@ -129,7 +125,6 @@ export default function ProductionOrderBookingPage() {
     searchParams.get("type") || location.state?.loaiDatHang || "NguyenLieu";
 
   const profile = getCurrentProfile();
-  const tkId = Number(profile?.TKId || 0);
   const defaultNguoiDat = useMemo(() => {
     const full = [profile?.HoVaTenLot, profile?.Ten]
       .filter(Boolean)
@@ -158,7 +153,12 @@ export default function ProductionOrderBookingPage() {
 
   // Thông tin đơn đặt hàng ("ALL" | "NguyenLieu" | "PhuLieu" đồng bộ với Desktop)
   const [loaiDatHang, setLoaiDatHang] = useState(initialType);
-  const [nguoiDat, setNguoiDat] = useState(defaultNguoiDat);
+  // Người đặt / người hủy do server lấy từ token đăng nhập; ô này chỉ để hiển thị.
+  const nguoiDat = defaultNguoiDat;
+  // null = đang kiểm tra; chỉ XÍ NGHIỆP MAY 1 / 2 và DEVELOPER được đặt / hủy đơn
+  const [quyen, setQuyen] = useState(null);
+  const coQuyenDatHang = quyen ? quyen.datHang : null;
+  const coQuyenHuyDon = Boolean(quyen?.huyDon);
   const [ngayCanGiao, setNgayCanGiao] = useState(() =>
     dayjs().format("YYYY-MM-DD"),
   );
@@ -286,6 +286,16 @@ export default function ProductionOrderBookingPage() {
     setNgayCanGiao(dayjs().format("YYYY-MM-DD"));
     loadLsxDetail();
   }, [lsxId]);
+
+  useEffect(() => {
+    let active = true;
+    getMaterialOrderPermissions()
+      .then((res) => active && setQuyen(toQuyen(res?.data)))
+      .catch(() => active && setQuyen(NO_QUYEN));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Tự động tổng hợp Ghi chú Lot từ các dòng đã chọn (đồng bộ chuẩn Desktop: VC: ... | VL: ...)
   useEffect(() => {
@@ -663,10 +673,7 @@ export default function ProductionOrderBookingPage() {
       onOk: async () => {
         try {
           setCancellingId(od.DonDatHangId);
-          await cancelMaterialOrderFromLsx(
-            od.DonDatHangId,
-            nguoiDat.trim() || defaultNguoiDat,
-          );
+          await cancelMaterialOrderFromLsx(od.DonDatHangId);
           message.success(
             `Đã hủy đơn đặt hàng [${od.SoDonDatHang}] thành công!`,
           );
@@ -683,6 +690,12 @@ export default function ProductionOrderBookingPage() {
   // Gửi đơn đặt hàng xuống Kho (tự động tách đơn Kho Vải & Kho Phụ Liệu nếu chọn cả 2 loại giống Desktop)
   const handleSubmitOrder = async () => {
     if (submitting || calculating) return;
+    if (!coQuyenDatHang) {
+      message.warning(
+        "Chỉ tài khoản thuộc XÍ NGHIỆP MAY 1, XÍ NGHIỆP MAY 2 hoặc DEVELOPER mới được đặt hàng vật tư LSX.",
+      );
+      return;
+    }
     if (bomDirty) {
       message.warning("Số lượng đã thay đổi. Vui lòng tính lại vật tư trước khi gửi.");
       return;
@@ -699,17 +712,40 @@ export default function ProductionOrderBookingPage() {
       return;
     }
 
+    // Cảnh báo đặt trùng: LSX đã có đơn hiện hành cùng kho với các vật tư sắp gửi
+    const khoSapGui = new Set(
+      checkedBomItems.map((it) =>
+        isNguyenLieuItem(it.LoaiNPL) ? "NguyenLieu" : "PhuLieu",
+      ),
+    );
+    const donTrung = activeExistingOrders.filter((o) =>
+      khoSapGui.has(o.LoaiDatHang),
+    );
+    if (donTrung.length > 0) {
+      const ok = await modal.confirm({
+        width: 560,
+        centered: true,
+        className: "egmf-confirm",
+        title: "Lệnh sản xuất này đã có đơn đặt hàng",
+        content: `Đang có ${donTrung.length} đơn hiện hành cùng kho (${donTrung
+          .map((o) => o.SoDonDatHang)
+          .join(", ")}). Bạn vẫn muốn gửi thêm đơn mới?`,
+        okText: "Vẫn gửi đơn",
+        cancelText: "Xem lại",
+      });
+      if (!ok) return;
+    }
+
     try {
       setSubmitting(true);
       const payload = {
         lsxId,
         loaiDatHang,
-        nguoiDat: nguoiDat.trim() || defaultNguoiDat,
-        tkId,
         ngayCanGiao: ngayCanGiao || undefined,
         ghiChuLot: ghiChuLot.trim(),
         ghiChu: ghiChu.trim(),
         items: checkedBomItems.map((it) => ({
+          pdmId: Number(it.PDMId),
           vtId: it.VTId ? Number(it.VTId) : 0,
           maVatTu: String(it.MaVatTu || "").trim(),
           tenVatTu: String(it.TenVatTu || "").trim(),
@@ -865,12 +901,12 @@ export default function ProductionOrderBookingPage() {
                           <Layers size={13} />
                           {lsxHeader?.SoLSX}
                         </span>
-                        <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-sm font-extrabold text-emerald-700">
-                          Kế hoạch:{" "}
-                          {Number(
-                            lsxHeader?.TongSanLuong || 0,
-                          ).toLocaleString("vi-VN")}{" "}
-                          SP
+                        <span className="inline-flex items-baseline gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-700">
+                          <span className="text-sm font-bold text-emerald-800">Số lượng LSX</span>
+                          <strong className="text-2xl font-black leading-none tabular-nums sm:text-3xl">
+                            {Number(lsxHeader?.TongSanLuong || 0).toLocaleString("vi-VN")}
+                          </strong>
+                          <span className="text-sm font-extrabold">SP</span>
                         </span>
                       </div>
                       <h2 className="mt-1 truncate text-[15px] font-extrabold text-slate-900 sm:text-lg">
@@ -1031,10 +1067,15 @@ export default function ProductionOrderBookingPage() {
                         <input
                           type="text"
                           value={nguoiDat}
-                          onChange={(e) => setNguoiDat(e.target.value)}
-                          placeholder="Tên người đặt"
-                          className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-base font-semibold text-slate-800 outline-none focus:border-egmf-primary focus:bg-white"
+                          readOnly
+                          title="Lấy theo tài khoản đăng nhập"
+                          className="h-12 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 text-base font-semibold text-slate-600 outline-none"
                         />
+                        {coQuyenDatHang === false && (
+                          <p className="mt-1 text-sm font-semibold text-rose-600">
+                            Tài khoản không thuộc XÍ NGHIỆP MAY 1 / 2 hoặc DEVELOPER nên không được đặt hàng.
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -1988,7 +2029,7 @@ export default function ProductionOrderBookingPage() {
                       <button
                         type="button"
                         onClick={handleSubmitOrder}
-                        disabled={submitting || calculating || bomDirty || selectedSizeCount === 0 || checkedBomItems.length === 0}
+                        disabled={!coQuyenDatHang || submitting || calculating || bomDirty || selectedSizeCount === 0 || checkedBomItems.length === 0}
                         className={`flex min-h-[48px] flex-1 touch-manipulation items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-extrabold text-white shadow-md transition active:scale-[0.99] disabled:opacity-50 sm:flex-initial sm:text-base ${
                           isCat
                             ? "bg-blue-600 hover:bg-blue-700"
@@ -2093,7 +2134,7 @@ export default function ProductionOrderBookingPage() {
                       Ngày đặt: {dayjs(order.NgayDat).format("DD/MM/YYYY HH:mm")}
                     </p>
                   )}
-                  {canCancelOrder(order) && (
+                  {coQuyenHuyDon && canCancelOrder(order) && (
                     <button
                       type="button"
                       disabled={cancellingId === order.DonDatHangId}

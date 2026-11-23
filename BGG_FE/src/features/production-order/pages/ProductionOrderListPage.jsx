@@ -22,12 +22,14 @@ import { App as AntApp, Empty, Spin, message } from "antd";
 import dayjs from "dayjs";
 
 import MainLayout from "../../../layouts/MainLayout/MainLayout";
-import { getCurrentProfile } from "../../../shared/auth/session";
 import {
   cancelMaterialOrderFromLsx,
   createPickingOrderFromMaterialOrder,
   getListProductionOrders,
   getMaterialOrderDetail,
+  getMaterialOrderPermissions,
+  NO_MATERIAL_ORDER_PERMISSION as NO_QUYEN,
+  toMaterialOrderPermissions as toQuyen,
   getMaterialOrders,
 } from "../api/productionOrderAPI";
 
@@ -146,15 +148,19 @@ export default function ProductionOrderListPage({ initialTab }) {
     : "lsx";
   const [activeTab, setActiveTab] = useState(currentTab); // "lsx" | "ddh" | "ddh_huy"
 
-  const profile = getCurrentProfile();
-  const tkId = Number(profile?.TKId || 0);
-  const currentUserName = useMemo(() => {
-    const full = [profile?.HoVaTenLot, profile?.Ten]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-    return full || profile?.TenDangNhap || "Người dùng Web";
-  }, [profile]);
+  // Chỉ XÍ NGHIỆP MAY 1 / 2 và DEVELOPER được đặt / hủy đơn (server kiểm tra lại theo token).
+  const [quyen, setQuyen] = useState(NO_QUYEN);
+  const coQuyenDatHang = quyen.datHang;
+  const coQuyenHuyDon = quyen.huyDon;
+  useEffect(() => {
+    let active = true;
+    getMaterialOrderPermissions()
+      .then((res) => active && setQuyen(toQuyen(res?.data)))
+      .catch(() => active && setQuyen(NO_QUYEN));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState("");
@@ -501,13 +507,7 @@ export default function ProductionOrderListPage({ initialTab }) {
       onOk: async () => {
         try {
           setCreatingPshId(ddh.DonDatHangId);
-          const res = await createPickingOrderFromMaterialOrder(
-            ddh.DonDatHangId,
-            {
-              tkId,
-              nguoiTao: currentUserName,
-            },
-          );
+          const res = await createPickingOrderFromMaterialOrder(ddh.DonDatHangId);
           const maPsh = res?.data?.maSoPhieuSoan || "";
           const pshId = res?.data?.phieuSoanHangId;
 
@@ -571,7 +571,7 @@ export default function ProductionOrderListPage({ initialTab }) {
       onOk: async () => {
         try {
           setCancelling(true);
-          await cancelMaterialOrderFromLsx(ddh.DonDatHangId, currentUserName);
+          await cancelMaterialOrderFromLsx(ddh.DonDatHangId);
           message.success(
             `Đã hủy đơn đặt hàng [${ddh.SoDonDatHang}]! Phiếu đã chuyển sang mục Đơn Đã Hủy.`,
           );
@@ -929,12 +929,6 @@ export default function ProductionOrderListPage({ initialTab }) {
                                   <Layers size={13} />
                                   {lsx.SoLSX}
                                 </span>
-                                <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-extrabold text-emerald-700">
-                                  {Number(
-                                    lsx.TongSanLuong || 0,
-                                  ).toLocaleString("vi-VN")}{" "}
-                                  SP
-                                </span>
                               </div>
 
                               <h3 className="mt-1.5 break-words text-[16px] font-extrabold leading-snug text-slate-900 sm:text-lg">
@@ -946,6 +940,21 @@ export default function ProductionOrderListPage({ initialTab }) {
                               className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold sm:text-xs ${st.cls}`}
                             >
                               {st.label}
+                            </span>
+                          </div>
+
+                          {/* SỐ LƯỢNG LSX - HIỂN THỊ LỚN ĐỂ NHẬN DIỆN NHANH */}
+                          <div className="mt-2.5 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 sm:px-4">
+                            <span className="text-sm font-bold text-emerald-800 sm:text-base">
+                              Số lượng LSX
+                            </span>
+                            <span className="flex items-baseline gap-1.5">
+                              <strong className="text-3xl font-black leading-none tabular-nums text-emerald-700 sm:text-4xl">
+                                {Number(lsx.TongSanLuong || 0).toLocaleString("vi-VN")}
+                              </strong>
+                              <span className="text-base font-extrabold text-emerald-700">
+                                SP
+                              </span>
                             </span>
                           </div>
 
@@ -1005,8 +1014,20 @@ export default function ProductionOrderListPage({ initialTab }) {
                         <div className="mt-3.5 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
                           <button
                             type="button"
+                            onClick={() =>
+                              navigate(`/production-order-detail?lsxId=${lsx.LSXId}`)
+                            }
+                            className="col-span-2 flex min-h-[44px] touch-manipulation items-center justify-center gap-1.5 rounded-xl border border-egmf-border bg-white px-3 py-2 text-xs font-extrabold text-egmf-ink-secondary transition hover:border-egmf-primary hover:text-egmf-primary active:scale-[0.98] sm:text-sm"
+                          >
+                            <Eye size={16} className="shrink-0" />
+                            <span>Xem chi tiết đặt / nhận vật tư</span>
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleOpenBooking(lsx, "NguyenLieu")}
-                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-blue-700 active:scale-[0.98] sm:text-sm"
+                            disabled={!coQuyenDatHang}
+                            title={coQuyenDatHang ? undefined : "Chỉ XÍ NGHIỆP MAY 1 / 2 và DEVELOPER được đặt hàng"}
+                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
                           >
                             <Scissors size={16} className="shrink-0" />
                             <span>Nhà Cắt Đặt NL</span>
@@ -1015,7 +1036,9 @@ export default function ProductionOrderListPage({ initialTab }) {
                           <button
                             type="button"
                             onClick={() => handleOpenBooking(lsx, "PhuLieu")}
-                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-amber-700 active:scale-[0.98] sm:text-sm"
+                            disabled={!coQuyenDatHang}
+                            title={coQuyenDatHang ? undefined : "Chỉ XÍ NGHIỆP MAY 1 / 2 và DEVELOPER được đặt hàng"}
+                            className="flex min-h-[48px] touch-manipulation items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2.5 text-xs font-extrabold text-white shadow-xs transition hover:bg-amber-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
                           >
                             <Shirt size={16} className="shrink-0" />
                             <span>Nhà May Đặt PL</span>
@@ -1041,7 +1064,7 @@ export default function ProductionOrderListPage({ initialTab }) {
                 {filteredDdh.map((ddh) => {
                   const isCat = ddh.LoaiDatHang === "NguyenLieu";
                   const st = getDdhStatusBadge(ddh);
-                  const allowCancel = canCancelDdh(ddh);
+                  const allowCancel = coQuyenHuyDon && canCancelDdh(ddh);
                   const allowCreatePsh = canCreatePsh(ddh);
                   const isThisCreating = creatingPshId === ddh.DonDatHangId;
 
@@ -1545,7 +1568,7 @@ export default function ProductionOrderListPage({ initialTab }) {
                   )}
 
                 {/* NÚT HỦY ĐƠN ĐẶT */}
-                {canCancelDdh(selectedDdh) && (
+                {coQuyenHuyDon && canCancelDdh(selectedDdh) && (
                   <button
                     type="button"
                     disabled={cancelling}

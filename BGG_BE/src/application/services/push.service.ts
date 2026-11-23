@@ -4,7 +4,6 @@ import { createHash } from 'node:crypto';
 import sql from 'mssql';
 import webPush from 'web-push';
 import { DatabaseService } from '../../infrastructure/database/database.service.js';
-import type { CreateMaterialOrderDto } from '../dtos/production-order.dto.js';
 
 export function validateSubscription(value: unknown): webPush.PushSubscription {
   const sub = value as webPush.PushSubscription;
@@ -173,11 +172,11 @@ export class PushService implements OnModuleInit, OnModuleDestroy {
 
   // Called inside the material-order transaction. A rollback removes both the
   // order and its deliveries. Split orders each have their own stable tag.
-  async enqueueOrders(tx: sql.Transaction, orders: Array<{ donDatHangId: number; soDonDatHang: string; loaiDatHang: string }>, dto: CreateMaterialOrderDto) {
+  async enqueueOrders(tx: sql.Transaction, orders: Array<{ donDatHangId: number; soDonDatHang: string; loaiDatHang: string }>, dto: { lsxId: number; nguoiDat?: string }) {
     if (!this.ready) return;
     const result = await new sql.Request(tx).input('LSXId', sql.Int, dto.lsxId).query('SELECT MaHang FROM dbo.OMM_LenhSanXuat WHERE LSXId=@LSXId;');
     for (const order of orders) {
-      const payload = buildOrderPush(order, result.recordset[0]?.MaHang, dto.nguoiDat);
+      const payload = buildOrderPush(order, result.recordset[0]?.MaHang, dto.nguoiDat ?? '');
       await new sql.Request(tx).input('Id', sql.Int, order.donDatHangId).input('Payload', sql.NVarChar(sql.MAX), JSON.stringify(payload)).query(`
         INSERT dbo.BGG_WebPushOutbox(DonDatHangId,EndpointHash,TKId,Payload)
         SELECT @Id,s.EndpointHash,s.TKId,@Payload FROM dbo.BGG_WebPushSubscriptions s

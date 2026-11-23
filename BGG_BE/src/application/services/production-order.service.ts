@@ -41,8 +41,22 @@ export class ProductionOrderService implements IProductionOrderService {
     };
   }
 
-  async taoDonDatHangVatTu(dto: CreateMaterialOrderDto) {
-    const data = await this.productionOrderRepo.taoDonDatHangVatTu(dto);
+  async getTheoDoiVatTuLSX(lsxId: number) {
+    const data = await this.productionOrderRepo.getTheoDoiVatTuLSX(lsxId);
+    return {
+      success: true,
+      message: 'Lấy theo dõi vật tư Lệnh sản xuất thành công',
+      data,
+    };
+  }
+
+  async getQuyenDatHang(tkId: number) {
+    const data = await this.productionOrderRepo.getQuyenDatHang(tkId);
+    return { success: true, data };
+  }
+
+  async taoDonDatHangVatTu(dto: CreateMaterialOrderDto, tkId: number) {
+    const data = await this.productionOrderRepo.taoDonDatHangVatTu(dto, tkId);
     return {
       success: true,
       message: `Tạo đơn đặt hàng ${data.soDonDatHang} thành công`,
@@ -77,11 +91,8 @@ export class ProductionOrderService implements IProductionOrderService {
     };
   }
 
-  async huyDonDatHangLSX(donDatHangId: number, nguoiHuy?: string) {
-    const data = await this.productionOrderRepo.huyDonDatHangLSX(
-      donDatHangId,
-      nguoiHuy,
-    );
+  async huyDonDatHangLSX(donDatHangId: number, tkId: number) {
+    const data = await this.productionOrderRepo.huyDonDatHangLSX(donDatHangId, tkId);
     return {
       success: true,
       message: `Đã hủy đơn đặt hàng [${data.soDonDatHang}] thành công`,
@@ -89,15 +100,10 @@ export class ProductionOrderService implements IProductionOrderService {
     };
   }
 
-  async taoPhieuSoanHangTuDonDatHang(
-    donDatHangId: number,
-    tkId?: number,
-    nguoiTao?: string,
-  ) {
+  async taoPhieuSoanHangTuDonDatHang(donDatHangId: number, tkId: number) {
     const data = await this.productionOrderRepo.taoPhieuSoanHangTuDonDatHang(
       donDatHangId,
       tkId,
-      nguoiTao,
     );
     return {
       success: true,

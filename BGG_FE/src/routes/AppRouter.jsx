@@ -22,6 +22,7 @@ import FabricInspectionList from "../features/fabric-inspection/pages/FabricInsp
 import FabricInspectionRollListPage from "../features/fabric-inspection/pages/FabricInspectionRollList";
 import ProductionOrderListPage from "../features/production-order/pages/ProductionOrderListPage";
 import ProductionOrderBookingPage from "../features/production-order/pages/ProductionOrderBookingPage";
+import ProductionOrderDetailPage from "../features/production-order/pages/ProductionOrderDetailPage";
 import MappingOptionPage from "../features/mapping-qr/pages/MappingOptionPage";
 import RawMaterialRollQrPage from "../features/mapping-qr/pages/RawMaterialRollQrPage";
 import MappingQrListPage from "../features/mapping-qr/pages/MappingQrListPage";
@@ -165,6 +166,15 @@ export default function AppRouter() {
           element={
             <PrivateRoute>
               <ProductionOrderListPage initialTab="ddh_huy" />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production-order-detail"
+          element={
+            <PrivateRoute>
+              <ProductionOrderDetailPage />
             </PrivateRoute>
           }
         />

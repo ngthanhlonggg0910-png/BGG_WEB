@@ -6,13 +6,13 @@ import {
   Param,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { AuthenticatedRequest } from '../guards/auth.guard.js';
 import type { IProductionOrderService } from '../../application/interfaces/production-order.service.interface.js';
 import {
   CalculateBomDto,
-  CancelMaterialOrderDto,
   CreateMaterialOrderDto,
-  CreatePickingOrderDto,
   GetProductionOrdersDto,
 } from '../../application/dtos/production-order.dto.js';
 
@@ -33,36 +33,50 @@ export class ProductionOrderController {
     return this.productionOrderService.getChiTietLSX(Number(lsxId));
   }
 
+  @Get('material-tracking/:lsxId')
+  async getTheoDoiVatTuLSX(@Param('lsxId') lsxId: string) {
+    return this.productionOrderService.getTheoDoiVatTuLSX(Number(lsxId));
+  }
+
   @Post('calculate-bom')
   async tinhNhuCauVatTu(@Body() dto: CalculateBomDto) {
     return this.productionOrderService.tinhNhuCauVatTu(dto);
   }
 
+  // The acting account always comes from the login token, never from the request body.
+
+  @Get('permissions')
+  async getQuyenDatHang(@Req() req: AuthenticatedRequest) {
+    return this.productionOrderService.getQuyenDatHang(req.user!.tkId);
+  }
+
   @Post('create-material-order')
-  async taoDonDatHangVatTu(@Body() dto: CreateMaterialOrderDto) {
-    return this.productionOrderService.taoDonDatHangVatTu(dto);
+  async taoDonDatHangVatTu(
+    @Body() dto: CreateMaterialOrderDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.productionOrderService.taoDonDatHangVatTu(dto, req.user!.tkId);
   }
 
   @Post('cancel-material-order/:donDatHangId')
   async huyDonDatHangLSX(
     @Param('donDatHangId') donDatHangId: string,
-    @Body() dto?: CancelMaterialOrderDto,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.productionOrderService.huyDonDatHangLSX(
       Number(donDatHangId),
-      dto?.nguoiHuy,
+      req.user!.tkId,
     );
   }
 
   @Post('create-picking-order/:donDatHangId')
   async taoPhieuSoanHangTuDonDatHang(
     @Param('donDatHangId') donDatHangId: string,
-    @Body() dto?: CreatePickingOrderDto,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.productionOrderService.taoPhieuSoanHangTuDonDatHang(
       Number(donDatHangId),
-      dto?.tkId,
-      dto?.nguoiTao,
+      req.user!.tkId,
     );
   }
 

@@ -23,6 +23,8 @@ export class CalculateBomDto {
 }
 
 export class MaterialOrderItemDto {
+  /** OMM_PO_BangDinhMuc.PDMId of the BOM line (required; the server re-reads the line from it). */
+  pdmId: number;
   vtId?: number | null;
   maVatTu: string;
   tenVatTu: string;
@@ -38,8 +40,10 @@ export class MaterialOrderItemDto {
 export class CreateMaterialOrderDto {
   lsxId: number;
   loaiDatHang: 'ALL' | 'NguyenLieu' | 'PhuLieu';
-  nguoiDat: string;
-  tkId: number;
+  /** Ignored: the orderer is the logged-in account (filled in by the server). */
+  nguoiDat?: string;
+  /** Ignored: the orderer is the logged-in account (filled in by the server). */
+  tkId?: number;
   ngayCanGiao?: string;
   ghiChuLot?: string;
   ghiChu?: string;
