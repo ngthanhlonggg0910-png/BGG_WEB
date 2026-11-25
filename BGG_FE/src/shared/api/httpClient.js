@@ -76,6 +76,28 @@ export async function postJson(url, payload) {
   return data;
 }
 
+export async function postFormData(url, formData) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(),
+    body: formData,
+  });
+
+  handleUnauthorized(response);
+
+  const data = normalizeApiMessage(await response.json());
+
+  if (!response.ok) {
+    const message = Array.isArray(data?.message)
+      ? data.message.join(", ")
+      : data?.message || `HTTP ${response.status}: ${response.statusText}`;
+
+    throw new Error(message);
+  }
+
+  return data;
+}
+
 export async function getJson(url) {
   const response = await fetch(url, { headers: authHeaders() });
 

@@ -4,6 +4,7 @@ import {
   TEC_TaiLieuKyThuat_LayDanhSachFile_TheoBarcodeMau,
   TEC_GetTrangThai_ByBarcodeMauAndLoai,
   TEC_BarcodeMau_UpdateTrangThai_Mobile,
+  TEC_BarcodeMau_SelectThongTinKiemMau,
   TEC_KiemMau_DanhSachLoi,
   TEC_KiemMau_Master_KiemTraTonTai,
   TEC_KiemMau_Detail_Insert,
@@ -40,6 +41,12 @@ export class capNhatTrangThai_TEC_BarcodeMau_ResponseDTO {
   data: TEC_BarcodeMau_UpdateTrangThai_Mobile;
 }
 
+export class TEC_BarcodeMau_SelectThongTinKiemMau_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: TEC_BarcodeMau_SelectThongTinKiemMau;
+}
+
 export class layDanhSachLoi_ResponseDTO {
   success: boolean;
   message: string;
@@ -62,4 +69,16 @@ export class TEC_KiemMau_Detail_Select_ResponseDTO {
   success: boolean;
   message: string;
   data: TEC_KiemMau_Detail_Select[];
+}
+
+export class TEC_KiemMau_Detail_Delete_ResponseDTO {
+  success: boolean;
+  message: string;
+  rowsAffected: number;
+}
+
+export class TEC_KiemMau_Detail_Update_ResponseDTO {
+  success: boolean;
+  message: string;
+  data: { UpdatedId: number } | null;
 }

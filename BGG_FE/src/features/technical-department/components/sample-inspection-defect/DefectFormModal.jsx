@@ -1,34 +1,63 @@
 import { Check, ClipboardPenLine, Minus, Plus, X } from "lucide-react";
 import { createPortal } from "react-dom";
 
+import { useCaptureImage } from "../../../../shared/hooks/useCaptureImage";
 import AppSelect from "../../../../shared/components/ui/AppSelect";
 import DefectImageField from "./DefectImageField";
+import { useEffect } from "react";
 
 export default function DefectFormModal({
   dsLoi,
   isOpen,
-  editingDefect,
+  mode,
   form,
-  imagePreview,
+  existingImageUrl,
+  removeExistingImage,
   saving,
-  cameraInputRef,
-  imageInputRef,
   onClose,
   onSubmit,
   onFormChange,
   onDefectNameChange,
-  onImageChange,
-  onRemoveImage,
+  onImageFileChange,
+  onRemoveExistingImage,
+  onRestoreExistingImage,
 }) {
-  if (!isOpen) return null;
-
+  const {
+    cameraRef,
+    fileRef,
+    previewUrl: newImagePreviewUrl,
+    handleCaptureImage,
+    removeImage,
+    image,
+  } = useCaptureImage();
   const canSave = Boolean(
     form.TenLoi && form.CumLoiId && form.MucDoNghiemTrong,
   );
 
+  useEffect(() => {
+    onImageFileChange?.(image);
+  }, [image, onImageFileChange]);
+
+  useEffect(() => {
+    if (!isOpen) removeImage();
+  }, [isOpen, removeImage]);
+
+  const previewUrl = image
+    ? newImagePreviewUrl
+    : removeExistingImage
+      ? ""
+      : existingImageUrl;
+
+  const handleImageChange = (event) => {
+    onRestoreExistingImage?.();
+    handleCaptureImage(event);
+  };
+
+  if (!isOpen) return null;
+
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-stretch justify-center bg-slate-900/55 p-0 pb-[max(6rem,env(safe-area-inset-bottom))] backdrop-blur-xs sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/55 p-0 pb-[max(5rem,env(safe-area-inset-bottom))] backdrop-blur-xs sm:items-center sm:p-4"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !saving) onClose();
@@ -38,7 +67,7 @@ export default function DefectFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="defect-form-title"
-        className="flex h-full min-h-0 max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-[calc(100dvh-2rem)] sm:max-h-[46rem] sm:rounded-2xl"
+        className="relative flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-[calc(100dvh-2rem)] sm:max-h-[52rem] sm:rounded-2xl"
       >
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-egmf-border-subtle bg-gradient-to-r from-egmf-primary-soft via-white to-white px-4 pb-3.5 pt-[max(0.875rem,env(safe-area-inset-top))] sm:px-5 sm:py-3.5">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -50,7 +79,7 @@ export default function DefectFormModal({
                 id="defect-form-title"
                 className="m-0 text-base font-extrabold text-egmf-ink"
               >
-                {editingDefect ? "Cập nhật lỗi" : "Thêm lỗi mới"}
+                {mode === "EDIT" ? "Cập nhật lỗi" : "Thêm lỗi mới"}
               </h2>
               <p className="m-0 mt-0.5 text-xs text-egmf-muted">
                 Các trường có dấu * là bắt buộc.
@@ -85,103 +114,136 @@ export default function DefectFormModal({
               );
             }}
           >
-            <div className="grid gap-3 p-4 pb-8 sm:grid-cols-2 sm:p-5">
-              <Field
-                label="Vị trí lỗi"
-                value={form.ViTriLoi}
-                onChange={(ViTriLoi) => onFormChange({ ViTriLoi })}
-              />
-              <div className="grid grid-cols-2 gap-3 sm:col-span-2">
-                <DefectSelectField
-                  value={form.TenLoi}
-                  options={dsLoi}
-                  onChange={onDefectNameChange}
-                />
-                <Field
-                  label="Hướng xử lý"
-                  value={form.BienPhapXuLy}
-                  onChange={(BienPhapXuLy) =>
-                    onFormChange({ BienPhapXuLy })
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:contents">
-                <Field label="Cụm lỗi" value={form.CumLoi} disabled />
-                <SeveritySelectField
-                  value={form.MucDoNghiemTrong}
-                  onChange={(MucDoNghiemTrong) =>
-                    onFormChange({ MucDoNghiemTrong })
-                  }
-                />
-              </div>
-              <QuantityField
-                value={form.SoLuong}
-                onChange={(SoLuong) => onFormChange({ SoLuong })}
-              />
-              <div className="grid gap-3 sm:col-span-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
-                <div className="order-2 sm:order-1">
+            <div className="space-y-4 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
+              <section className="rounded-2xl border border-egmf-border-subtle bg-egmf-surface-subtle/60 p-3 sm:p-4">
+                <SectionLabel title="Thông tin lỗi" />
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <DefectSelectField
+                      value={form.TenLoi}
+                      options={dsLoi}
+                      onChange={onDefectNameChange}
+                    />
+                  </div>
+                  <Field
+                    label="Vị trí lỗi"
+                    value={form.ViTriLoi}
+                    placeholder="Ví dụ: thân trước, tay áo..."
+                    onChange={(ViTriLoi) => onFormChange({ ViTriLoi })}
+                  />
+                  <Field label="Cụm lỗi" value={form.TenCumLoi} disabled />
+                  <SeveritySelectField
+                    value={form.MucDoNghiemTrong}
+                    onChange={(MucDoNghiemTrong) =>
+                      onFormChange({ MucDoNghiemTrong })
+                    }
+                  />
+                  <QuantityField
+                    value={form.SoLuong}
+                    onChange={(SoLuong) => onFormChange({ SoLuong })}
+                  />
+                  <div className="sm:col-span-2">
+                    <Field
+                      label="Hướng xử lý"
+                      value={form.BienPhapXuLy}
+                      onChange={(BienPhapXuLy) =>
+                        onFormChange({ BienPhapXuLy })
+                      }
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border border-egmf-border-subtle bg-white p-3 sm:p-4">
+                <SectionLabel title="Ảnh và ghi chú" optional />
+                <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+                  <DefectImageField
+                    preview={previewUrl}
+                    hasNewImage={Boolean(image)}
+                    hasExistingImage={Boolean(existingImageUrl)}
+                    isExistingImageRemoved={removeExistingImage}
+                    cameraInputRef={cameraRef}
+                    imageInputRef={fileRef}
+                    onImageChange={handleImageChange}
+                    onRemoveNewImage={removeImage}
+                    onRemoveExistingImage={onRemoveExistingImage}
+                    onRestoreExistingImage={onRestoreExistingImage}
+                    disabled={saving}
+                  />
                   <TextArea
                     label="Ghi chú"
                     optional
+                    rows={4}
                     value={form.GhiChu}
                     onChange={(GhiChu) => onFormChange({ GhiChu })}
                   />
                 </div>
-                <div className="order-1 sm:order-2">
-                  <DefectImageField
-                    preview={imagePreview}
-                    cameraInputRef={cameraInputRef}
-                    imageInputRef={imageInputRef}
-                    onImageChange={onImageChange}
-                    onRemove={onRemoveImage}
-                  />
-                </div>
-              </div>
-              {editingDefect && (
-                <div className="sm:col-span-2">
-                  <TextArea
-                    label="Kết quả cuối cùng"
-                    value={form.KetQuaCuoi}
-                    onChange={(KetQuaCuoi) => onFormChange({ KetQuaCuoi })}
-                  />
-                </div>
+              </section>
+
+              {mode === "EDIT" && (
+                <section className="rounded-2xl border border-egmf-border-subtle bg-white p-3 sm:p-4">
+                  <SectionLabel title="Kết quả xử lý" optional />
+                  <div className="mt-3">
+                    <TextArea
+                      label="Kết quả cuối cùng"
+                      rows={3}
+                      value={form.KetQuaCuoi}
+                      onChange={(KetQuaCuoi) => onFormChange({ KetQuaCuoi })}
+                    />
+                  </div>
+                </section>
               )}
+
+              <footer className="grid grid-cols-2 gap-2 border-t border-egmf-border-subtle pt-4 sm:gap-3 sm:pt-5">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={onClose}
+                  className="h-11 rounded-xl border border-egmf-border bg-white px-5 text-sm font-bold text-egmf-ink-secondary transition hover:border-egmf-primary-border hover:bg-egmf-primary-tint hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 disabled:opacity-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={!canSave || saving}
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl bg-egmf-primary px-5 text-sm font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Check size={17} strokeWidth={2.5} />
+                  {saving ? "Đang lưu..." : "Lưu lỗi"}
+                </button>
+              </footer>
             </div>
           </div>
         </form>
 
-        <footer className="z-10 min-h-[4.75rem] shrink-0 grid grid-cols-2 gap-2 border-t border-egmf-border-subtle bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_20px_rgba(15,23,42,.06)] sm:px-5 sm:py-3">
-          <button
-            type="button"
-            disabled={saving}
-            onClick={onClose}
-            className="h-11 rounded-xl border border-egmf-border bg-white px-5 text-sm font-bold text-egmf-ink-secondary transition hover:border-egmf-primary-border hover:bg-egmf-primary-tint hover:text-egmf-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/15 disabled:opacity-50"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            form="defect-form"
-            disabled={!canSave || saving}
-            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-egmf-primary px-5 text-sm font-extrabold text-white shadow-egmf-primary-compact transition hover:bg-egmf-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-egmf-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Check size={17} strokeWidth={2.5} />
-            {saving ? "Đang lưu..." : "Lưu lỗi"}
-          </button>
-        </footer>
       </section>
     </div>,
     document.body,
   );
 }
 
-function Field({ label, value, onChange, disabled = false }) {
+function SectionLabel({ title, optional = false }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="h-4 w-1 rounded-full bg-egmf-primary" />
+      <h3 className="m-0 text-sm font-extrabold text-egmf-ink">{title}</h3>
+      {optional && (
+        <span className="text-xs font-medium text-egmf-muted">
+          (không bắt buộc)
+        </span>
+      )}
+    </div>
+  );
+}
+
+function Field({ label, value, onChange, disabled = false, placeholder }) {
   return (
     <label className="block min-w-0 text-xs font-bold text-egmf-ink-secondary">
       {label}
       <input
         value={value}
         disabled={disabled}
+        placeholder={placeholder}
         onChange={(event) => onChange?.(event.target.value)}
         className="mt-1.5 h-11 w-full rounded-xl border border-egmf-border bg-white px-3 text-sm font-semibold text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10 disabled:cursor-not-allowed disabled:bg-egmf-surface-subtle disabled:text-egmf-muted"
       />
@@ -265,7 +327,7 @@ function QuantityField({ value, onChange }) {
   );
 }
 
-function TextArea({ label, optional = false, value, onChange }) {
+function TextArea({ label, optional = false, rows = 2, value, onChange }) {
   return (
     <label className="block min-w-0 text-xs font-bold text-egmf-ink-secondary">
       {label}
@@ -275,7 +337,7 @@ function TextArea({ label, optional = false, value, onChange }) {
         </span>
       )}
       <textarea
-        rows={2}
+        rows={rows}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="mt-1.5 w-full resize-y rounded-xl border border-egmf-border bg-white px-3 py-2.5 text-sm font-semibold leading-5 text-egmf-ink outline-none transition focus:border-egmf-primary focus:ring-4 focus:ring-egmf-primary/10"

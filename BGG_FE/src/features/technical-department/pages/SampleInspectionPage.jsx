@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Modal } from "antd";
 import {
   ChevronDown,
   ChevronUp,
@@ -6,156 +6,66 @@ import {
   FileText,
   PackageCheck,
   Search,
+  TriangleAlert,
 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
+//Import Custom Hook
+import { useTechnicalDocuments } from "../hook/useTechnicalDocuments";
+
+import {
+  capNhatTrangThaiBarcodeMau,
+  layThongTinGiayDeNghiTheoBarcodeMau,
+  layTrangThaiTheoBarcodeMau,
+} from "../api/technical-department.api";
+import DocumentPreviewModal from "../components/DocumentPreviewModal";
+import SampleImageCard from "../components/SampleImageCard";
 import SelectSampleInspection from "../components/SelectSampleInspection";
 import SelectedInspectionType from "../components/SelectedInspectionType";
-
-import MainLayout from "../../../layouts/MainLayout/MainLayout";
-import SampleImageCard from "../components/SampleImageCard";
-import DocumentPreviewModal from "../components/DocumentPreviewModal";
 import { displayPreviewValue } from "../utils/sampleInspection.utils";
+import MainLayout from "../../../layouts/MainLayout/MainLayout";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "../../../shared/components/ui/CustomToast";
 import { formatDateTime } from "../../../shared/utils/formatDateTime";
 
 const actions = [
   { label: "Kiểm mẫu", icon: ClipboardCheck },
   { label: "Xem tài liệu kỹ thuật", icon: FileText },
 ];
+
 const detailGridClass =
   "grid grid-cols-2 gap-x-5 gap-y-3 sm:gap-x-6 [&>div]:min-w-0 [&_dt]:leading-4 [&_dd]:mt-0.5 [&_dd]:leading-5 [&_dd]:break-words";
 
-import {
-  layThongTinGiayDeNghiTheoBarcodeMau,
-  layDanhSachFileTaiLieuTheoBarcodeMau,
-  layTrangThaiTheoBarcodeMau,
-  capNhatTrangThaiBarcodeMau,
-} from "../api/technical-department.api";
-
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "../../../shared/components/ui/CustomToast";
-import { Modal } from "antd";
-import { useNavigate } from "react-router-dom";
-
 export default function SampleInspectionPage() {
+  const navigate = useNavigate();
+
+  // Tra cứu và dữ liệu thông tin phiếu.
   const [barCodeMau, setBarCodeMau] = useState("");
   const [thongTinPhieu, setThongTinPhieu] = useState({});
   const [hasSearched, setHasSearched] = useState(false);
-  const [expanded, setExpanded] = useState(false); //
   const [isLoading, setIsLoading] = useState(false);
-  const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
-  const [selectedDocumentIndex, setSelectedDocumentIndex] = useState(0);
-  const [dsFileName, setDsFileName] = useState([]);
-  const [dsFile, setDsFile] = useState([]);
-  const [loadingFile, setLoadingFile] = useState(false);
-  const [openPopup, setOpenPopup] = useState(false);
 
+  // Trạng thái hiển thị chi tiết phiếu.
+  const [expanded, setExpanded] = useState(false);
+
+  // Tài liệu kỹ thuật và modal xem tài liệu.
+  // const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
+  // const [selectedDocumentIndex, setSelectedDocumentIndex] = useState(0);
+  // const [dsFileName, setDsFileName] = useState([]);
+  // const [dsFile, setDsFile] = useState([]);
+  // const [loadingFile, setLoadingFile] = useState(false);
+
+  // Modal chọn loại kiểm và kết quả kiểm mẫu.
+  const [openPopup, setOpenPopup] = useState(false);
+  const [openPopupConfirm, setOpenPopupConfirm] = useState(false);
   const [modeModal, setModeModal] = useState("Chọn loại");
-  const [selectedType, setSelectedType] = useState("QA"); //CHỌN LOẠI KIỂM
+  const [selectedType, setSelectedType] = useState("QA");
   const [kqKiem, setKqKiem] = useState("");
 
-  const navigate = useNavigate();
-
-  console.log(kqKiem);
-  //LẤY RA DANH SÁCH FILE THUỘC BarcodeMau
-  const fetchDsFile = async () => {
-    setLoadingFile(true);
-    try {
-      const response = await layDanhSachFileTaiLieuTheoBarcodeMau(barCodeMau);
-      if (!response.success) {
-        showErrorToast(response.message);
-        setDsFile([]);
-        return;
-      }
-      setDsFile(response?.data || []);
-      return response?.data;
-    } catch (error) {
-      console.error("Lấy danh sách file lỗi: ", error);
-      showErrorToast(error.message);
-      setDsFile([]);
-    } finally {
-      setLoadingFile(false);
-    }
-  };
-
-  //XỬ LÝ CÁC NÚT CHỨC NĂNG
-  const handleAction = async (action) => {
-    switch (action) {
-      case "Xem tài liệu kỹ thuật": {
-        try {
-          setSelectedDocumentIndex(0);
-          setIsDocumentModalOpen(true);
-          const data = await fetchDsFile();
-          console.log("data: ", data);
-          setDsFileName(
-            data.map((item) => item.DuongDanLocal.split("/").pop()),
-          );
-        } catch (error) {
-          console.error(error);
-        }
-        break;
-      }
-
-      case "Kiểm mẫu": {
-        try {
-          setOpenPopup(true);
-        } catch (error) {}
-      }
-
-      default:
-        "Chức năng chưa hỗ trợ";
-        break;
-    }
-  };
-
-  console.log(modeModal, kqKiem);
-
-  const handleComfirmModal = async () => {
-    console.log(modeModal);
-    if (modeModal === "Chọn loại") {
-      setModeModal("Chọn kết quả kiểm");
-      return;
-    }
-
-    if (
-      modeModal === "Chọn kết quả kiểm" &&
-      ["HÀNG ĐẠT", "CHƯA KIỂM"].includes(kqKiem)
-    ) {
-      const payload = {
-        TrangThai: kqKiem,
-        isSua: kqKiem === "HÀNG SỬA" ? true : false,
-        BarcodeMau: barCodeMau,
-        LoaiKiemMau: selectedType,
-      };
-
-      const response = await capNhatTrangThaiBarcodeMau(payload);
-      if (!response.success) {
-        showErrorToast(response.message || "Cập nhật trạng thái thất bại");
-        return;
-      }
-      showSuccessToast(response.message || "Cập nhật trạng thái thành công");
-      setOpenPopup(false);
-      setModeModal("Chọn loại");
-      fetchTTGiayDeNghi();
-    }
-
-    if (
-      modeModal === "Chọn kết quả kiểm" &&
-      ["HÀNG LỖI", "HÀNG SỬA"].includes(kqKiem)
-    ) {
-      navigate("/sample-inspection/defects", {
-        state: {
-          barcodeMau: barCodeMau,
-          loaiKiem: selectedType,
-          kqKiem,
-        },
-      });
-    }
-  };
-
-  // console.log(modeModal);
-
+  // Tải thông tin phiếu và trạng thái QA/Autonomy theo BarcodeMau.
   const fetchTTGiayDeNghi = async () => {
     setIsLoading(true);
     try {
@@ -198,6 +108,7 @@ export default function SampleInspectionPage() {
     }
   };
 
+  // Kiểm tra dữ liệu đầu vào trước khi bắt đầu tra cứu.
   const handleSearch = () => {
     if (!barCodeMau.trim()) {
       showErrorToast("Vui lòng nhập hoặc quét Barcode màu");
@@ -205,6 +116,133 @@ export default function SampleInspectionPage() {
     }
     setHasSearched(true);
     fetchTTGiayDeNghi();
+  };
+
+  //Gọi hook
+  const {
+    selectedDocumentIndex,
+    setSelectedDocumentIndex,
+    isDocumentModalOpen,
+    setIsDocumentModalOpen,
+    dsFileName,
+    handleViewDocuments,
+    dsFile,
+    loadingFile,
+    fetchDsFile,
+  } = useTechnicalDocuments(barCodeMau);
+
+  // Điều phối các nút thao tác nhanh.
+  const handleAction = async (action) => {
+    switch (action) {
+      case "Xem tài liệu kỹ thuật": {
+        try {
+          handleViewDocuments();
+        } catch (error) {
+          console.error(error);
+        }
+        break;
+      }
+
+      case "Kiểm mẫu": {
+        try {
+          setOpenPopup(true);
+        } catch (error) {}
+      }
+
+      default:
+        "Chức năng chưa hỗ trợ";
+        break;
+    }
+  };
+
+  //XỬ LÝ NÚT XÁC NHẬN TRONG MODAL
+  const handleComfirmModal = async () => {
+    console.log(modeModal);
+    if (modeModal === "Chọn loại") {
+      setModeModal("Chọn kết quả kiểm");
+      return;
+    }
+
+    if (
+      modeModal === "Chọn kết quả kiểm" &&
+      ["HÀNG ĐẠT", "CHƯA KIỂM"].includes(kqKiem)
+    ) {
+      const payload = {
+        TrangThai: kqKiem,
+        isSua: kqKiem === "HÀNG SỬA" ? true : false,
+        BarcodeMau: barCodeMau,
+        LoaiKiemMau: selectedType,
+      };
+
+      const response = await capNhatTrangThaiBarcodeMau(payload);
+      if (!response.success) {
+        showErrorToast(response.message || "Cập nhật trạng thái thất bại");
+        return;
+      }
+      showSuccessToast(response.message || "Cập nhật trạng thái thành công");
+      setOpenPopup(false);
+      setModeModal("Chọn loại");
+      fetchTTGiayDeNghi();
+    }
+
+    if (modeModal === "Chọn kết quả kiểm" && ["HÀNG LỖI"].includes(kqKiem)) {
+      try {
+        const response = await capNhatTrangThaiBarcodeMau({
+          BarcodeMau: barCodeMau,
+          LoaiKiemMau: selectedType,
+          TrangThai: kqKiem,
+          isSua: false,
+        });
+        if (!response.success) {
+          showErrorToast(
+            response.message || "Không thể cập nhật trạng thái kiểm mẫu.",
+          );
+          return;
+        }
+        navigate("/sample-inspection/defects", {
+          state: {
+            barcodeMau: barCodeMau,
+            loaiKiem: selectedType,
+            kqKiem,
+          },
+        });
+      } catch (error) {
+        showErrorToast(
+          error.message || "Có lỗi khi cập nhật trạng thái kiểm mẫu.",
+        );
+      }
+    }
+
+    if (modeModal === "Chọn kết quả kiểm" && ["HÀNG SỬA"].includes(kqKiem)) {
+      setOpenPopupConfirm(true);
+      return;
+    }
+  };
+
+  //Xác nhận tại modal2
+  const handleComfirmRepair = async () => {
+    try {
+      const payload = {
+        TrangThai: kqKiem,
+        isSua: true,
+        BarcodeMau: barCodeMau,
+        LoaiKiemMau: selectedType,
+      };
+      const response = await capNhatTrangThaiBarcodeMau(payload);
+      if (!response.success) {
+        showErrorToast(response.message || "Cập nhật trạng thái thất bại");
+        return;
+      }
+      showSuccessToast(response.message);
+      setOpenPopupConfirm(false);
+      setOpenPopup(false);
+      setModeModal("Chọn loại");
+      fetchTTGiayDeNghi();
+    } catch (error) {
+      showErrorToast(
+        error.message || "Có lỗi khi cập nhật trạng thái kiểm mẫu.",
+      );
+    }
   };
 
   return (
@@ -970,6 +1008,7 @@ export default function SampleInspectionPage() {
           okText="Xác nhận"
           cancelText="Hủy"
           onOk={handleComfirmModal}
+          zIndex={1000}
         >
           {modeModal === "Chọn loại" && (
             <SelectedInspectionType
@@ -987,6 +1026,28 @@ export default function SampleInspectionPage() {
           )}
         </Modal>
       )}
+
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <TriangleAlert size={22} className="text-amber-500" />
+            <span>Xác nhận cập nhật</span>
+          </div>
+        }
+        open={openPopupConfirm}
+        onCancel={() => setOpenPopupConfirm(false)}
+        okText="Cập nhật"
+        cancelText="Hủy"
+        onOk={handleComfirmRepair}
+        zIndex={1100}
+      >
+        <p className="text-base leading-relaxed">
+          Bạn có chắc muốn cập nhật trạng thái từ{" "}
+          <span className="font-bold text-red-600">[HÀNG LỖI]</span> sang{" "}
+          <span className="font-bold text-amber-600">[HÀNG SỬA]</span> cho
+          Barcode: <span className="font-bold">{barCodeMau}</span> hay không?
+        </p>
+      </Modal>
     </MainLayout>
   );
 }
