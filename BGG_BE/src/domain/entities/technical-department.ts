@@ -82,6 +82,23 @@ export class TEC_BarcodeMau_UpdateTrangThai_Mobile {
   RowsDeleted: number;
 }
 
+export class TEC_BarcodeMau_SelectThongTinKiemMau {
+  BarcodeMauId: number;
+  MasterId: number;
+  isSua: boolean;
+  BarcodeMau: string;
+  MaHang: string;
+  Mua: string;
+  Size: string;
+  Mau: string;
+  LoaiMau: string;
+  NhaCungCap: string;
+  DPP: number;
+  NgayTao: Date;
+  TrangThai: string;
+  TrangThaiAutonomy: string;
+}
+
 export class TEC_KiemMau_DanhSachLoi {
   id: number;
   ten: string;
@@ -99,6 +116,9 @@ export class TEC_KiemMau_Detail_Insert {
 }
 
 export class TEC_KiemMau_Detail_Select {
+  IdDetail: number;
+  IdKiemMauMaster: number;
+  BarcodeMau: string;
   ViTriLoi: string;
   NguoiKhaiBao: string;
   ThoiGianKhaiBao: Date;
@@ -106,8 +126,11 @@ export class TEC_KiemMau_Detail_Select {
   MaLoi: string;
   TenLoi: string;
   SL: number;
-  Image: string;
+  ImagePath: string | null;
   BienPhapXuLy: string;
   LoaiKiem: string;
   GhiChu: string;
+  CumLoiId: number;
+  TenCumLoi: string;
+  KetQuaCuoi: string | null;
 }

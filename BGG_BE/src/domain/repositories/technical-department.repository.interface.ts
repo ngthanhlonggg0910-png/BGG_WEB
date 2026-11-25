@@ -4,6 +4,7 @@ import {
   TEC_TaiLieuKyThuat_LayDanhSachFile_TheoBarcodeMau,
   TEC_GetTrangThai_ByBarcodeMauAndLoai,
   TEC_BarcodeMau_UpdateTrangThai_Mobile,
+  TEC_BarcodeMau_SelectThongTinKiemMau,
   TEC_KiemMau_DanhSachLoi,
   TEC_KiemMau_Master_KiemTraTonTai,
   TEC_KiemMau_Detail_Insert,
@@ -35,6 +36,10 @@ export interface ITechnicalDepartmentRepository {
     LoaiKiemMau: string,
   ): Promise<TEC_BarcodeMau_UpdateTrangThai_Mobile>;
 
+  TEC_BarcodeMau_SelectThongTinKiemMau(
+    BarcodeMau: string,
+  ): Promise<TEC_BarcodeMau_SelectThongTinKiemMau>;
+
   layDanhSachLoi(): Promise<TEC_KiemMau_DanhSachLoi[]>;
 
   TEC_KiemMau_Master_KiemTraTonTai(
@@ -57,10 +62,36 @@ export interface ITechnicalDepartmentRepository {
     BienPhapXuLy: string,
     GhiChu: string,
     LoaiKiem: string,
-    Image: string,
+    Image: string | null,
   ): Promise<TEC_KiemMau_Detail_Insert>;
 
   TEC_KiemMau_Detail_Select(
     BarcodeMau: string,
   ): Promise<TEC_KiemMau_Detail_Select[]>;
+
+  TEC_KiemMau_Detail_Delete(IdDetail: number): Promise<number>;
+
+  TEC_KiemMau_Detail_LayImagePath(
+    IdDetail: number,
+  ): Promise<string | null | undefined>;
+
+  TEC_KiemMau_Detail_DemSuDungImagePath(ImagePath: string): Promise<number>;
+
+  TEC_KiemMau_Detail_Update(
+    IdDetail: number,
+    IdKiemMauMaster: number,
+    BarcodeMau: string,
+    ViTriLoi: string,
+    NguoiKhaiBao: string,
+    MucDoNghiemTrong: string,
+    MaLoi: string,
+    TenLoi: string,
+    CumLoiId: number,
+    SL: number,
+    BienPhapXuLy: string,
+    GhiChu: string,
+    LoaiKiem: string,
+    Image: string | null,
+    RemoveImage: boolean,
+  ): Promise<{ UpdatedId: number }>;
 }

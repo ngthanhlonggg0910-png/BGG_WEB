@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import sql from 'mssql';
-import { encryptPassword } from '../../utils/password-encryption.util.js';
+import { encryptPassword } from '../../shared/utils/password-encryption.util.js';
 import { DatabaseService } from '../database/database.service.js';
 import { User } from '../../domain/entities/user.entity.js';
 import type { IUserRepository } from '../../domain/repositories/user.repository.interface.js';
